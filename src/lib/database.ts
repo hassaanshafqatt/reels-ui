@@ -239,10 +239,14 @@ export const sessionOperations = {
     `);
     
     try {
-      stmt.run(id, userId, token, expiresAt.toISOString());
+      const isoString = expiresAt.toISOString();
+      console.log('Creating session:', { id, userId, tokenLength: token.length, expiresAt: isoString });
+      stmt.run(id, userId, token, isoString);
+      console.log('Session created successfully:', id);
       return { success: true, sessionId: id };
     } catch (error) {
-      return { success: false, error: 'Failed to create session' };
+      console.error('Session creation error:', error);
+      return { success: false, error: `Failed to create session: ${error}` };
     }
   },
 

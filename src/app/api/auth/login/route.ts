@@ -35,6 +35,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
+    console.log('User found:', !!user);
+    console.log('Password hash exists:', !!user.password_hash);
+    console.log('Password hash length:', user.password_hash?.length || 0);
+    
     const isValidPassword = await passwordUtils.verify(password, user.password_hash);
     
     if (!isValidPassword) {
