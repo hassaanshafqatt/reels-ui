@@ -57,8 +57,15 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Create data directory for SQLite database
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+# Create data directory for SQLite database with proper permissions
+RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data && chmod -R 755 /app/data
+
+# Ensure the nextjs user owns the entire app directory
+RUN chown -R nextjs:nodejs /app
+
+# Copy and setup init script
+COPY docker-init.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-init.sh
 
 USER nextjs
 
@@ -70,4 +77,5 @@ ENV HOSTNAME="0.0.0.0"
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
+ENTRYPOINT ["/usr/local/bin/docker-init.sh"]
 CMD ["node", "server.js"]

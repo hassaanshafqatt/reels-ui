@@ -6,6 +6,27 @@ services:
     ports:
       - "4761:4761"
     volumes:
+      # Mount data directory for persistent SQLite database with proper permissions
+      - reels_data:/app/data
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4761/api/debug"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  reels_data:
+    driver: localrvices:
+  reels-ui:
+    build: .
+    ports:
+      - "4761:4761"
+    volumes:
       # Mount data directory for persistent SQLite database
       - ./data:/app/data
     environment:

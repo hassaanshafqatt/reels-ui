@@ -1,9 +1,27 @@
 import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import path from 'path';
+import fs from 'fs';
+
+// Ensure data directory exists
+const dataDir = path.join(process.cwd(), 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+}
 
 // Initialize database
-const dbPath = path.join(process.cwd(), 'data', 'reelcraft.db');
+const dbPath = path.join(dataDir, 'reelcraft.db');
+console.log('Database path:', dbPath);
+
+// Check if we can write to the directory
+try {
+  fs.accessSync(dataDir, fs.constants.W_OK);
+  console.log('Data directory is writable');
+} catch (error) {
+  console.error('Data directory is not writable:', error);
+  console.log('Data directory stats:', fs.statSync(dataDir));
+}
+
 const db = new Database(dbPath);
 
 // Enable foreign keys
