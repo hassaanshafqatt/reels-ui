@@ -1,10 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import {
   Zap,
   Crown,
@@ -26,138 +36,38 @@ import {
   PawPrint,
   Instagram,
   ChevronDown,
-  Plus
+  Plus,
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Loader,
+  ExternalLink,
+  Music,
+  Upload,
+  X
 } from "lucide-react";
+import { jobService, type StoredJob } from "@/lib/jobService";
+import { useReelData } from "@/hooks/useReelData";
+import { type ReelType as DatabaseReelType } from "@/lib/reelService";
 
-interface ReelType {
-  id: string;
-  title: string;
-  icon: React.ReactNode;
-  category: string;
-  url: string; // Added URL field
-}
-
-interface ReelCategory {
-  id: string;
-  title: string;
-  description: string;
-  types: ReelType[];
-}
-
-const reelCategories: ReelCategory[] = [
-  {
-    id: "viral",
-    title: "Viral Reels",
-    description: "High-engagement motivational content",
-    types: [
-      { 
-        id: "gym-motivation", 
-        title: "Gym Motivation", 
-        icon: <Dumbbell className="h-4 w-4" />, 
-        category: "viral",
-        url: "/api/reels/gym-motivation"
-      },
-      { 
-        id: "war-motivation", 
-        title: "War Motivation/Wisdom", 
-        icon: <Sword className="h-4 w-4" />, 
-        category: "viral",
-        url: "/api/reels/war-motivation"
-      },
-      { 
-        id: "medieval-war", 
-        title: "Medieval War Motivation", 
-        icon: <Shield className="h-4 w-4" />, 
-        category: "viral",
-        url: "/api/reels/medieval-war"
-      },
-      { 
-        id: "gangsters", 
-        title: "1920s Gangsters", 
-        icon: <Crown className="h-4 w-4" />, 
-        category: "viral",
-        url: "/api/reels/gangsters"
-      },
-    ]
-  },
-  {
-    id: "proverbs",
-    title: "Proverbs Viral Reels",
-    description: "Wisdom-based content with deep meaning",
-    types: [
-      { 
-        id: "wisdom", 
-        title: "Wisdom", 
-        icon: <Brain className="h-4 w-4" />, 
-        category: "proverbs",
-        url: "/api/reels/wisdom"
-      },
-      { 
-        id: "motivation", 
-        title: "Motivation", 
-        icon: <Zap className="h-4 w-4" />, 
-        category: "proverbs",
-        url: "/api/reels/motivation"
-      },
-      { 
-        id: "brotherhood", 
-        title: "Brotherhood", 
-        icon: <HandHeart className="h-4 w-4" />, 
-        category: "proverbs",
-        url: "/api/reels/brotherhood"
-      },
-      { 
-        id: "bravery", 
-        title: "Bravery", 
-        icon: <Heart className="h-4 w-4" />, 
-        category: "proverbs",
-        url: "/api/reels/bravery"
-      },
-    ]
-  },
-  {
-    id: "anime",
-    title: "Anime Style Reels",
-    description: "Anime-inspired creative content",
-    types: [
-      { 
-        id: "theory", 
-        title: "Theory", 
-        icon: <Lightbulb className="h-4 w-4" />, 
-        category: "anime",
-        url: "https://n8n.nutrador.com/webhook-test/d1eb881a-33e3-4051-ba1f-1a1f31ba8b69"
-      },
-      { 
-        id: "painting", 
-        title: "Painting", 
-        icon: <PaintBucket className="h-4 w-4" />, 
-        category: "anime",
-        url: "/api/reels/anime-painting"
-      },
-    ]
-  },
-  {
-    id: "asmr",
-    title: "ASMR Reels",
-    description: "Relaxing and satisfying content",
-    types: [
-      { 
-        id: "food", 
-        title: "Food", 
-        icon: <Utensils className="h-4 w-4" />, 
-        category: "asmr",
-        url: "/api/reels/asmr-food"
-      },
-      { 
-        id: "animal", 
-        title: "Animal", 
-        icon: <PawPrint className="h-4 w-4" />, 
-        category: "asmr",
-        url: "/api/reels/asmr-animal"
-      },
-    ]
-  }
-];
+// Extracted components
+import { iconMap } from "@/components/IconMap";
+import LoadingState from "@/components/LoadingState";
+import ErrorState from "@/components/ErrorState";
+import Message from "@/components/Message";
+import CategoryOverview from "@/components/CategoryOverview";
+import TabNavigation from "@/components/TabNavigation";
+import SubTabNavigation from "@/components/SubTabNavigation";
+import ReelTypeGrid from "@/components/ReelTypeGrid";
+import CaptionToggle from "@/components/CaptionToggle";
+import AudioToggle from "@/components/AudioToggle";
+import AudioUpload from "@/components/AudioUpload";
+import CustomCaptionDisplay from "@/components/CustomCaptionDisplay";
+import CustomCaptionDialog from "@/components/CustomCaptionDialog";
+import JobStatusCard from "@/components/JobStatusCard";
+import HistorySection from "@/components/HistorySection";
+import PostingScheduleSection from "@/components/PostingScheduleSection";
+import GeneratedReelsSection from "@/components/GeneratedReelsSection";
 
 interface DashboardProps {
   onReelSelect: (categoryId: string, typeId: string) => void;
@@ -166,18 +76,288 @@ interface DashboardProps {
 export default function Dashboard({
   onReelSelect = () => {}
 }: DashboardProps) {
-  const [activeTab, setActiveTab] = useState("creation");
-  const [selectedReel, setSelectedReel] = useState<ReelType | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const { categories: reelCategories, loading: reelDataLoading, error: reelDataError } = useReelData();
+  const [activeTab, setActiveTab] = useState("");
+  const [selectedReel, setSelectedReel] = useState<DatabaseReelType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [generateCaption, setGenerateCaption] = useState(true);
   const [customCaption, setCustomCaption] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [storedJobs, setStoredJobs] = useState<StoredJob[]>([]);
+  const [refreshingJobs, setRefreshingJobs] = useState<Set<string>>(new Set());
+  const [showCaptionDialog, setShowCaptionDialog] = useState(false);
+  const [tempCustomCaption, setTempCustomCaption] = useState("");
+  const [tempAuthor, setTempAuthor] = useState("");
+  const [customAuthor, setCustomAuthor] = useState("");
+  const [customAudioFile, setCustomAudioFile] = useState<File | null>(null);
+  const [useCustomAudio, setUseCustomAudio] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<Record<string, string>>({});
+  const [activeSubSection, setActiveSubSection] = useState<Record<string, Record<string, string>>>({});
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
+
+  // Auto-clear success and error messages after 7 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Initialize sub-sections for each category and sub-tab
+  useEffect(() => {
+    if (reelCategories.length > 0) {
+      const initialSubSections: Record<string, Record<string, string>> = {};
+      reelCategories.forEach(category => {
+        initialSubSections[category.name] = {
+          generate: 'quick',
+          post: 'schedule',
+          history: 'recent'
+        };
+      });
+      setActiveSubSection(initialSubSections);
+    }
+  }, [reelCategories]);
+
+  // Load stored jobs on component mount
+  useEffect(() => {
+    const loadJobs = async () => {
+      // Only load jobs if user is authenticated
+      if (!user || authLoading) {
+        console.log('User not authenticated or loading, skipping job load:', { user: !!user, authLoading });
+        return;
+      }
+      
+      try {
+        console.log('Loading jobs for user:', user.email);
+        const jobs = await jobService.getJobs();
+        console.log('Loaded jobs:', jobs);
+        setStoredJobs(jobs);
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+        // Clear jobs on error (might be auth issue)
+        setStoredJobs([]);
+      }
+    };
+    
+    loadJobs();
+  }, [user, authLoading]);
+
+  // Set initial activeTab when categories load
+  useEffect(() => {
+    if (reelCategories.length > 0 && !activeTab) {
+      const firstCategory = reelCategories[0];
+      setActiveTab(firstCategory.name);
+      
+      // Auto-select the first reel type of the first category
+      if (firstCategory.types && firstCategory.types.length > 0) {
+        const firstType = firstCategory.types[0];
+        setSelectedReel(firstType);
+        setSelectedCategory(firstCategory.name);
+        onReelSelect(firstCategory.name, firstType.name);
+      }
+      
+      // Initialize sub-tabs with "Generate" as default for each category
+      const initialSubTabs: Record<string, string> = {};
+      const initialSubSections: Record<string, Record<string, string>> = {};
+      reelCategories.forEach(category => {
+        initialSubTabs[category.name] = 'generate';
+        initialSubSections[category.name] = {
+          generate: 'quick',
+          post: 'schedule',
+          history: 'recent'
+        };
+      });
+      setActiveSubTab(initialSubTabs);
+      setActiveSubSection(initialSubSections);
+    }
+  }, [reelCategories, activeTab, onReelSelect]);
+
+  // Auto-select first reel type when switching categories
+  useEffect(() => {
+    if (activeTab && reelCategories.length > 0) {
+      const currentCategory = reelCategories.find(c => c.name === activeTab);
+      if (currentCategory && currentCategory.types && currentCategory.types.length > 0) {
+        // Only auto-select if no reel is currently selected for this category
+        if (!selectedReel || selectedCategory !== activeTab) {
+          const firstType = currentCategory.types[0];
+          setSelectedReel(firstType);
+          setSelectedCategory(activeTab);
+          onReelSelect(activeTab, firstType.name);
+        }
+      }
+    }
+  }, [activeTab, reelCategories, selectedReel, selectedCategory, onReelSelect]);
+
+  // Function to validate audio file duration
+  const validateAudioDuration = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      const url = URL.createObjectURL(file);
+      
+      audio.addEventListener('loadedmetadata', () => {
+        URL.revokeObjectURL(url);
+        const duration = audio.duration;
+        if (duration > 60) {
+          setAudioError(`Audio file is ${duration.toFixed(1)}s long. Maximum allowed is 60s.`);
+          resolve(false);
+        } else {
+          setAudioError(null);
+          resolve(true);
+        }
+      });
+      
+      audio.addEventListener('error', () => {
+        URL.revokeObjectURL(url);
+        setAudioError('Could not read audio file. Please try a different file.');
+        resolve(false);
+      });
+      
+      audio.src = url;
+    });
+  };
+
+  // Filter jobs by current tab category
+  const getJobsForCategory = (categoryName: string) => {
+    return storedJobs.filter(job => job.category === categoryName);
+  };
+
+  // Function to clear all job history
+  const clearJobHistory = async () => {
+    if (isClearingHistory) return;
+    
+    setIsClearingHistory(true);
+    try {
+      const success = await jobService.clearAllJobs();
+      if (success) {
+        setStoredJobs([]);
+        setSuccess('Job history cleared successfully!');
+      } else {
+        setError('Failed to clear job history. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error clearing job history:', error);
+      setError('Failed to clear job history. Please try again.');
+    } finally {
+      setIsClearingHistory(false);
+    }
+  };
+
+  // Function to check job status
+  const checkJobStatus = async (job: StoredJob) => {
+    if (refreshingJobs.has(job.job_id)) return;
+    
+    console.log(`Frontend: Checking job status for ${job.job_id}`);
+    setRefreshingJobs(prev => new Set(prev).add(job.job_id));
+    
+    try {
+      const url = `/api/reels/status?jobId=${job.job_id}&type=${job.type}`;
+      console.log(`Frontend: Making request to ${url}`);
+      
+      const response = await fetch(url);
+      console.log(`Frontend: Got response with status ${response.status}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`Frontend: Full response data:`, JSON.stringify(result, null, 2));
+        
+        // Check if response contains an error, or if status is missing
+        let jobStatus = result.status;
+        let errorMessage = null;
+        
+        if (result.error || result.message?.includes('error') || result.message?.includes('Error')) {
+          jobStatus = 'failed';
+          errorMessage = result.error || result.message || 'Unknown error in response';
+          console.log(`Frontend: Error found in response, setting status to failed:`, errorMessage);
+        } else if (!jobStatus) {
+          jobStatus = 'failed';
+          errorMessage = 'No status found in response';
+          console.log(`Frontend: No status found in response, setting to failed`);
+        }
+        
+        console.log(`Frontend: Final job status:`, jobStatus);
+        
+        // Extract reel link from multiple possible sources
+        const reelLink = result.reelLink || 
+                        result.result?.reelUrl || 
+                        result.result?.videoUrl || 
+                        result.result?.downloadUrl || 
+                        result.result?.url || 
+                        result.result?.link;
+        
+        console.log(`Frontend: Extracted reel link:`, reelLink);
+        
+        // Update job status using the job service
+        await jobService.updateJobStatus(job.job_id, jobStatus, reelLink, errorMessage);
+        const refreshedJobs = await jobService.getJobs();
+        setStoredJobs(refreshedJobs); // Refresh the list
+        
+        // Show success message with appropriate content
+        if (jobStatus === 'completed') {
+          if (reelLink) {
+            setSuccess(`Job ${job.job_id.substring(0, 8)} completed! Reel is ready.`);
+          } else {
+            setSuccess(`Job ${job.job_id.substring(0, 8)} completed successfully!`);
+          }
+        } else if (jobStatus === 'processing') {
+          setSuccess(`Job ${job.job_id.substring(0, 8)} is still processing...`);
+        } else if (jobStatus === 'failed') {
+          const displayError = errorMessage || 'Job failed';
+          setError(`Job ${job.job_id.substring(0, 8)} failed: ${displayError}`);
+        } else {
+          setSuccess(`Job ${job.job_id.substring(0, 8)} status updated: ${jobStatus}`);
+        }
+      } else {
+        console.error(`Frontend: Request failed with status ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Frontend: Error response body:`, errorText);
+        
+        // Try to parse error response as JSON for more details
+        let errorDetails = errorText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.log(`Frontend: Parsed error JSON:`, errorJson);
+          errorDetails = errorJson.error || errorJson.message || errorText;
+        } catch (parseError) {
+          console.log(`Frontend: Could not parse error response as JSON, using raw text`);
+        }
+        
+        // Set job status to failed for non-OK responses
+        await jobService.updateJobStatus(job.job_id, 'failed', undefined, `HTTP ${response.status}: ${errorDetails}`);
+        const refreshedJobs = await jobService.getJobs();
+        setStoredJobs(refreshedJobs);
+        
+        setError(`Failed to check job status: ${response.status} ${response.statusText} - ${errorDetails}`);
+      }
+    } catch (error) {
+      console.error('Frontend: Failed to check job status:', error);
+      setError('Failed to check job status: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setRefreshingJobs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(job.job_id);
+        return newSet;
+      });
+    }
+  };
 
   const handleReelSelect = (categoryId: string, typeId: string) => {
-    const category = reelCategories.find(c => c.id === categoryId);
-    const type = category?.types.find(t => t.id === typeId);
+    const category = reelCategories.find(c => c.name === categoryId);
+    const type = category?.types.find(t => t.name === typeId);
     if (type) {
       setSelectedReel(type);
       setSelectedCategory(categoryId);
@@ -193,263 +373,339 @@ export default function Dashboard({
       return;
     }
 
-    // Get the URL from the reel categories data
-    const category = reelCategories.find(c => c.id === selectedCategory);
-    const reelType = category?.types.find(t => t.id === selectedReel.id);
-    
-    if (!reelType?.url) {
-      setError("API endpoint not configured for this reel type");
-      return;
-    }
-
     setIsGenerating(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const payload = {
-        reelType: selectedReel.id,
-        category: selectedCategory,
-        generateCaption,
-        customCaption: generateCaption ? "" : customCaption,
-        timestamp: new Date().toISOString()
-      };
-      console.log(reelType.url);
-      try {
-        const response = await fetch(reelType.url, {
+      // Always use local dynamic route - external URLs are handled server-side
+      const targetUrl = `/api/reels/${selectedReel.name}`;
+      console.log('🎯 Target URL:', targetUrl);
+      console.log('🔍 Selected reel details:', {
+        name: selectedReel.name,
+        external_url: selectedReel.external_url,
+        id: selectedReel.id
+      });
+      
+      let response;
+      
+      if (useCustomAudio && customAudioFile) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append('reelType', selectedReel.name);
+        formData.append('category', selectedCategory);
+        formData.append('generateCaption', generateCaption.toString());
+        formData.append('customCaption', generateCaption ? "" : customCaption);
+        formData.append('customAuthor', (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "");
+        formData.append('useCustomAudio', 'true');
+        formData.append('audioFile', customAudioFile);
+        formData.append('timestamp', new Date().toISOString());
+
+        response = await fetch(targetUrl, {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        // Use JSON for regular requests
+        const payload = {
+          reelType: selectedReel.name,
+          category: selectedCategory,
+          generateCaption,
+          customCaption: generateCaption ? "" : customCaption,
+          customAuthor: (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "",
+          useCustomAudio: false,
+          timestamp: new Date().toISOString()
+        };
+
+        console.log('Making fetch request to:', targetUrl);
+        console.log('Request payload:', payload);
+        
+        response = await fetch(targetUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        setSuccess(`Reel generated successfully! ${result.message || ''}`);
         
-        console.log("Reel generation response:", result);
-      } catch (error) {
-        setError("Error generating reel: " + (error instanceof Error ? error.message : String(error)));
-        console.error("Error generating reel:", error);
+        console.log('Fetch response status:', response.status);
+        console.log('Fetch response ok:', response.ok);
       }
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(`Failed to generate reel: ${errorMessage}`);
-      console.error("Error generating reel:", err);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      
+      // Store the job in database
+      if (result.jobId) {
+        await jobService.createJob({
+          jobId: result.jobId,
+          category: selectedCategory,
+          type: selectedReel.name
+        });
+        
+        // Refresh the jobs list
+        const refreshedJobs = await jobService.getJobs();
+        setStoredJobs(refreshedJobs);
+      }
+      
+      setSuccess(`Reel generated successfully! Job ID: ${result.jobId || 'N/A'}`);
+      
+      console.log("Reel generation response:", result);
+    } catch (error) {
+      console.error('Detailed error in handleGenerate:', error);
+      console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      setError("Error generating reel: " + (error instanceof Error ? error.message : String(error)));
+      console.error("Error generating reel:", error);
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Reel Generator Dashboard</h1>
-          <p className="text-gray-600">Create engaging reels for your Instagram account</p>
-        </div>
+    <div className="w-full min-h-screen flex flex-col">
+      <div className="max-w-7xl w-full mx-auto px-1 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-16 sm:pb-8">
+        {/* Loading State */}
+        {reelDataLoading && <LoadingState />}
 
-        {/* Tabs */}
+        {/* Error State */}
+        {reelDataError && <ErrorState message={reelDataError} />}
+
+        {/* Main Content */}
+        {!reelDataLoading && !reelDataError && reelCategories.length > 0 && (
+        <div>
+        {/* Clean & Elegant Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200">
-            <TabsTrigger 
-              value="creation" 
-              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=inactive]:text-gray-700"
-            >
-              Creation
-            </TabsTrigger>
-            <TabsTrigger 
-              value="activity" 
-              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=inactive]:text-gray-700"
-            >
-              Activity
-            </TabsTrigger>
-            <TabsTrigger 
-              value="workflows" 
-              className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=inactive]:text-gray-700"
-            >
-              Workflows
-            </TabsTrigger>
-          </TabsList>
+          {/* Desktop Tab Navigation */}
+          <div className="hidden sm:block">
+            <TabNavigation 
+              categories={reelCategories}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
 
-          <TabsContent value="creation" className="space-y-6 mt-6">
-            {/* Error/Success Messages */}
-            {error && (
-              <Card className="border border-red-200 bg-red-50">
-                <CardContent className="pt-6">
-                  <div className="flex items-center space-x-2 text-red-700">
-                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                    <span className="font-medium">Error:</span>
-                    <span>{error}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          {reelCategories.map((category) => (
+            <TabsContent key={category.id} value={category.name} className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200">
+              {/* Responsive Error/Success Messages */}
+              {error && <Message type="error" message={error} onClose={() => setError(null)} />}
+              {success && <Message type="success" message={success} onClose={() => setSuccess(null)} />}
 
-            {success && (
-              <Card className="border border-green-200 bg-green-50">
-                <CardContent className="pt-6">
-                  <div className="flex items-center space-x-2 text-green-700">
-                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                    <span className="font-medium">Success:</span>
-                    <span>{success}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+              {/* Category Overview - Full width on all screens */}
+              <CategoryOverview title={category.title} description={category.description} />
 
-            {/* Reel Categories */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {reelCategories.map((category) => (
-                <Card key={category.id} className="border border-gray-200 hover:shadow-md transition-shadow bg-white">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="text-gray-800">{category.title}</span>
-                      <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                        {category.types.length} types
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="text-gray-600">{category.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-3">
-                      {category.types.map((type) => {
-                        const isSelected = selectedReel?.id === type.id;
-                        return (
-                          <Button
-                            key={type.id}
-                            variant="outline"
-                            className={`h-auto p-4 flex-col gap-2 border-gray-200 hover:border-teal-300 transition-colors bg-white text-gray-700 hover:bg-gray-50 ${
-                              isSelected ? 'border-teal-600 bg-teal-50' : ''
-                            }`}
-                            onClick={() => handleReelSelect(category.id, type.id)}
-                          >
-                            {type.icon}
-                            <span className="text-sm font-medium">{type.title}</span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+              {/* Sub-tabs Navigation */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <SubTabNavigation 
+                  activeSubTab={activeSubTab[category.name] || 'generate'}
+                  onSubTabChange={(subTab) => setActiveSubTab(prev => ({ ...prev, [category.name]: subTab }))}
+                />
 
-            {/* Caption Settings */}
-            {selectedReel && (
-              <Card className="border border-gray-200 bg-white">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-800">
-                    <Sparkles className="h-5 w-5 text-teal-600" />
-                    Caption Settings
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Configure your caption for the selected reel type: <span className="font-medium text-teal-600">{selectedReel.title}</span>
-                    <br />
-                    <span className="text-sm text-gray-500">
-                      API Endpoint: {reelCategories.find(c => c.id === selectedCategory)?.types.find(t => t.id === selectedReel.id)?.url || 'Not configured'}
-                    </span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="generateCaption"
-                      checked={generateCaption}
-                      onChange={(e) => setGenerateCaption(e.target.checked)}
-                      className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                    />
-                    <label htmlFor="generateCaption" className="font-medium text-gray-700">
-                      Generate caption automatically
-                    </label>
-                  </div>
-
-                  {!generateCaption && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Custom Caption
-                      </label>
-                      <textarea
-                        value={customCaption}
-                        onChange={(e) => setCustomCaption(e.target.value)}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                        placeholder="Enter your custom caption here..."
+                {/* Sub-tab Content */}
+                <div className="p-4 sm:p-6">
+                  {/* Generate Tab Content */}
+                  {activeSubTab[category.name] === 'generate' && (
+                    <div className="p-4 sm:p-6">
+                      <ReelTypeGrid 
+                        types={category.types}
+                        selectedReel={selectedReel}
+                        selectedCategory={selectedCategory}
+                        categoryName={category.name}
+                        onReelSelect={handleReelSelect}
                       />
+
+                      {/* Responsive Generation Options */}
+                      {selectedReel && selectedCategory === category.name && (
+                        <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+                          <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Generation Settings</h4>
+                          
+                          <div className="space-y-3 sm:space-y-4">
+                            {/* Caption Toggle Button Group */}
+                            <CaptionToggle 
+                              generateCaption={generateCaption}
+                              onToggleCaption={(generate) => {
+                                setGenerateCaption(generate);
+                                if (generate) setCustomCaption("");
+                              }}
+                              onOpenCustomDialog={() => {
+                                setTempCustomCaption(customCaption);
+                                setTempAuthor(customAuthor);
+                                setShowCaptionDialog(true);
+                              }}
+                            />
+
+                            {/* Show current custom caption if set */}
+                            {!generateCaption && (
+                              <CustomCaptionDisplay 
+                                customCaption={customCaption}
+                                customAuthor={customAuthor}
+                                activeTab={activeTab}
+                              />
+                            )}
+
+                            {/* Audio Options Toggle */}
+                            <AudioToggle 
+                              useCustomAudio={useCustomAudio}
+                              onToggleAudio={(useCustom) => {
+                                setUseCustomAudio(useCustom);
+                                if (!useCustom) setCustomAudioFile(null);
+                              }}
+                            />
+
+                            {/* File Upload Section */}
+                            {useCustomAudio && (
+                              <AudioUpload 
+                                customAudioFile={customAudioFile}
+                                audioError={audioError}
+                                onFileSelect={setCustomAudioFile}
+                                onValidateFile={async (file) => {
+                                  setAudioError(null);
+                                  return await validateAudioDuration(file);
+                                }}
+                              />
+                            )}
+
+                            <Button 
+                              onClick={handleGenerate}
+                              disabled={isGenerating || audioError !== null}
+                              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isGenerating ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                  <span className="truncate">Generating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles size={16} className="flex-shrink-0" />
+                                  <span className="truncate">Generate {selectedReel.title}</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  <div className="pt-4 border-t border-gray-200">
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={isGenerating || !selectedReel}
-                      className="w-full bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                          <span>Generating Reel...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={16} />
-                          <span>Generate Reel</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                  {/* Post Tab Content */}
+                  {activeSubTab[category.name] === 'post' && (
+                    <div className="space-y-6">
+                      <GeneratedReelsSection 
+                        jobs={getJobsForCategory(activeTab)}
+                        refreshingJobs={refreshingJobs}
+                        onRefreshJob={(job) => {
+                          setRefreshingJobs(prev => new Set(prev).add(job.job_id));
+                          checkJobStatus(job);
+                        }}
+                      />
+                      <PostingScheduleSection />
+                    </div>
+                  )}
 
-          <TabsContent value="activity" className="space-y-6 mt-6">
-            <Card className="bg-white border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-800">
-                  <Clock className="h-5 w-5 text-teal-600" />
-                  Recent Generations
-                </CardTitle>
-                <CardDescription className="text-gray-600">Your previously generated reels</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  <Clock className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium mb-2">No recent activity</p>
-                  <p className="text-sm">Generated reels will appear here once you create them</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  {/* History Tab Content */}
+                  {activeSubTab[category.name] === 'history' && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-5 w-5 text-teal-600" />
+                          <h3 className="text-lg font-semibold text-gray-900">Generation History</h3>
+                        </div>
+                        <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium">
+                          {getJobsForCategory(category.name).length}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm">Track generation progress and view completed reels</p>
 
-          <TabsContent value="workflows" className="space-y-6 mt-6">
-            <Card className="bg-white border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-800">
-                  <Settings className="h-5 w-5 text-teal-600" />
-                  Automation Workflows
-                </CardTitle>
-                <CardDescription className="text-gray-600">Manage your workflows</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-gray-500">
-                  <Settings className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium mb-2">No workflows configured</p>
-                  <p className="text-sm">Connect your workflows to automate reel generation and posting</p>
-                  <Button className="mt-4 bg-teal-600 hover:bg-teal-700 text-white">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Workflow
-                  </Button>
+                      <HistorySection 
+                        jobs={getJobsForCategory(category.name)}
+                        refreshingJobs={refreshingJobs}
+                        onRefreshJob={checkJobStatus}
+                        onClearHistory={clearJobHistory}
+                        isClearingHistory={isClearingHistory}
+                      />
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </TabsContent>
+          ))}
         </Tabs>
+      </div>
+        )}
+
+      {/* Custom Caption Dialog */}
+      <CustomCaptionDialog 
+        isOpen={showCaptionDialog}
+        onClose={() => setShowCaptionDialog(false)}
+        tempCustomCaption={tempCustomCaption}
+        setTempCustomCaption={setTempCustomCaption}
+        tempAuthor={tempAuthor}
+        setTempAuthor={setTempAuthor}
+        activeTab={activeTab}
+        onSave={() => {
+          setCustomCaption(tempCustomCaption);
+          setCustomAuthor(tempAuthor);
+          setGenerateCaption(false);
+          setShowCaptionDialog(false);
+        }}
+      />
+      
+      {/* Mobile Bottom Navigation */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="px-2 py-1">
+          <div className="flex justify-center">
+            <div className="flex space-x-1 bg-gray-50 rounded-full p-1 max-w-full overflow-x-auto scrollbar-hide">
+              {reelCategories.map((category) => {
+                const mobileTitle = category.title
+                  .replace("Viral Reels", "Viral")
+                  .replace("Proverbs Viral Reels", "Proverbs") 
+                  .replace("Anime Style Reels", "Anime")
+                  .replace("ASMR Reels", "ASMR");
+                
+                const isActive = activeTab === category.name;
+                
+                // Import the icon map function
+                const getCategoryIcon = (categoryName: string) => {
+                  const iconMap: Record<string, React.ReactNode> = {
+                    'fitness': <Dumbbell className="h-4 w-4" />,
+                    'motivation': <Zap className="h-4 w-4" />,
+                    'proverbs': <BookOpen className="h-4 w-4" />,
+                    'anime': <Sword className="h-4 w-4" />,
+                    'asmr': <Music className="h-4 w-4" />,
+                    'default': <Sparkles className="h-4 w-4" />
+                  };
+                  return iconMap[categoryName] || iconMap['default'];
+                };
+                
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveTab(category.name)}
+                    className={`flex flex-col items-center px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 min-w-[60px] ${
+                      isActive
+                        ? 'bg-teal-600 text-white'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className={`transition-colors duration-200 ${
+                      isActive ? 'text-white' : 'text-gray-400'
+                    }`}>
+                      {getCategoryIcon(category.name)}
+                    </div>
+                    <span className="mt-1 leading-none">{mobileTitle}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      
       </div>
     </div>
   );
