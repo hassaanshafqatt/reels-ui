@@ -11,7 +11,7 @@ This project includes Docker support for easy deployment and development.
 docker build -t reels-ui .
 
 # Run the container
-docker run -p 3000:3000 -v $(pwd)/data:/app/data reels-ui
+docker run -p 4761:4761 -v $(pwd)/data:/app/data reels-ui
 ```
 
 ### Using Docker Compose (Recommended)
@@ -33,7 +33,7 @@ docker-compose down
 
 - `NODE_ENV`: Set to `production` for production builds
 - `NEXT_TELEMETRY_DISABLED`: Set to `1` to disable Next.js telemetry
-- `PORT`: Application port (default: 3000)
+- `PORT`: Application port (default: 4761)
 - `HOSTNAME`: Bind hostname (default: 0.0.0.0)
 
 ### Data Persistence
@@ -41,7 +41,7 @@ docker-compose down
 The SQLite database is stored in `/app/data` inside the container. Mount a volume to persist data:
 
 ```bash
-docker run -p 3000:3000 -v ./data:/app/data reels-ui
+docker run -p 4761:4761 -v ./data:/app/data reels-ui
 ```
 
 ## Development
@@ -53,7 +53,7 @@ docker run -p 3000:3000 -v ./data:/app/data reels-ui
 docker build -t reels-ui:dev .
 
 # Run with volume mounts for development
-docker run -p 3000:3000 -v $(pwd):/app -v /app/node_modules reels-ui:dev
+docker run -p 4761:4761 -v $(pwd):/app -v /app/node_modules reels-ui:dev
 ```
 
 ## Health Checks
@@ -78,7 +78,7 @@ docker logs reels-ui-container
 ```
 
 Common issues:
-- Port 3000 already in use
+- Port 4761 already in use
 - Insufficient permissions for data directory
 - Missing environment variables
 
