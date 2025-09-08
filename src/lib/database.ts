@@ -176,8 +176,9 @@ export const userOperations = {
     try {
       stmt.run(id, userData.email, userData.password_hash, userData.name, userData.plan, userData.avatar);
       return { success: true, userId: id };
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      const dbError = error as { code?: string };
+      if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return { success: false, error: 'Email already exists' };
       }
       return { success: false, error: 'Failed to create user' };
@@ -253,7 +254,7 @@ export const sessionOperations = {
       JOIN users u ON s.user_id = u.id
       WHERE s.token = ? AND s.expires_at > datetime('now')
     `);
-    return stmt.get(token) as any;
+    return stmt.get(token) as Record<string, unknown> | undefined;
   },
 
   // Delete session

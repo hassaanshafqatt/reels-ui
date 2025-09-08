@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
           // Extract status and other relevant information from the response
           let newStatus = jobRecord.status; // Default to current status
           let reelLink = null;
-          let updatedResult = statusResult;
+          const updatedResult = statusResult;
           let errorMessage = null;
           
           // Check for errors in the response first

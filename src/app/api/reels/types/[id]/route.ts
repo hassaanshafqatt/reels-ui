@@ -58,7 +58,7 @@ export async function PUT(
       is_active 
     } = body;
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (category_id !== undefined) updates.category_id = category_id;
     if (name !== undefined) updates.name = name;
     if (title !== undefined) updates.title = title;

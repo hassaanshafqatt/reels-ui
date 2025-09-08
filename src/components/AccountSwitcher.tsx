@@ -28,7 +28,7 @@ export function AccountSwitcher({
   onAccountChange,
   isMobile = false
 }: AccountSwitcherProps) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [activeAccount, setActiveAccount] = useState(
     accounts.find(acc => acc.isActive) || accounts[0]
   );
@@ -74,7 +74,7 @@ export function AccountSwitcher({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 truncate">
-              Welcome, {useAuth().user?.name || 'User'}
+              Welcome, {user?.name || 'User'}
             </p>
             <p className="text-xs text-gray-500">Account Manager</p>
           </div>
@@ -205,14 +205,14 @@ export function AccountSwitcher({
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">
-                Welcome, {useAuth().user?.name || 'User'}
+                Welcome, {user?.name || 'User'}
               </p>
               <p className="text-xs text-gray-500">Account Manager</p>
             </div>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0" title={`Welcome, ${useAuth().user?.name || 'User'}`}>
+            <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0" title={`Welcome, ${user?.name || 'User'}`}>
               <User className="h-4 w-4 text-white flex-shrink-0" />
             </div>
           </div>

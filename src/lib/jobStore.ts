@@ -6,7 +6,7 @@ export interface JobRecord {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   createdAt: string;
   updatedAt: string;
-  result?: any;
+  result?: Record<string, unknown>;
   error?: string;
 }
 
@@ -36,7 +36,7 @@ export const getJobStoreSize = (): number => {
 };
 
 // Update job status and result
-export const updateJobStatus = (jobId: string, status: JobRecord['status'], result?: any): boolean => {
+export const updateJobStatus = (jobId: string, status: JobRecord['status'], result?: Record<string, unknown>): boolean => {
   const job = jobStore.get(jobId);
   if (!job) return false;
   

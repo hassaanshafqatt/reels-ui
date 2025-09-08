@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Get fresh user data
-      const user = userOperations.findById(session.user_id);
+      const user = userOperations.findById(session.user_id as string);
       
       if (!user) {
         return NextResponse.json(
