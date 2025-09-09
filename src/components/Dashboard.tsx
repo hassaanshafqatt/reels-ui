@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { jobService, type StoredJob } from "@/lib/jobService";
 import { useReelData } from "@/hooks/useReelData";
+import { getIconFromDatabase } from "@/lib/iconUtils";
 import { type ReelType as DatabaseReelType } from "@/lib/reelService";
 
 // Extracted components
@@ -669,19 +670,6 @@ export default function Dashboard({
                 
                 const isActive = activeTab === category.name;
                 
-                // Import the icon map function
-                const getCategoryIcon = (categoryName: string) => {
-                  const iconMap: Record<string, React.ReactNode> = {
-                    'fitness': <Dumbbell className="h-4 w-4" />,
-                    'motivation': <Zap className="h-4 w-4" />,
-                    'proverbs': <BookOpen className="h-4 w-4" />,
-                    'anime': <Sword className="h-4 w-4" />,
-                    'asmr': <Music className="h-4 w-4" />,
-                    'default': <Sparkles className="h-4 w-4" />
-                  };
-                  return iconMap[categoryName] || iconMap['default'];
-                };
-                
                 return (
                   <button
                     key={category.id}
@@ -695,7 +683,7 @@ export default function Dashboard({
                     <div className={`transition-colors duration-200 ${
                       isActive ? 'text-white' : 'text-gray-400'
                     }`}>
-                      {getCategoryIcon(category.name)}
+                      {getIconFromDatabase(category.icon || 'Sparkles')}
                     </div>
                     <span className="mt-1 leading-none">{mobileTitle}</span>
                   </button>

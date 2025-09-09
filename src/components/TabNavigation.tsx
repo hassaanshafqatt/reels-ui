@@ -1,10 +1,11 @@
 import React from "react";
-import { Zap, Heart, Sparkles, Headphones, Crown, Brain } from "lucide-react";
+import { getIconFromDatabase } from "@/lib/iconUtils";
 
 interface Category {
   id: string;
   name: string;
   title: string;
+  icon?: string;
 }
 
 interface TabNavigationProps {
@@ -14,19 +15,6 @@ interface TabNavigationProps {
 }
 
 export default function TabNavigation({ categories, activeTab, onTabChange }: TabNavigationProps) {
-  // Category icon mapping for enhanced visual appeal
-  const getCategoryIcon = (categoryName: string) => {
-    const iconMap: Record<string, React.ReactNode> = {
-      'fitness': <Zap className="h-4 w-4" />,
-      'motivation': <Heart className="h-4 w-4" />,
-      'proverbs': <Brain className="h-4 w-4" />,
-      'anime': <Sparkles className="h-4 w-4" />,
-      'asmr': <Headphones className="h-4 w-4" />,
-      'default': <Crown className="h-4 w-4" />
-    };
-    return iconMap[categoryName] || iconMap['default'];
-  };
-
   // Category color schemes for visual distinction - all teal-based flat colors
   const getCategoryColors = (categoryName: string, isActive: boolean) => {
     const colorMap: Record<string, { active: string; inactive: string; gradient: string }> = {
@@ -92,9 +80,9 @@ export default function TabNavigation({ categories, activeTab, onTabChange }: Ta
                   }`}
                 >
                   <div className="flex items-center space-x-2">
-                    {/* Icon for mobile */}
+                    {/* Icon from database */}
                     <div className={`transition-transform duration-300 ${isActive ? 'text-teal-600' : 'text-gray-400'}`}>
-                      {getCategoryIcon(category.name)}
+                      {getIconFromDatabase(category.icon || 'Sparkles')}
                     </div>
                     <span>{mobileTitle}</span>
                   </div>
