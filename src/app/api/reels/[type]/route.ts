@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { JobRecord, jobStore, setJob, getJobStoreSize, getAllJobIds } from '@/lib/jobStore';
-import { reelTypeOperations } from '@/lib/database';
+import { reelTypeOperations, jobOperations } from '@/lib/database';
+import { verifyAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
   try {
+    // Verify authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { reelType, category, generateCaption, customCaption, timestamp } = await request.json();
     const { type } = await params;
 
@@ -27,7 +34,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const jobId = randomUUID();
     console.log(`Generated job ID: ${jobId}`);
 
-    // Store initial job record
+    // Store job in database first (persistent storage)
+    const dbJobId = jobOperations.create(user.id, {
+      jobId,
+      category,
+      type
+    });
+    console.log(`Stored job in database with ID: ${dbJobId}`);
+
+    // Store initial job record in memory store (for current request processing)
     const jobRecord: JobRecord = {
       jobId,
       type,
@@ -54,6 +69,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     jobRecord.status = 'processing';
     jobRecord.updatedAt = new Date().toISOString();
     setJob(jobId, jobRecord);
+    
+    // Also update database
+    jobOperations.updateStatus(jobId, 'processing');
     console.log(`Updated job status to processing for: ${jobId}`);
 
     // If this reel type has an external URL, make a request to it
@@ -74,18 +92,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         const externalResult = await externalResponse.json();
         
-        // Update job record with success
-        jobRecord.status = 'completed';
-        jobRecord.updatedAt = new Date().toISOString();
+        // Don't immediately set to completed - let the job stay processing
+        // The status will be updated via the status polling endpoint
+        console.log(`External API call successful for job: ${jobId}, keeping status as processing`);
+        console.log(`External API response:`, externalResult);
+        
+        // Update job record with the external result but keep processing status
         jobRecord.result = externalResult;
+        jobRecord.updatedAt = new Date().toISOString();
         setJob(jobId, jobRecord);
-        console.log(`External job completed and stored: ${jobId}, store size: ${getJobStoreSize()}`);
         
         // Return the external result with our local config merged in
         return NextResponse.json({
           ...externalResult,
           jobId,
-          message: reelTypeData.message || `${reelTypeData.title} reel generated successfully`,
+          message: reelTypeData.message || `${reelTypeData.title} reel generation started successfully`,
           type,
           category,
           generatedAt: timestamp,
@@ -104,6 +125,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         jobRecord.updatedAt = new Date().toISOString();
         jobRecord.error = externalError instanceof Error ? externalError.message : String(externalError);
         setJob(jobId, jobRecord);
+        
+        // Also update database
+        jobOperations.updateStatus(jobId, 'failed', undefined, jobRecord.error);
         
         // Return error - do not fall back to local processing
         return NextResponse.json(
@@ -127,6 +151,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     jobRecord.updatedAt = new Date().toISOString();
     jobRecord.error = 'No external URL configured for this reel type';
     setJob(jobId, jobRecord);
+    
+    // Also update database
+    jobOperations.updateStatus(jobId, 'failed', undefined, jobRecord.error);
     
     return NextResponse.json(
       { 

@@ -40,7 +40,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Session not found' }, { status: 401 });
     }
 
-    const { status, resultUrl, errorMessage } = await request.json();
+    const { status, resultUrl, errorMessage, caption } = await request.json();
     const { jobId } = await params;
 
     if (!status) {
@@ -56,7 +56,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Job not found' }, { status: 404 });
     }
 
-    jobOperations.updateStatus(jobId, status, resultUrl, errorMessage);
+    jobOperations.updateStatus(jobId, status, resultUrl, errorMessage, caption);
 
     return NextResponse.json({
       success: true,

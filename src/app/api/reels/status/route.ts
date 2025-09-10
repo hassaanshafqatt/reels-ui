@@ -1,88 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JobRecord, getJob, getJobStoreSize, getAllJobIds, setJob } from '@/lib/jobStore';
-
-// Import reel configs to get status URLs
-const reelConfigs: Record<string, {
-  message: string;
-  caption: string;
-  description: string;
-  externalUrl?: string;
-  statusUrl?: string;
-}> = {
-  'gym-motivation': {
-    message: 'Gym motivation reel generated successfully',
-    caption: 'Get motivated and crush your fitness goals! 💪 #GymMotivation #Fitness #Workout',
-    description: 'High-energy motivational content for fitness enthusiasts',
-    statusUrl: '/api/reels/gym-motivation/status'
-  },
-  'war-motivation': {
-    message: 'War motivation/wisdom reel generated successfully',
-    caption: 'Tactical wisdom from the greatest strategists in history ⚔️ #WarWisdom #Strategy #Motivation',
-    description: 'Strategic wisdom and motivational content inspired by military leaders',
-    statusUrl: '/api/reels/war-motivation/status'
-  },
-  'medieval-war': {
-    message: 'Medieval war motivation reel generated successfully',
-    caption: 'Honor, courage, and medieval wisdom for the modern warrior 🛡️ #Medieval #Honor #Courage',
-    description: 'Medieval-inspired motivational content with themes of honor and bravery',
-    statusUrl: '/api/reels/medieval-war/status'
-  },
-  'gangsters': {
-    message: '1920s Gangsters reel generated successfully',
-    caption: 'Class, respect, and old-school wisdom from the prohibition era 🎩 #Gangster #Respect #OldSchool',
-    description: '1920s gangster-inspired content with themes of respect and old-school values',
-    statusUrl: '/api/reels/gangsters/status'
-  },
-  'wisdom': {
-    message: 'Wisdom reel generated successfully',
-    caption: 'Ancient wisdom for modern times 🧠 #Wisdom #Proverbs #LifeLessons',
-    description: 'Deep wisdom and life lessons through powerful proverbs',
-    statusUrl: '/api/reels/wisdom/status'
-  },
-  'motivation': {
-    message: 'Motivation reel generated successfully',
-    caption: 'Motivational wisdom to fuel your journey ⚡ #Motivation #Inspiration #Success',
-    description: 'Motivational proverbs and quotes to inspire action',
-    statusUrl: '/api/reels/motivation/status'
-  },
-  'brotherhood': {
-    message: 'Brotherhood reel generated successfully',
-    caption: 'Brotherhood bonds that last a lifetime 🤝 #Brotherhood #Loyalty #Friendship',
-    description: 'Content celebrating brotherhood, loyalty, and strong bonds',
-    statusUrl: '/api/reels/brotherhood/status'
-  },
-  'bravery': {
-    message: 'Bravery reel generated successfully',
-    caption: 'Courage in the face of adversity ❤️ #Bravery #Courage #Strength',
-    description: 'Inspiring content about courage, bravery, and overcoming challenges',
-    statusUrl: '/api/reels/bravery/status'
-  },
-  'theory': {
-    message: 'Anime theory reel generated successfully',
-    caption: 'Mind-blowing anime theories and analysis 🧠 #Anime #Theory #Analysis',
-    description: 'Deep dive into anime theories and character analysis',
-    externalUrl: 'https://n8n.nutrador.com/webhook-test/d1eb881a-33e3-4051-ba1f-1a1f31ba8b69',
-    statusUrl: 'https://n8n.nutrador.com/webhook-test/2a357088-6f10-4d2a-8e26-67dfab8504b5'
-  },
-  'anime-painting': {
-    message: 'Anime painting reel generated successfully',
-    caption: 'Beautiful anime art coming to life 🎨 #Anime #Art #Painting #Digital',
-    description: 'Anime-style painting and digital art creation content',
-    statusUrl: '/api/reels/anime-painting/status'
-  },
-  'asmr-food': {
-    message: 'ASMR food reel generated successfully',
-    caption: 'Satisfying food sounds and visuals 🍽️ #ASMR #Food #Satisfying #Relaxing',
-    description: 'Relaxing and satisfying food-related ASMR content',
-    statusUrl: '/api/reels/asmr-food/status'
-  },
-  'asmr-animal': {
-    message: 'ASMR animal reel generated successfully',
-    caption: 'Peaceful animal sounds and moments 🐾 #ASMR #Animals #Peaceful #Nature',
-    description: 'Relaxing animal-related ASMR content with nature sounds',
-    statusUrl: '/api/reels/asmr-animal/status'
-  }
-};
+import { jobOperations, reelTypeOperations } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -100,33 +18,68 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'jobId and type parameters are required' }, { status: 400 });
     }
 
-    const jobRecord = getJob(jobId);
+    // Check both memory store and database for the job
+    let jobRecord = getJob(jobId);
+    let dbJob = null;
+    
     if (!jobRecord) {
-      console.log(`Job not found in store for ID: ${jobId}`);
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+      // Try to find the job in the database
+      dbJob = jobOperations.getByJobId(jobId);
+      if (!dbJob) {
+        console.log(`Job not found in store or database for ID: ${jobId}`);
+        return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+      }
+      
+      // Convert database job to JobRecord format and store in memory for this request
+      jobRecord = {
+        jobId: dbJob.job_id,
+        type: dbJob.type,
+        category: dbJob.category,
+        status: dbJob.status as JobRecord['status'],
+        createdAt: dbJob.created_at,
+        updatedAt: dbJob.updated_at,
+        result: dbJob.result_url ? { url: dbJob.result_url } : undefined,
+        error: dbJob.error_message || undefined
+      };
+      
+      // Optionally restore to memory store
+      setJob(jobId, jobRecord);
+      console.log(`Job ${jobId} restored from database to memory store`);
+    } else {
+      // Job is in memory, but we still need the database record for poll tracking
+      dbJob = jobOperations.getByJobId(jobId);
+      if (!dbJob) {
+        console.log(`Warning: Job ${jobId} exists in memory but not in database`);
+      }
     }
 
-    // Get the reel config for this type
-    const config = reelConfigs[type];
-    if (!config) {
+    // Get the reel config for this type from database
+    const reelTypeData = reelTypeOperations.getByNameOnly(type);
+    if (!reelTypeData) {
       console.log(`Unknown reel type: ${type}`);
       return NextResponse.json({ error: 'Unknown reel type' }, { status: 400 });
     }
 
     // If there's a status URL, hit it with the job ID
-    if (config.statusUrl) {
+    if (reelTypeData.status_url) {
       try {
-        const isExternalUrl = config.statusUrl.startsWith('http');
-        const statusUrl = isExternalUrl ? config.statusUrl : `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${config.statusUrl}`;
+        const isExternalUrl = reelTypeData.status_url.startsWith('http');
+        const statusUrl = isExternalUrl ? reelTypeData.status_url : `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${reelTypeData.status_url}`;
         
         console.log(`Hitting status URL: ${statusUrl} with jobId: ${jobId}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
         const statusResponse = await fetch(`${statusUrl}?jobId=${jobId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (statusResponse.ok) {
           const statusResult = await statusResponse.json();
@@ -135,6 +88,7 @@ export async function GET(request: NextRequest) {
           // Extract status and other relevant information from the response
           let newStatus = jobRecord.status; // Default to current status
           let reelLink = null;
+          let caption = null;
           const updatedResult = statusResult;
           let errorMessage = null;
           
@@ -146,17 +100,16 @@ export async function GET(request: NextRequest) {
           }
           // Try to extract status from common response formats if no error
           else if (statusResult.status) {
-            newStatus = statusResult.status;
+            newStatus = statusResult.status.toLowerCase();
           } else if (statusResult.state) {
-            newStatus = statusResult.state;
+            newStatus = statusResult.state.toLowerCase();
           } else if (statusResult.job_status) {
-            newStatus = statusResult.job_status;
+            newStatus = statusResult.job_status.toLowerCase();
           }
-          // If no status field found and no error, assume failed
+          // If no status field found and no error, assume no change
           else {
-            newStatus = 'failed';
-            errorMessage = 'No status found in response';
-            console.log(`No status field found in response, setting to failed`);
+            console.log(`No status field found in response, keeping current status: ${jobRecord.status}`);
+            newStatus = jobRecord.status;
           }
           
           // Try to extract reel link from common response formats
@@ -164,12 +117,19 @@ export async function GET(request: NextRequest) {
             reelLink = statusResult.reelUrl;
           } else if (statusResult.videoUrl) {
             reelLink = statusResult.videoUrl;
+          } else if (statusResult.videoURL) {
+            reelLink = statusResult.videoURL;
           } else if (statusResult.downloadUrl) {
             reelLink = statusResult.downloadUrl;
           } else if (statusResult.url) {
             reelLink = statusResult.url;
           } else if (statusResult.link) {
             reelLink = statusResult.link;
+          }
+          
+          // Try to extract caption from the response
+          if (statusResult.caption) {
+            caption = statusResult.caption;
           }
           
           // Update the job record with the new status information
@@ -181,25 +141,165 @@ export async function GET(request: NextRequest) {
             error: errorMessage || jobRecord.error
           };
           
+          // Update both memory store and database with poll tracking
           setJob(jobId, updatedJob);
-          console.log(`Updated job ${jobId} with new status: ${newStatus}${errorMessage ? `, error: ${errorMessage}` : ''}`);
           
-          return NextResponse.json({
-            jobId: updatedJob.jobId,
-            type: updatedJob.type,
-            category: updatedJob.category,
-            status: updatedJob.status,
-            createdAt: updatedJob.createdAt,
-            updatedAt: updatedJob.updatedAt,
-            result: updatedJob.result,
-            error: updatedJob.error,
-            reelLink: reelLink
-          });
+          console.log(`About to update database poll tracking for ${jobId}, dbJob exists: ${!!dbJob}`);
+          
+          // Update database with new status and poll tracking
+          if (dbJob) {
+            const updateResult = jobOperations.updateStatusWithPollTracking(
+              jobId, 
+              newStatus, 
+              reelLink || undefined, 
+              errorMessage || undefined, 
+              caption || undefined // caption from external response
+            );
+            
+            // Update the job record with the actual final status from poll tracking
+            const finalUpdatedJob: JobRecord = {
+              ...updatedJob,
+              status: updateResult.status as JobRecord['status'],
+              pollCount: updateResult.pollCount,
+              shouldStopPolling: updateResult.shouldStopPolling
+            };
+            setJob(jobId, finalUpdatedJob);
+            
+            console.log(`Updated job ${jobId} in database with status: ${updateResult.status} (poll count: ${updateResult.pollCount}, failure count: ${updateResult.failureCount})`);
+            
+            console.log(`Poll tracking result for ${jobId}:`, updateResult);
+            
+            // If we should stop polling, return a special indicator
+            if (updateResult.shouldStopPolling) {
+              console.log(`Job ${jobId} polling limit reached or completed - client should stop polling`);
+              return NextResponse.json({
+                jobId: finalUpdatedJob.jobId,
+                type: finalUpdatedJob.type,
+                category: finalUpdatedJob.category,
+                status: finalUpdatedJob.status,
+                createdAt: finalUpdatedJob.createdAt,
+                updatedAt: finalUpdatedJob.updatedAt,
+                result: finalUpdatedJob.result,
+                error: finalUpdatedJob.error,
+                reelLink: reelLink,
+                shouldStopPolling: true,
+                pollCount: updateResult.pollCount
+              });
+            }
+            
+            // Return normal response with poll count
+            return NextResponse.json({
+              jobId: finalUpdatedJob.jobId,
+              type: finalUpdatedJob.type,
+              category: finalUpdatedJob.category,
+              status: finalUpdatedJob.status,
+              createdAt: finalUpdatedJob.createdAt,
+              updatedAt: finalUpdatedJob.updatedAt,
+              result: finalUpdatedJob.result,
+              error: finalUpdatedJob.error,
+              reelLink: reelLink,
+              pollCount: updateResult.pollCount
+            });
+          } else {
+            console.log(`No database job found for ${jobId}, skipping poll tracking`);
+            // No database job, just return the memory record
+            return NextResponse.json({
+              jobId: updatedJob.jobId,
+              type: updatedJob.type,
+              category: updatedJob.category,
+              status: updatedJob.status,
+              createdAt: updatedJob.createdAt,
+              updatedAt: updatedJob.updatedAt,
+              result: updatedJob.result,
+              error: updatedJob.error,
+              reelLink: reelLink
+            });
+          }
         } else {
-          console.log(`Status URL returned error: ${statusResponse.status}`);
+          console.log(`Status URL returned error: ${statusResponse.status} ${statusResponse.statusText}`);
+          // Even if status URL fails, we should track the polling attempt
+          if (dbJob) {
+            const updateResult = jobOperations.updateStatusWithPollTracking(
+              jobId, 
+              jobRecord.status, // Keep current status
+              undefined, // No new result URL
+              `Status check failed: ${statusResponse.status}`, // Error message
+              undefined // No caption update
+            );
+            
+            if (updateResult.shouldStopPolling) {
+              console.log(`Job ${jobId} polling limit reached due to repeated failures - client should stop polling`);
+              return NextResponse.json({
+                jobId: jobRecord.jobId,
+                type: jobRecord.type,
+                category: jobRecord.category,
+                status: updateResult.status,
+                createdAt: jobRecord.createdAt,
+                updatedAt: jobRecord.updatedAt,
+                result: jobRecord.result,
+                error: jobRecord.error,
+                shouldStopPolling: true,
+                pollCount: updateResult.pollCount
+              });
+            }
+          }
         }
       } catch (statusError) {
         console.error(`Error calling status URL:`, statusError);
+        // Track the polling attempt even if there's a network error
+        if (dbJob) {
+          const updateResult = jobOperations.updateStatusWithPollTracking(
+            jobId, 
+            jobRecord.status, // Keep current status
+            undefined, // No new result URL
+            `Network error during status check: ${statusError instanceof Error ? statusError.message : String(statusError)}`, // Error message
+            undefined // No caption update
+          );
+          
+          if (updateResult.shouldStopPolling) {
+            console.log(`Job ${jobId} polling limit reached due to network errors - client should stop polling`);
+            return NextResponse.json({
+              jobId: jobRecord.jobId,
+              type: jobRecord.type,
+              category: jobRecord.category,
+              status: updateResult.status,
+              createdAt: jobRecord.createdAt,
+              updatedAt: jobRecord.updatedAt,
+              result: jobRecord.result,
+              error: jobRecord.error,
+              shouldStopPolling: true,
+              pollCount: updateResult.pollCount
+            });
+          }
+        }
+      }
+    } else {
+      // No status URL configured, but we should still track polling to avoid infinite polling
+      console.log(`No status URL configured for reel type: ${type}, tracking poll anyway`);
+      if (dbJob) {
+        const updateResult = jobOperations.updateStatusWithPollTracking(
+          jobId, 
+          jobRecord.status, // Keep current status
+          undefined, // No result URL
+          undefined, // No error message
+          undefined // No caption update
+        );
+        
+        if (updateResult.shouldStopPolling) {
+          console.log(`Job ${jobId} polling limit reached (no status URL) - client should stop polling`);
+          return NextResponse.json({
+            jobId: jobRecord.jobId,
+            type: jobRecord.type,
+            category: jobRecord.category,
+            status: updateResult.status,
+            createdAt: jobRecord.createdAt,
+            updatedAt: jobRecord.updatedAt,
+            result: jobRecord.result,
+            error: jobRecord.error,
+            shouldStopPolling: true,
+            pollCount: updateResult.pollCount
+          });
+        }
       }
     }
 

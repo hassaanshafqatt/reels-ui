@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import Cookies from 'js-cookie';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ import {
 } from "lucide-react";
 import { jobService, type StoredJob } from "@/lib/jobService";
 import { useReelData } from "@/hooks/useReelData";
+import { useJobs } from "@/hooks/useJobs";
 import { getIconFromDatabase } from "@/lib/iconUtils";
 import { type ReelType as DatabaseReelType } from "@/lib/reelService";
 
@@ -79,6 +81,8 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user, isLoading: authLoading } = useAuth();
   const { categories: reelCategories, loading: reelDataLoading, error: reelDataError } = useReelData();
+  const { jobs: storedJobs, loading: jobsLoading, error: jobsError, refetch: refetchJobs, isPolling } = useJobs();
+  
   const [activeTab, setActiveTab] = useState("");
   const [selectedReel, setSelectedReel] = useState<DatabaseReelType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -87,7 +91,6 @@ export default function Dashboard({
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [storedJobs, setStoredJobs] = useState<StoredJob[]>([]);
   const [refreshingJobs, setRefreshingJobs] = useState<Set<string>>(new Set());
   const [showCaptionDialog, setShowCaptionDialog] = useState(false);
   const [tempCustomCaption, setTempCustomCaption] = useState("");
@@ -133,30 +136,6 @@ export default function Dashboard({
       setActiveSubSection(initialSubSections);
     }
   }, [reelCategories]);
-
-  // Load stored jobs on component mount
-  useEffect(() => {
-    const loadJobs = async () => {
-      // Only load jobs if user is authenticated
-      if (!user || authLoading) {
-        console.log('User not authenticated or loading, skipping job load:', { user: !!user, authLoading });
-        return;
-      }
-      
-      try {
-        console.log('Loading jobs for user:', user.email);
-        const jobs = await jobService.getJobs();
-        console.log('Loaded jobs:', jobs);
-        setStoredJobs(jobs);
-      } catch (error) {
-        console.error('Failed to load jobs:', error);
-        // Clear jobs on error (might be auth issue)
-        setStoredJobs([]);
-      }
-    };
-    
-    loadJobs();
-  }, [user, authLoading]);
 
   // Set initial activeTab when categories load
   useEffect(() => {
@@ -237,21 +216,21 @@ export default function Dashboard({
     return storedJobs.filter(job => job.category === categoryName);
   };
 
-  // Function to clear all job history
-  const clearJobHistory = async () => {
+  // Function to clear job history for a specific category
+  const clearJobHistory = async (categoryName?: string) => {
     if (isClearingHistory) return;
     
     setIsClearingHistory(true);
     try {
-      const success = await jobService.clearAllJobs();
+      const success = await jobService.clearJobsByCategory(categoryName);
       if (success) {
-        setStoredJobs([]);
-        setSuccess('Job history cleared successfully!');
+        refetchJobs();
+        setSuccess(`Job history cleared successfully for ${categoryName || 'all categories'}!`);
       } else {
         setError('Failed to clear job history. Please try again.');
       }
     } catch (error) {
-      console.error('Error clearing job history:', error);
+      console.error('Error clearing job history:', error || 'Unknown error');
       setError('Failed to clear job history. Please try again.');
     } finally {
       setIsClearingHistory(false);
@@ -266,66 +245,138 @@ export default function Dashboard({
     setRefreshingJobs(prev => new Set(prev).add(job.job_id));
     
     try {
-      const url = `/api/reels/status?jobId=${job.job_id}&type=${job.type}`;
+      const url = `/api/reels/status?jobId=${encodeURIComponent(job.job_id)}&type=${encodeURIComponent(job.type)}`;
       console.log(`Frontend: Making request to ${url}`);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || Cookies.get('auth_token')}`
+        }
+      });
       console.log(`Frontend: Got response with status ${response.status}`);
       
       if (response.ok) {
         const result = await response.json();
         console.log(`Frontend: Full response data:`, JSON.stringify(result, null, 2));
         
-        // Check if response contains an error, or if status is missing
-        let jobStatus = result.status;
-        let errorMessage = null;
-        
-        if (result.error || result.message?.includes('error') || result.message?.includes('Error')) {
-          jobStatus = 'failed';
-          errorMessage = result.error || result.message || 'Unknown error in response';
-          console.log(`Frontend: Error found in response, setting status to failed:`, errorMessage);
-        } else if (!jobStatus) {
-          jobStatus = 'failed';
-          errorMessage = 'No status found in response';
-          console.log(`Frontend: No status found in response, setting to failed`);
-        }
-        
-        console.log(`Frontend: Final job status:`, jobStatus);
-        
-        // Extract reel link from multiple possible sources
-        const reelLink = result.reelLink || 
-                        result.result?.reelUrl || 
-                        result.result?.videoUrl || 
-                        result.result?.downloadUrl || 
-                        result.result?.url || 
-                        result.result?.link;
-        
-        console.log(`Frontend: Extracted reel link:`, reelLink);
-        
-        // Update job status using the job service
-        await jobService.updateJobStatus(job.job_id, jobStatus, reelLink, errorMessage);
-        const refreshedJobs = await jobService.getJobs();
-        setStoredJobs(refreshedJobs); // Refresh the list
-        
-        // Show success message with appropriate content
-        if (jobStatus === 'completed') {
-          if (reelLink) {
-            setSuccess(`Job ${job.job_id.substring(0, 8)} completed! Reel is ready.`);
-          } else {
-            setSuccess(`Job ${job.job_id.substring(0, 8)} completed successfully!`);
+        // Handle the actual API response format
+        if (result.jobId && (result.status || result.result?.status)) {
+          const topLevelStatus = result.status; // "Pending"
+          const resultStatus = result.result?.status; // "Pending"
+          const videoUrl = result.result?.videoURL;
+          const caption = result.result?.caption || result.caption; // Extract caption from either location
+          
+          // Use the most relevant status (prefer result.status if available, otherwise top-level status)
+          const rawStatus = resultStatus || topLevelStatus;
+          const jobStatus = rawStatus.toLowerCase(); // Convert "Pending" to "pending"
+          
+          console.log(`Frontend: Job ${result.jobId} status: ${jobStatus}`);
+          if (caption) {
+            console.log(`Frontend: Job ${result.jobId} caption: ${caption}`);
           }
-        } else if (jobStatus === 'processing') {
-          setSuccess(`Job ${job.job_id.substring(0, 8)} is still processing...`);
-        } else if (jobStatus === 'failed') {
-          const displayError = errorMessage || 'Job failed';
-          setError(`Job ${job.job_id.substring(0, 8)} failed: ${displayError}`);
+          
+          // Update job status using the job service
+          await jobService.updateJobStatus(result.jobId, jobStatus, videoUrl, undefined, caption);
+          refetchJobs();
+          
+          // Show status-specific messages
+          const statusMessages = {
+            pending: 'Job is still processing...',
+            approved: 'Job has been approved!',
+            posted: 'Reel has been posted successfully!',
+            rejected: 'Job was rejected. Please try again.'
+          };
+          
+          const message = statusMessages[jobStatus as keyof typeof statusMessages] || 
+                         `Job status updated: ${rawStatus}`;
+          
+          if (jobStatus === 'rejected') {
+            setError(`Job ${result.jobId.substring(0, 8)}: ${message}`);
+          } else {
+            setSuccess(`Job ${result.jobId.substring(0, 8)}: ${message}`);
+          }
+        } else if (result.job_id && result.Status) {
+          // Handle alternative format (job_id + Status)
+          const jobStatus = result.Status.toLowerCase(); // Convert "Pending" to "pending"
+          const videoUrl = result.videoURL;
+          const caption = result.caption; // Extract caption
+          
+          console.log(`Frontend: Job ${result.job_id} status: ${jobStatus}`);
+          if (caption) {
+            console.log(`Frontend: Job ${result.job_id} caption: ${caption}`);
+          }
+          
+          // Update job status using the job service
+          await jobService.updateJobStatus(result.job_id, jobStatus, videoUrl, undefined, caption);
+          refetchJobs();
+          
+          // Show status-specific messages
+          const statusMessages = {
+            pending: 'Job is still processing...',
+            approved: 'Job has been approved!',
+            posted: 'Reel has been posted successfully!',
+            rejected: 'Job was rejected. Please try again.'
+          };
+          
+          const message = statusMessages[jobStatus as keyof typeof statusMessages] || 
+                         `Job status updated: ${result.Status}`;
+          
+          if (jobStatus === 'rejected') {
+            setError(`Job ${result.job_id.substring(0, 8)}: ${message}`);
+          } else {
+            setSuccess(`Job ${result.job_id.substring(0, 8)}: ${message}`);
+          }
         } else {
-          setSuccess(`Job ${job.job_id.substring(0, 8)} status updated: ${jobStatus}`);
+          // Fallback to old format if new format not detected
+          let jobStatus = result.status;
+          let errorMessage = null;
+          
+          if (result.error || result.message?.includes('error') || result.message?.includes('Error')) {
+            jobStatus = 'failed';
+            errorMessage = result.error || result.message || 'Unknown error in response';
+            console.log(`Frontend: Error found in response, setting status to failed:`, errorMessage);
+          } else if (!jobStatus) {
+            jobStatus = 'failed';
+            errorMessage = 'No status found in response';
+            console.log(`Frontend: No status found in response, setting to failed`);
+          }
+          
+          console.log(`Frontend: Final job status:`, jobStatus);
+          
+          // Extract reel link from multiple possible sources
+          const reelLink = result.reelLink || 
+                          result.result?.reelUrl || 
+                          result.result?.videoUrl || 
+                          result.result?.downloadUrl || 
+                          result.result?.url || 
+                          result.result?.link;
+          
+          console.log(`Frontend: Extracted reel link:`, reelLink);
+          
+          // Update job status using the job service
+          await jobService.updateJobStatus(job.job_id, jobStatus, reelLink, errorMessage);
+          refetchJobs(); // Refresh the list
+          
+          // Show success message with appropriate content
+          if (jobStatus === 'completed') {
+            if (reelLink) {
+              setSuccess(`Job ${job.job_id.substring(0, 8)} completed! Reel is ready.`);
+            } else {
+              setSuccess(`Job ${job.job_id.substring(0, 8)} completed successfully!`);
+            }
+          } else if (jobStatus === 'processing') {
+            setSuccess(`Job ${job.job_id.substring(0, 8)} is still processing...`);
+          } else if (jobStatus === 'failed') {
+            const displayError = errorMessage || 'Job failed';
+            setError(`Job ${job.job_id.substring(0, 8)} failed: ${displayError}`);
+          } else {
+            setSuccess(`Job ${job.job_id.substring(0, 8)} status updated: ${jobStatus}`);
+          }
         }
       } else {
         console.error(`Frontend: Request failed with status ${response.status}`);
         const errorText = await response.text();
-        console.error(`Frontend: Error response body:`, errorText);
+        console.error(`Frontend: Error response body:`, errorText || 'No error text available');
         
         // Try to parse error response as JSON for more details
         let errorDetails = errorText;
@@ -339,14 +390,13 @@ export default function Dashboard({
         
         // Set job status to failed for non-OK responses
         await jobService.updateJobStatus(job.job_id, 'failed', undefined, `HTTP ${response.status}: ${errorDetails}`);
-        const refreshedJobs = await jobService.getJobs();
-        setStoredJobs(refreshedJobs);
+        refetchJobs();
         
         setError(`Failed to check job status: ${response.status} ${response.statusText} - ${errorDetails}`);
       }
     } catch (error) {
-      console.error('Frontend: Failed to check job status:', error);
-      setError('Failed to check job status: ' + (error instanceof Error ? error.message : String(error)));
+      console.error('Frontend: Failed to check job status:', error || 'Unknown error');
+      setError('Failed to check job status: ' + (error instanceof Error ? error.message : String(error || 'Unknown error')));
     } finally {
       setRefreshingJobs(prev => {
         const newSet = new Set(prev);
@@ -448,20 +498,19 @@ export default function Dashboard({
         });
         
         // Refresh the jobs list
-        const refreshedJobs = await jobService.getJobs();
-        setStoredJobs(refreshedJobs);
+        refetchJobs();
       }
       
       setSuccess(`Reel generated successfully! Job ID: ${result.jobId || 'N/A'}`);
       
       console.log("Reel generation response:", result);
     } catch (error) {
-      console.error('Detailed error in handleGenerate:', error);
+      console.error('Detailed error in handleGenerate:', error || 'Unknown error');
       console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Error message:', error instanceof Error ? error.message : String(error || 'Unknown'));
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-      setError("Error generating reel: " + (error instanceof Error ? error.message : String(error)));
-      console.error("Error generating reel:", error);
+      setError("Error generating reel: " + (error instanceof Error ? error.message : String(error || 'Unknown error')));
+      console.error("Error generating reel:", error || 'Unknown error');
     } finally {
       setIsGenerating(false);
     }
@@ -603,6 +652,8 @@ export default function Dashboard({
                           setRefreshingJobs(prev => new Set(prev).add(job.job_id));
                           checkJobStatus(job);
                         }}
+                        isPolling={isPolling}
+                        onManualRefresh={refetchJobs}
                       />
                       <PostingScheduleSection />
                     </div>
@@ -626,7 +677,7 @@ export default function Dashboard({
                         jobs={getJobsForCategory(category.name)}
                         refreshingJobs={refreshingJobs}
                         onRefreshJob={checkJobStatus}
-                        onClearHistory={clearJobHistory}
+                        onClearHistory={() => clearJobHistory(category.name)}
                         isClearingHistory={isClearingHistory}
                       />
                     </div>

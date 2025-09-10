@@ -7,8 +7,9 @@ interface StoredJob {
   job_id: string;
   category: string;
   type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'approved' | 'posted' | 'rejected';
   result_url?: string;
+  caption?: string;
   error_message?: string;
   created_at: string;
   updated_at: string;
@@ -77,12 +78,12 @@ export const jobService = {
   },
 
   // Update job status
-  async updateJobStatus(jobId: string, status: string, resultUrl?: string, errorMessage?: string): Promise<boolean> {
+  async updateJobStatus(jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string): Promise<boolean> {
     try {
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ status, resultUrl, errorMessage }),
+        body: JSON.stringify({ status, resultUrl, errorMessage, caption }),
       });
 
       if (!response.ok) {
@@ -112,6 +113,50 @@ export const jobService = {
     } catch (error) {
       console.error('Error clearing job history:', error);
       return false;
+    }
+  },
+
+  // Clear job history for a specific category
+  async clearJobsByCategory(category?: string): Promise<boolean> {
+    try {
+      const url = category ? `/api/jobs?category=${encodeURIComponent(category)}` : '/api/jobs';
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear job history');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error clearing job history:', error);
+      return false;
+    }
+  },
+
+  // Check job status via status API
+  async checkJobStatus(jobId: string, type: string): Promise<any> {
+    try {
+      const url = `/api/reels/status?jobId=${encodeURIComponent(jobId)}&type=${encodeURIComponent(type)}`;
+      console.log(`JobService: Checking status for job ${jobId} via ${url}`);
+      
+      const response = await fetch(url, {
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        console.warn(`JobService: Status check failed for job ${jobId}: ${response.status}`);
+        return null;
+      }
+
+      const result = await response.json();
+      console.log(`JobService: Status check result for ${jobId}:`, result);
+      return result;
+    } catch (error) {
+      console.error(`JobService: Error checking status for job ${jobId}:`, error);
+      return null;
     }
   }
 };

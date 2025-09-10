@@ -45,9 +45,13 @@ interface Job {
   job_id: string;
   category: string;
   type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'approved' | 'posted' | 'rejected';
   result_url?: string;
+  caption?: string;
   error_message?: string;
+  failure_count?: number;
+  poll_count?: number;
+  last_status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -121,8 +125,9 @@ const createJobsTable = () => {
       job_id TEXT NOT NULL,
       category TEXT NOT NULL,
       type TEXT NOT NULL,
-      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+      status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'approved', 'posted', 'rejected')),
       result_url TEXT,
+      caption TEXT,
       error_message TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -298,11 +303,24 @@ export const jobOperations = {
   create: (userId: string, jobData: { jobId: string; category: string; type: string }) => {
     const id = crypto.randomUUID();
     const stmt = db.prepare(`
-      INSERT INTO jobs (id, user_id, job_id, category, type)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO jobs (id, user_id, job_id, category, type, failure_count, poll_count, last_status)
+      VALUES (?, ?, ?, ?, ?, 0, 0, 'pending')
     `);
-    stmt.run(id, userId, jobData.jobId, jobData.category, jobData.type);
-    return id;
+    
+    try {
+      stmt.run(id, userId, jobData.jobId, jobData.category, jobData.type);
+      return id;
+    } catch (error: any) {
+      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        // Job with this job_id already exists, find and return the existing record
+        console.warn(`Job with job_id ${jobData.jobId} already exists, returning existing record`);
+        const existing = db.prepare('SELECT id FROM jobs WHERE job_id = ?').get(jobData.jobId) as { id: string } | undefined;
+        if (existing) {
+          return existing.id;
+        }
+      }
+      throw error;
+    }
   },
 
   // Get jobs for a user
@@ -317,13 +335,126 @@ export const jobOperations = {
   },
 
   // Update job status
-  updateStatus: (jobId: string, status: string, resultUrl?: string, errorMessage?: string) => {
+  updateStatus: (jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string) => {
     const stmt = db.prepare(`
       UPDATE jobs 
-      SET status = ?, result_url = ?, error_message = ?, updated_at = CURRENT_TIMESTAMP
+      SET status = ?, result_url = ?, error_message = ?, caption = ?, updated_at = CURRENT_TIMESTAMP
       WHERE job_id = ?
     `);
-    stmt.run(status, resultUrl || null, errorMessage || null, jobId);
+    stmt.run(status, resultUrl || null, errorMessage || null, caption || null, jobId);
+  },
+
+  // Update job status with failure tracking
+  updateStatusWithFailureTracking: (jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string) => {
+    // Get current job to check failure count
+    const currentJob = db.prepare('SELECT failure_count, status FROM jobs WHERE job_id = ?').get(jobId) as { failure_count: number; status: string } | undefined;
+    const currentFailureCount = currentJob?.failure_count || 0;
+    
+    let newFailureCount = 0;
+    let finalStatus = status;
+    
+    if (status === 'failed' || errorMessage) {
+      // Increment failure count
+      newFailureCount = currentFailureCount + 1;
+      
+      // Only set to failed if we've had 10 consecutive failures
+      if (newFailureCount < 10) {
+        // Keep the current status (probably 'pending' or 'processing')
+        finalStatus = currentJob?.status || 'pending';
+        console.log(`Job ${jobId} failure ${newFailureCount}/10 - keeping status as ${finalStatus}`);
+      } else {
+        // 10 failures reached, set to failed
+        finalStatus = 'failed';
+        console.log(`Job ${jobId} reached 10 failures - setting to failed`);
+      }
+    } else {
+      // Success status, reset failure count
+      newFailureCount = 0;
+    }
+    
+    const stmt = db.prepare(`
+      UPDATE jobs 
+      SET status = ?, result_url = ?, error_message = ?, caption = ?, failure_count = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE job_id = ?
+    `);
+    stmt.run(finalStatus, resultUrl || null, errorMessage || null, caption || null, newFailureCount, jobId);
+    
+    return { status: finalStatus, failureCount: newFailureCount };
+  },
+
+  // Update job status with poll count tracking
+  updateStatusWithPollTracking: (jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string) => {
+    // Get current job to check poll count and last status
+    const currentJob = db.prepare('SELECT poll_count, last_status, failure_count, status FROM jobs WHERE job_id = ?').get(jobId) as { poll_count: number; last_status: string; failure_count: number; status: string } | undefined;
+    
+    if (!currentJob) {
+      console.warn(`Job ${jobId} not found for poll tracking`);
+      return { status: 'failed', pollCount: 0, shouldStopPolling: true };
+    }
+    
+    const currentPollCount = currentJob.poll_count || 0;
+    const lastStatus = currentJob.last_status;
+    let newPollCount = currentPollCount;
+    let shouldStopPolling = false;
+    
+    // Check if status has changed from last poll
+    if (lastStatus === status) {
+      // Status hasn't changed, increment poll count
+      newPollCount = currentPollCount + 1;
+      
+      // Stop polling if we've checked the same status 50 times
+      if (newPollCount >= 50) {
+        shouldStopPolling = true;
+        console.log(`Job ${jobId} polled 50 times with same status '${status}' - stopping polling`);
+      }
+    } else {
+      // Status changed, reset poll count
+      newPollCount = 1;
+      console.log(`Job ${jobId} status changed from '${lastStatus}' to '${status}' - resetting poll count`);
+    }
+    
+    // Handle failure tracking as well
+    let finalStatus = status;
+    let newFailureCount = currentJob.failure_count || 0;
+    
+    if (status === 'failed' || errorMessage) {
+      // Increment failure count
+      newFailureCount = newFailureCount + 1;
+      
+      // Only set to failed if we've had 10 consecutive failures
+      if (newFailureCount < 10) {
+        // Keep the current status (probably 'pending' or 'processing')
+        finalStatus = currentJob.status || 'pending';
+        console.log(`Job ${jobId} failure ${newFailureCount}/10 - keeping status as ${finalStatus}`);
+      } else {
+        // 10 failures reached, set to failed
+        finalStatus = 'failed';
+        shouldStopPolling = true;
+        console.log(`Job ${jobId} reached 10 failures - setting to failed and stopping polling`);
+      }
+    } else if (status === 'completed' || status === 'posted') {
+      // Success status, reset failure count and stop polling
+      newFailureCount = 0;
+      shouldStopPolling = true;
+      console.log(`Job ${jobId} completed successfully - stopping polling`);
+    } else {
+      // Other statuses, reset failure count
+      newFailureCount = 0;
+    }
+    
+    const stmt = db.prepare(`
+      UPDATE jobs 
+      SET status = ?, result_url = ?, error_message = ?, caption = ?, failure_count = ?, poll_count = ?, last_status = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE job_id = ?
+    `);
+    stmt.run(finalStatus, resultUrl || null, errorMessage || null, caption || null, newFailureCount, newPollCount, status, jobId);
+    
+    return { 
+      status: finalStatus, 
+      pollCount: newPollCount, 
+      failureCount: newFailureCount,
+      shouldStopPolling 
+    };
   },
 
   // Get job by job_id
@@ -350,6 +481,13 @@ export const jobOperations = {
   clearAllByUserId: (userId: string): number => {
     const stmt = db.prepare('DELETE FROM jobs WHERE user_id = ?');
     const result = stmt.run(userId);
+    return result.changes;
+  },
+
+  // Clear jobs for a user by category
+  clearByCategoryAndUserId: (category: string, userId: string): number => {
+    const stmt = db.prepare('DELETE FROM jobs WHERE user_id = ? AND category = ?');
+    const result = stmt.run(userId, category);
     return result.changes;
   }
 };
@@ -498,6 +636,118 @@ export const reelTypeOperations = {
   delete: (id: string) => {
     const stmt = db.prepare('DELETE FROM reel_types WHERE id = ?');
     return stmt.run(id).changes > 0;
+  }
+};
+
+// Migration function to add caption column to jobs table
+export const migrateCaptionColumn = () => {
+  try {
+    // Check if caption column already exists
+    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all();
+    const captionExists = columnInfo.some((col: any) => col.name === 'caption');
+    
+    if (!captionExists) {
+      console.log('Adding caption column to jobs table...');
+      db.prepare('ALTER TABLE jobs ADD COLUMN caption TEXT').run();
+      console.log('Caption column added successfully');
+    } else {
+      console.log('Caption column already exists');
+    }
+    
+    console.log('Jobs table caption migration completed');
+  } catch (error) {
+    console.error('Error migrating caption column:', error);
+  }
+};
+
+// Migration function to update status constraint to include new status values
+export const migrateStatusConstraint = () => {
+  try {
+    console.log('Updating jobs table status constraint...');
+    
+    // SQLite doesn't support ALTER TABLE to modify constraints directly
+    // We need to recreate the table with the new constraint
+    
+    // First, create a backup table with the new structure
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS jobs_new (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        job_id TEXT NOT NULL,
+        category TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'approved', 'posted', 'rejected')),
+        result_url TEXT,
+        caption TEXT,
+        error_message TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+      )
+    `).run();
+    
+    // Copy data from old table to new table
+    db.prepare(`
+      INSERT INTO jobs_new (id, user_id, job_id, category, type, status, result_url, caption, error_message, created_at, updated_at)
+      SELECT id, user_id, job_id, category, type, status, result_url, caption, error_message, created_at, updated_at
+      FROM jobs
+    `).run();
+    
+    // Drop the old table
+    db.prepare('DROP TABLE jobs').run();
+    
+    // Rename the new table to the original name
+    db.prepare('ALTER TABLE jobs_new RENAME TO jobs').run();
+    
+    console.log('Status constraint migration completed successfully');
+  } catch (error) {
+    console.error('Error migrating status constraint:', error);
+    // If migration fails, we should continue without crashing
+  }
+};
+
+// Migration function to add polling control columns to jobs table
+export const migratePollCountColumns = () => {
+  try {
+    // Check if polling columns already exist
+    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all();
+    const failureCountExists = columnInfo.some((col: any) => col.name === 'failure_count');
+    const pollCountExists = columnInfo.some((col: any) => col.name === 'poll_count');
+    const lastStatusExists = columnInfo.some((col: any) => col.name === 'last_status');
+    
+    if (!failureCountExists) {
+      console.log('Adding failure_count column to jobs table...');
+      db.prepare('ALTER TABLE jobs ADD COLUMN failure_count INTEGER DEFAULT 0').run();
+      // Update existing rows to have default value
+      db.prepare('UPDATE jobs SET failure_count = 0 WHERE failure_count IS NULL').run();
+      console.log('failure_count column added successfully');
+    } else {
+      console.log('failure_count column already exists');
+    }
+    
+    if (!pollCountExists) {
+      console.log('Adding poll_count column to jobs table...');
+      db.prepare('ALTER TABLE jobs ADD COLUMN poll_count INTEGER DEFAULT 0').run();
+      // Update existing rows to have default value
+      db.prepare('UPDATE jobs SET poll_count = 0 WHERE poll_count IS NULL').run();
+      console.log('poll_count column added successfully');
+    } else {
+      console.log('poll_count column already exists');
+    }
+    
+    if (!lastStatusExists) {
+      console.log('Adding last_status column to jobs table...');
+      db.prepare('ALTER TABLE jobs ADD COLUMN last_status TEXT').run();
+      // Update existing rows to have their current status as last_status
+      db.prepare('UPDATE jobs SET last_status = status WHERE last_status IS NULL').run();
+      console.log('last_status column added successfully');
+    } else {
+      console.log('last_status column already exists');
+    }
+    
+    console.log('Jobs table polling control migration completed');
+  } catch (error) {
+    console.error('Error migrating polling control columns:', error);
   }
 };
 
@@ -753,9 +1003,19 @@ const initializeDemoData = async () => {
     });
   }
 
+  // Run database migrations
+  migratePollCountColumns();
+  
   // Run reel data migration (disabled - use /admin to manage data)
   // migrateInitialReelData();
+  
+  // Migrations have been applied, no need to run on each startup
+  // migrateCaptionColumn();
+  // migrateStatusConstraint();
 };
+
+// Initialize the database when this module is imported
+initializeDemoData().catch(console.error);
 
 // Initialize demo data
 initializeDemoData().catch(console.error);

@@ -8,6 +8,8 @@ export interface JobRecord {
   updatedAt: string;
   result?: Record<string, unknown>;
   error?: string;
+  pollCount?: number;
+  shouldStopPolling?: boolean;
 }
 
 // Use globalThis to persist the job store across module reloads

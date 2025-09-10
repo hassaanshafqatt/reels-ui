@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Clear all jobs for user
+// DELETE - Clear jobs for user (all or by category)
 export async function DELETE(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -124,13 +124,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ message: 'Session not found' }, { status: 401 });
     }
 
-    // Clear all jobs for this user
-    const deletedCount = jobOperations.clearAllByUserId(payload.userId as string);
+    // Get category from query parameters
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+
+    // Clear jobs for this user (all or by category)
+    const deletedCount = category 
+      ? jobOperations.clearByCategoryAndUserId(category, payload.userId as string)
+      : jobOperations.clearAllByUserId(payload.userId as string);
+
+    const message = category 
+      ? `Job history cleared successfully for category: ${category}`
+      : 'All job history cleared successfully';
 
     return NextResponse.json({
       success: true,
       deletedCount,
-      message: 'Job history cleared successfully'
+      message,
+      category: category || null
     });
 
   } catch (error) {
