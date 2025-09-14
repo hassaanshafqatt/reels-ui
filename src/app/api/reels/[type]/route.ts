@@ -12,11 +12,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { reelType, category, generateCaption, customCaption, timestamp } = await request.json();
+    // Check if request is JSON (now all requests are JSON with optional audio URL)
+    const jsonData = await request.json();
+    const { reelType, category, generateCaption, customCaption, timestamp, customAuthor, useCustomAudio, customAudioUrl } = jsonData;
+
     const { type } = await params;
 
     console.log(`POST request received for type: ${type}`);
-    console.log(`Request payload:`, { reelType, category, generateCaption, customCaption, timestamp });
+    console.log(`Request payload:`, { reelType, category, generateCaption, customCaption, timestamp, useCustomAudio, customAudioUrl });
 
     // Get configuration for this reel type from database
     const reelTypeData = reelTypeOperations.getByNameOnly(type);
@@ -61,8 +64,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       category,
       generateCaption,
       customCaption,
+      customAuthor: customAuthor || '',
       timestamp,
-      type
+      type,
+      useCustomAudio: !!customAudioUrl,
+      customAudioUrl: customAudioUrl || null
     };
 
     // Update job status to processing
@@ -78,6 +84,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (reelTypeData.external_url) {
       try {
         console.log(`Making external API call to: ${reelTypeData.external_url}`);
+        
+        // Always send JSON (with audio URL if present)
         const externalResponse = await fetch(reelTypeData.external_url, {
           method: 'POST',
           headers: {
@@ -87,7 +95,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         });
 
         if (!externalResponse.ok) {
-          throw new Error(`External API error: ${externalResponse.status} - ${externalResponse.statusText}`);
+          let errorMessage = `External API error: ${externalResponse.status} - ${externalResponse.statusText}`;
+          
+          // Provide specific error messages for common HTTP status codes
+          if (externalResponse.status === 413) {
+            errorMessage = 'The audio file is too large for the external service. Please use a smaller audio file (recommended: under 5MB).';
+          } else if (externalResponse.status === 415) {
+            errorMessage = 'The audio file format is not supported. Please use MP3, WAV, or M4A format.';
+          } else if (externalResponse.status === 400) {
+            errorMessage = 'Invalid request data. Please check your inputs and try again.';
+          } else if (externalResponse.status >= 500) {
+            errorMessage = 'The external service is temporarily unavailable. Please try again later.';
+          }
+          
+          console.log(`External API call failed: ${errorMessage}`);
+          
+          // Update job status to failed
+          jobRecord.status = 'failed';
+          jobRecord.error = errorMessage;
+          jobRecord.updatedAt = new Date().toISOString();
+          setJob(jobId, jobRecord);
+          jobOperations.updateStatus(jobId, 'failed', undefined, errorMessage);
+          
+          throw new Error(errorMessage);
         }
 
         const externalResult = await externalResponse.json();

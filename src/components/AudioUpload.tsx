@@ -38,7 +38,7 @@ export default function AudioUpload({
             <div className="border-2 border-dashed border-teal-300 rounded-lg p-4 text-center hover:border-teal-400 transition-colors">
               <Upload className="h-6 w-6 text-teal-500 mx-auto mb-2" />
               <div className="text-sm text-teal-700">Click to upload audio file</div>
-              <div className="text-xs text-teal-600 mt-1">MP3, WAV, M4A • Max 60s • Up to 50MB</div>
+              <div className="text-xs text-teal-600 mt-1">MP3, WAV, M4A • Max 60s • Up to 10MB</div>
             </div>
           </div>
         ) : (

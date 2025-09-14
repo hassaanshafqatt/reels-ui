@@ -179,12 +179,44 @@ const createReelTypesTable = () => {
   stmt.run();
 };
 
+// Create admin settings table
+const createAdminSettingsTable = () => {
+  const stmt = db.prepare(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      description TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  stmt.run();
+
+  // Insert default settings if they don't exist
+  const defaultSettings = [
+    {
+      key: 'global_polling_enabled',
+      value: 'true',
+      description: 'Enable or disable global job status polling'
+    }
+  ];
+
+  const insertStmt = db.prepare(`
+    INSERT OR IGNORE INTO admin_settings (key, value, description)
+    VALUES (?, ?, ?)
+  `);
+
+  for (const setting of defaultSettings) {
+    insertStmt.run(setting.key, setting.value, setting.description);
+  }
+};
+
 // Initialize tables
 createUsersTable();
 createSessionsTable();
 createJobsTable();
 createReelCategoriesTable();
 createReelTypesTable();
+createAdminSettingsTable();
 
 // User operations
 export const userOperations = {
@@ -636,6 +668,49 @@ export const reelTypeOperations = {
   delete: (id: string) => {
     const stmt = db.prepare('DELETE FROM reel_types WHERE id = ?');
     return stmt.run(id).changes > 0;
+  }
+};
+
+// Admin settings operations
+export const adminSettingsOperations = {
+  // Get a setting by key
+  get: (key: string) => {
+    const stmt = db.prepare('SELECT * FROM admin_settings WHERE key = ?');
+    const result = stmt.get(key) as { key: string; value: string; description?: string; updated_at: string } | null;
+    return result;
+  },
+
+  // Get all settings
+  getAll: () => {
+    const stmt = db.prepare('SELECT * FROM admin_settings ORDER BY key');
+    return stmt.all() as { key: string; value: string; description?: string; updated_at: string }[];
+  },
+
+  // Set a setting value
+  set: (key: string, value: string, description?: string) => {
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO admin_settings (key, value, description, updated_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    return stmt.run(key, value, description || null, new Date().toISOString()).changes > 0;
+  },
+
+  // Get setting value as boolean
+  getBoolean: (key: string, defaultValue: boolean = false) => {
+    const setting = adminSettingsOperations.get(key);
+    if (!setting) return defaultValue;
+    return setting.value.toLowerCase() === 'true';
+  },
+
+  // Set boolean setting
+  setBoolean: (key: string, value: boolean, description?: string) => {
+    return adminSettingsOperations.set(key, value.toString(), description);
+  },
+
+  // Delete a setting
+  delete: (key: string) => {
+    const stmt = db.prepare('DELETE FROM admin_settings WHERE key = ?');
+    return stmt.run(key).changes > 0;
   }
 };
 

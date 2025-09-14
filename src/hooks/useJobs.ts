@@ -8,14 +8,42 @@ interface UseJobsReturn {
   error: string | null;
   refetch: () => Promise<void>;
   isPolling: boolean;
+  globalPollingEnabled: boolean;
 }
 
+// Function to check if global polling is enabled
+const checkGlobalPollingEnabled = async (authToken: string | null): Promise<boolean> => {
+  try {
+    if (!authToken) return true; // Default to enabled if no auth
+
+    const response = await fetch('/api/admin/settings', {
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.warn('Failed to fetch admin settings, defaulting to polling enabled');
+      return true;
+    }
+
+    const data = await response.json();
+    const pollingSetting = data.settings?.find((s: any) => s.key === 'global_polling_enabled');
+    return pollingSetting ? pollingSetting.value === 'true' : true;
+  } catch (error) {
+    console.warn('Error checking global polling setting:', error);
+    return true; // Default to enabled on error
+  }
+};
+
 export function useJobs(): UseJobsReturn {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, token } = useAuth();
   const [jobs, setJobs] = useState<StoredJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [globalPollingEnabled, setGlobalPollingEnabled] = useState(true);
 
   // Debug: Track when jobs state changes
   useEffect(() => {
@@ -27,6 +55,19 @@ export function useJobs(): UseJobsReturn {
       jobs: jobs.map(j => ({ id: j.job_id.slice(-8), status: j.status, hasResultUrl: !!j.result_url }))
     });
   }, [jobs]);
+
+  // Check global polling setting on component mount
+  useEffect(() => {
+    const checkPollingEnabled = async () => {
+      const enabled = await checkGlobalPollingEnabled(token);
+      setGlobalPollingEnabled(enabled);
+      console.log('Global polling enabled:', enabled);
+    };
+    
+    if (user) {
+      checkPollingEnabled();
+    }
+  }, [user]);
   
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchTimeRef = useRef<Date>(new Date());
@@ -108,6 +149,18 @@ export function useJobs(): UseJobsReturn {
     fetchJobsRef.current = fetchJobs;
   }, [fetchJobs]);
 
+  // Check global polling setting when token changes
+  useEffect(() => {
+    const checkPollingStatus = async () => {
+      if (token) {
+        const enabled = await checkGlobalPollingEnabled(token);
+        setGlobalPollingEnabled(enabled);
+      }
+    };
+    
+    checkPollingStatus();
+  }, [token]);
+
   // Check if there are jobs that need polling
   const hasIncompleteJobs = useCallback(() => {
     return jobs.some(job => 
@@ -118,6 +171,11 @@ export function useJobs(): UseJobsReturn {
 
   // Start polling for job updates
   const startPolling = useCallback(() => {
+    if (!globalPollingEnabled) {
+      console.log('Global polling disabled, skipping start');
+      return;
+    }
+
     if (pollingIntervalRef.current) {
       console.log('Polling already active, skipping start');
       return;
@@ -131,14 +189,14 @@ export function useJobs(): UseJobsReturn {
     console.log('Starting job polling...');
     setIsPolling(true);
     
-    // Poll every 60 seconds (1 minute) - use ref to avoid stale closures
+    // Poll every 5 minutes (300 seconds) - use ref to avoid stale closures
     pollingIntervalRef.current = setInterval(() => {
       console.log('Polling: Fetching fresh job data...');
       if (fetchJobsRef.current) {
         fetchJobsRef.current();
       }
-    }, 60000);
-  }, [hasIncompleteJobs]); // Remove fetchJobs dependency to prevent restarts
+    }, 300000);
+  }, [hasIncompleteJobs, globalPollingEnabled]);
 
   // Stop polling
   const stopPolling = useCallback(() => {
@@ -150,16 +208,20 @@ export function useJobs(): UseJobsReturn {
     }
   }, []);
 
-  // Auto-start/stop polling based on job states
+  // Auto-start/stop polling based on job states and global setting
   useEffect(() => {
-    const shouldPoll = hasIncompleteJobs();
+    const shouldPoll = hasIncompleteJobs() && globalPollingEnabled;
     const isCurrentlyPolling = pollingIntervalRef.current !== null;
     
     if (shouldPoll && !isCurrentlyPolling) {
-      console.log('Starting polling: found incomplete jobs');
+      console.log('Starting polling: found incomplete jobs and global polling enabled');
       startPolling();
     } else if (!shouldPoll && isCurrentlyPolling) {
-      console.log('Stopping polling: no incomplete jobs');
+      if (!globalPollingEnabled) {
+        console.log('Stopping polling: global polling disabled');
+      } else {
+        console.log('Stopping polling: no incomplete jobs');
+      }
       stopPolling();
     }
 
@@ -170,7 +232,7 @@ export function useJobs(): UseJobsReturn {
         stopPolling();
       }
     };
-  }, [jobs]); // Only depend on jobs array, not on function references
+  }, [jobs, globalPollingEnabled]); // Depend on jobs array and global polling setting
 
   // Initial load and when auth state changes
   useEffect(() => {
@@ -182,6 +244,7 @@ export function useJobs(): UseJobsReturn {
     loading,
     error,
     refetch: fetchJobs,
-    isPolling
+    isPolling,
+    globalPollingEnabled
   };
 }

@@ -183,16 +183,25 @@ export default function Dashboard({
     }
   }, [activeTab, reelCategories, selectedReel, selectedCategory, onReelSelect]);
 
-  // Function to validate audio file duration
+  // Function to validate audio file duration and size
   const validateAudioDuration = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
+      // First check file size (10MB limit to match backend)
+      const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSizeInBytes) {
+        const fileSizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+        setAudioError(`Audio file is ${fileSizeInMB}MB. Maximum allowed size is 10MB.`);
+        resolve(false);
+        return;
+      }
+
       const audio = new Audio();
       const url = URL.createObjectURL(file);
       
       audio.addEventListener('loadedmetadata', () => {
         URL.revokeObjectURL(url);
         const duration = audio.duration;
-        if (duration > 60) {
+        if (duration >= 61) {
           setAudioError(`Audio file is ${duration.toFixed(1)}s long. Maximum allowed is 60s.`);
           resolve(false);
         } else {
@@ -234,6 +243,20 @@ export default function Dashboard({
       setError('Failed to clear job history. Please try again.');
     } finally {
       setIsClearingHistory(false);
+    }
+  };
+
+  // Function to cleanup audio file for a job
+  const cleanupAudioFile = async (audioUrl: string) => {
+    try {
+      const success = await jobService.deleteAudioFile(audioUrl);
+      if (success) {
+        console.log('Audio file cleaned up successfully:', audioUrl);
+      } else {
+        console.warn('Failed to cleanup audio file:', audioUrl);
+      }
+    } catch (error) {
+      console.error('Error cleaning up audio file:', error);
     }
   };
 
@@ -439,50 +462,61 @@ export default function Dashboard({
       });
       
       let response;
+      let customAudioUrl = null;
       
       if (useCustomAudio && customAudioFile) {
-        // Use FormData for file upload
-        const formData = new FormData();
-        formData.append('reelType', selectedReel.name);
-        formData.append('category', selectedCategory);
-        formData.append('generateCaption', generateCaption.toString());
-        formData.append('customCaption', generateCaption ? "" : customCaption);
-        formData.append('customAuthor', (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "");
-        formData.append('useCustomAudio', 'true');
-        formData.append('audioFile', customAudioFile);
-        formData.append('timestamp', new Date().toISOString());
-
-        response = await fetch(targetUrl, {
-          method: 'POST',
-          body: formData,
-        });
-      } else {
-        // Use JSON for regular requests
-        const payload = {
-          reelType: selectedReel.name,
-          category: selectedCategory,
-          generateCaption,
-          customCaption: generateCaption ? "" : customCaption,
-          customAuthor: (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "",
-          useCustomAudio: false,
-          timestamp: new Date().toISOString()
-        };
-
-        console.log('Making fetch request to:', targetUrl);
-        console.log('Request payload:', payload);
+        console.log('Uploading custom audio file first...');
         
-        response = await fetch(targetUrl, {
+        // First upload the audio file to get a streamable URL
+        const audioFormData = new FormData();
+        audioFormData.append('audioFile', customAudioFile);
+        
+        // Get auth token from cookies (same method as jobService)
+        const authToken = Cookies.get('auth_token');
+        
+        const uploadResponse = await fetch('/api/upload/audio', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
           },
-          credentials: 'include',
-          body: JSON.stringify(payload),
+          body: audioFormData,
         });
-        
-        console.log('Fetch response status:', response.status);
-        console.log('Fetch response ok:', response.ok);
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json();
+          throw new Error(errorData.error || 'Failed to upload audio file');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        customAudioUrl = uploadResult.url;
+        console.log('Audio uploaded successfully:', customAudioUrl);
       }
+
+      // Now make the reel generation request with JSON (including audio URL if present)
+      const payload = {
+        reelType: selectedReel.name,
+        category: selectedCategory,
+        generateCaption,
+        customCaption: generateCaption ? "" : customCaption,
+        customAuthor: (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "",
+        useCustomAudio: !!customAudioUrl,
+        customAudioUrl: customAudioUrl,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('Making fetch request to:', targetUrl);
+      console.log('Request payload:', payload);
+
+      response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      console.log('Fetch response status:', response.status);
+      console.log('Fetch response ok:', response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -655,7 +689,7 @@ export default function Dashboard({
                         isPolling={isPolling}
                         onManualRefresh={refetchJobs}
                       />
-                      <PostingScheduleSection />
+                      
                     </div>
                   )}
 

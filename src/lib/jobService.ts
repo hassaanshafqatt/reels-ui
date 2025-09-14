@@ -158,6 +158,41 @@ export const jobService = {
       console.error(`JobService: Error checking status for job ${jobId}:`, error);
       return null;
     }
+  },
+
+  // Delete audio file by URL
+  async deleteAudioFile(audioUrl: string): Promise<boolean> {
+    try {
+      // Extract filename from URL
+      const url = new URL(audioUrl);
+      const pathParts = url.pathname.split('/');
+      const filename = pathParts[pathParts.length - 1];
+
+      if (!filename) {
+        console.error('JobService: Could not extract filename from URL:', audioUrl);
+        return false;
+      }
+
+      const token = getAuthToken();
+      const response = await fetch(`/api/uploads/audio/${filename}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+      });
+
+      if (!response.ok) {
+        console.warn(`JobService: Audio file deletion failed: ${response.status}`);
+        return false;
+      }
+
+      const result = await response.json();
+      console.log(`JobService: Audio file deleted successfully:`, result);
+      return true;
+    } catch (error) {
+      console.error('JobService: Error deleting audio file:', error);
+      return false;
+    }
   }
 };
 
