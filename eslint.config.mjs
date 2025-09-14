@@ -18,6 +18,13 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Exclude root JavaScript files (utility scripts)
+      "*.js",
+      "audit-db.js",
+      "check-completed-jobs.js", 
+      "check-users.js",
+      "clean-database.js",
+      "fix-urls.js",
     ],
   },
 ];

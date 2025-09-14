@@ -143,20 +143,20 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
       // Enter fullscreen
       if (containerRef.current?.requestFullscreen) {
         containerRef.current.requestFullscreen();
-      } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
-        (containerRef.current as any).webkitRequestFullscreen();
-      } else if ((containerRef.current as any)?.msRequestFullscreen) {
-        (containerRef.current as any).msRequestFullscreen();
+      } else if ((containerRef.current as unknown as { webkitRequestFullscreen?: () => void })?.webkitRequestFullscreen) {
+        (containerRef.current as unknown as { webkitRequestFullscreen: () => void }).webkitRequestFullscreen();
+      } else if ((containerRef.current as unknown as { msRequestFullscreen?: () => void })?.msRequestFullscreen) {
+        (containerRef.current as unknown as { msRequestFullscreen: () => void }).msRequestFullscreen();
       }
       setIsFullscreen(true);
     } else {
       // Exit fullscreen
       if (document.exitFullscreen) {
         document.exitFullscreen();
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen();
-      } else if ((document as any).msExitFullscreen) {
-        (document as any).msExitFullscreen();
+      } else if ((document as unknown as { webkitExitFullscreen?: () => void }).webkitExitFullscreen) {
+        (document as unknown as { webkitExitFullscreen: () => void }).webkitExitFullscreen();
+      } else if ((document as unknown as { msExitFullscreen?: () => void }).msExitFullscreen) {
+        (document as unknown as { msExitFullscreen: () => void }).msExitFullscreen();
       }
       setIsFullscreen(false);
     }

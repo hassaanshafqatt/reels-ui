@@ -4,7 +4,7 @@ FROM node:20-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apk add --no-cache libc6-compat python3 make g++ sqlite
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -43,6 +43,14 @@ ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Add production environment variables
+ENV DATABASE_URL=/app/data/reelcraft.db
+ENV PORT=4761
+ENV HOSTNAME="0.0.0.0"
+
+# Install sqlite3 for production
+RUN apk add --no-cache sqlite
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -60,20 +68,21 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Create data directory for SQLite database with proper permissions
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data && chmod -R 755 /app/data
 
-# Ensure the nextjs user owns the entire app directory
-RUN chown -R nextjs:nodejs /app
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/public/uploads/audio && chown -R nextjs:nodejs /app/public/uploads && chmod -R 755 /app/public/uploads
 
 # Copy and setup init script
-COPY docker-init.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-init.sh
+COPY --chown=nextjs:nodejs docker-init.sh /usr/local/bin/docker-init.sh
+RUN chmod +x /usr/local/bin/docker-init.sh && \
+    # Convert Windows line endings to Unix line endings
+    sed -i 's/\r$//' /usr/local/bin/docker-init.sh
+
+# Ensure the nextjs user owns the entire app directory
+RUN chown -R nextjs:nodejs /app
 
 USER nextjs
 
 EXPOSE 4761
-
-ENV PORT=4761
-# set hostname to localhost
-ENV HOSTNAME="0.0.0.0"
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output

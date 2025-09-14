@@ -461,7 +461,7 @@ export default function Dashboard({
         id: selectedReel.id
       });
       
-      let response;
+      let response: Response;
       let customAudioUrl = null;
       
       if (useCustomAudio && customAudioFile) {
@@ -507,6 +507,7 @@ export default function Dashboard({
       console.log('Making fetch request to:', targetUrl);
       console.log('Request payload:', payload);
 
+      // eslint-disable-next-line prefer-const
       response = await fetch(targetUrl, {
         method: 'POST',
         headers: {

@@ -137,7 +137,7 @@ export const jobService = {
   },
 
   // Check job status via status API
-  async checkJobStatus(jobId: string, type: string): Promise<any> {
+  async checkJobStatus(jobId: string, type: string): Promise<{ status: string; result_url?: string; shouldStopPolling?: boolean }> {
     try {
       const url = `/api/reels/status?jobId=${encodeURIComponent(jobId)}&type=${encodeURIComponent(type)}`;
       console.log(`JobService: Checking status for job ${jobId} via ${url}`);
@@ -148,7 +148,7 @@ export const jobService = {
 
       if (!response.ok) {
         console.warn(`JobService: Status check failed for job ${jobId}: ${response.status}`);
-        return null;
+        return { status: 'failed', shouldStopPolling: true };
       }
 
       const result = await response.json();
@@ -156,7 +156,7 @@ export const jobService = {
       return result;
     } catch (error) {
       console.error(`JobService: Error checking status for job ${jobId}:`, error);
-      return null;
+      return { status: 'failed', shouldStopPolling: true };
     }
   },
 

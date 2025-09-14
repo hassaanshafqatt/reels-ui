@@ -29,7 +29,7 @@ const checkGlobalPollingEnabled = async (authToken: string | null): Promise<bool
     }
 
     const data = await response.json();
-    const pollingSetting = data.settings?.find((s: any) => s.key === 'global_polling_enabled');
+    const pollingSetting = data.settings?.find((s: { key: string; value: string }) => s.key === 'global_polling_enabled');
     return pollingSetting ? pollingSetting.value === 'true' : true;
   } catch (error) {
     console.warn('Error checking global polling setting:', error);
@@ -111,7 +111,7 @@ export function useJobs(): UseJobsReturn {
                   console.log(`Stopping polling for job ${job.job_id} due to server directive`);
                   stoppedPollingJobsRef.current.add(job.job_id);
                 }
-              } catch (error: any) {
+              } catch (error: unknown) {
                 console.warn(`Failed to check status for job ${job.job_id}:`, error);
               }
               resolve();

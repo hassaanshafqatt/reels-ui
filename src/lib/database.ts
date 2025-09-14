@@ -342,8 +342,9 @@ export const jobOperations = {
     try {
       stmt.run(id, userId, jobData.jobId, jobData.category, jobData.type);
       return id;
-    } catch (error: any) {
-      if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+      const dbError = error as { code?: string };
+      if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         // Job with this job_id already exists, find and return the existing record
         console.warn(`Job with job_id ${jobData.jobId} already exists, returning existing record`);
         const existing = db.prepare('SELECT id FROM jobs WHERE job_id = ?').get(jobData.jobId) as { id: string } | undefined;
@@ -718,8 +719,8 @@ export const adminSettingsOperations = {
 export const migrateCaptionColumn = () => {
   try {
     // Check if caption column already exists
-    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all();
-    const captionExists = columnInfo.some((col: any) => col.name === 'caption');
+    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[];
+    const captionExists = columnInfo.some((col) => col.name === 'caption');
     
     if (!captionExists) {
       console.log('Adding caption column to jobs table...');
@@ -785,10 +786,10 @@ export const migrateStatusConstraint = () => {
 export const migratePollCountColumns = () => {
   try {
     // Check if polling columns already exist
-    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all();
-    const failureCountExists = columnInfo.some((col: any) => col.name === 'failure_count');
-    const pollCountExists = columnInfo.some((col: any) => col.name === 'poll_count');
-    const lastStatusExists = columnInfo.some((col: any) => col.name === 'last_status');
+    const columnInfo = db.prepare("PRAGMA table_info(jobs)").all() as { name: string }[];
+    const failureCountExists = columnInfo.some((col) => col.name === 'failure_count');
+    const pollCountExists = columnInfo.some((col) => col.name === 'poll_count');
+    const lastStatusExists = columnInfo.some((col) => col.name === 'last_status');
     
     if (!failureCountExists) {
       console.log('Adding failure_count column to jobs table...');
