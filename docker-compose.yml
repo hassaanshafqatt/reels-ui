@@ -8,6 +8,8 @@ services:
     volumes:
       # Mount data directory for persistent SQLite database with proper permissions
       - reels_data:/app/data
+      # Mount uploads directory for persistent file storage
+      - reels_uploads:/app/public/uploads
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
@@ -21,4 +23,6 @@ services:
 
 volumes:
   reels_data:
+    driver: local
+  reels_uploads:
     driver: local
