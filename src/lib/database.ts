@@ -604,6 +604,16 @@ export const reelCategoryOperations = {
   }
 };
 
+// Helper function to convert database boolean fields to actual booleans
+const convertReelTypeBooleans = (row: unknown): ReelType => {
+  const data = row as Record<string, unknown>;
+  return {
+    ...data,
+    is_active: Boolean(data.is_active),
+    include_author: Boolean(data.include_author)
+  } as ReelType;
+};
+
 // Reel type operations
 export const reelTypeOperations = {
   // Create a new reel type
@@ -643,7 +653,8 @@ export const reelTypeOperations = {
       ${whereClause}
       ORDER BY rc.title, rt.title
     `);
-    return stmt.all() as ReelType[];
+    const rows = stmt.all();
+    return rows.map(convertReelTypeBooleans);
   },
 
   // Get reel types by category
@@ -654,25 +665,29 @@ export const reelTypeOperations = {
       WHERE category_id = ? ${whereClause}
       ORDER BY title
     `);
-    return stmt.all(categoryId) as ReelType[];
+    const rows = stmt.all(categoryId);
+    return rows.map(convertReelTypeBooleans);
   },
 
   // Get reel type by id
   getById: (id: string): ReelType | null => {
     const stmt = db.prepare('SELECT * FROM reel_types WHERE id = ?');
-    return stmt.get(id) as ReelType | null;
+    const row = stmt.get(id);
+    return row ? convertReelTypeBooleans(row) : null;
   },
 
   // Get reel type by name and category
   getByName: (name: string, categoryId: string): ReelType | null => {
     const stmt = db.prepare('SELECT * FROM reel_types WHERE name = ? AND category_id = ?');
-    return stmt.get(name, categoryId) as ReelType | null;
+    const row = stmt.get(name, categoryId);
+    return row ? convertReelTypeBooleans(row) : null;
   },
 
   // Get reel type by name only (across all categories)
   getByNameOnly: (name: string): ReelType | null => {
     const stmt = db.prepare('SELECT * FROM reel_types WHERE name = ? LIMIT 1');
-    return stmt.get(name) as ReelType | null;
+    const row = stmt.get(name);
+    return row ? convertReelTypeBooleans(row) : null;
   },
 
   // Update reel type

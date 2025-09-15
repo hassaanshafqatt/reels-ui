@@ -21,6 +21,7 @@ interface CustomCaptionDialogProps {
   onSave: () => void;
   minCaptionLength?: number;
   maxCaptionLength?: number;
+  includeAuthor?: boolean;
 }
 
 export default function CustomCaptionDialog({
@@ -33,7 +34,8 @@ export default function CustomCaptionDialog({
   activeTab,
   onSave,
   minCaptionLength = 110,
-  maxCaptionLength = 140
+  maxCaptionLength = 140,
+  includeAuthor = false
 }: CustomCaptionDialogProps) {
   const wordCount = tempCustomCaption.trim().split(/\s+/).filter(word => word.length > 0).length;
   const isValidLength = wordCount >= minCaptionLength && wordCount <= maxCaptionLength && tempCustomCaption.trim().length > 0;
@@ -102,8 +104,8 @@ export default function CustomCaptionDialog({
               )}
             </div>
 
-            {/* Author field - only show for proverbs category */}
-            {activeTab === 'proverbs' && (
+            {/* Author field - show based on reel type setting */}
+            {includeAuthor && (
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">
                   Author <span className="text-gray-500 text-xs">(optional)</span>

@@ -498,7 +498,7 @@ export default function Dashboard({
         category: selectedCategory,
         generateCaption,
         customCaption: generateCaption ? "" : customCaption,
-        customAuthor: (selectedCategory === 'proverbs' && !generateCaption) ? customAuthor : "",
+        customAuthor: (selectedReel.include_author && !generateCaption) ? customAuthor : "",
         useCustomAudio: !!customAudioUrl,
         customAudioUrl: customAudioUrl,
         timestamp: new Date().toISOString()
@@ -629,6 +629,7 @@ export default function Dashboard({
                                 customCaption={customCaption}
                                 customAuthor={customAuthor}
                                 activeTab={activeTab}
+                                includeAuthor={selectedReel?.include_author}
                               />
                             )}
 
@@ -736,6 +737,7 @@ export default function Dashboard({
         activeTab={activeTab}
         minCaptionLength={selectedReel?.min_caption_length}
         maxCaptionLength={selectedReel?.max_caption_length}
+        includeAuthor={selectedReel?.include_author}
         onSave={() => {
           setCustomCaption(tempCustomCaption);
           setCustomAuthor(tempAuthor);
