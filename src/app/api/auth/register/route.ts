@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
       email,
       password_hash: hashedPassword,
       name,
-      plan: 'free' // Default plan for new users
+      plan: 'free', // Default plan for new users
+      is_admin: false // Default to non-admin for new users
     });
 
     if (!createResult.success) {

@@ -33,3 +33,6 @@ export { default as JobStatusCard } from "./JobStatusCard";
 
 // Utilities
 export { iconMap } from "./IconMap";
+
+// Admin Components  
+export { UserManagement } from "./UserManagement";

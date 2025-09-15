@@ -34,6 +34,7 @@ export interface User {
   password_hash: string;
   name: string;
   plan: 'free' | 'pro' | 'enterprise';
+  is_admin: boolean;
   avatar?: string;
   created_at: string;
   updated_at: string;
@@ -96,6 +97,7 @@ const createUsersTable = () => {
       password_hash TEXT NOT NULL,
       name TEXT NOT NULL,
       plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'enterprise')),
+      is_admin BOOLEAN DEFAULT 0,
       avatar TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -245,12 +247,12 @@ export const userOperations = {
   create: (userData: Omit<User, 'id' | 'created_at' | 'updated_at'>) => {
     const id = crypto.randomUUID();
     const stmt = db.prepare(`
-      INSERT INTO users (id, email, password_hash, name, plan, avatar)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, email, password_hash, name, plan, is_admin, avatar)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     
     try {
-      stmt.run(id, userData.email, userData.password_hash, userData.name, userData.plan, userData.avatar);
+      stmt.run(id, userData.email, userData.password_hash, userData.name, userData.plan, userData.is_admin ? 1 : 0, userData.avatar);
       return { success: true, userId: id };
     } catch (error: unknown) {
       const dbError = error as { code?: string };
@@ -300,6 +302,23 @@ export const userOperations = {
       return { success: true };
     } catch (error) {
       return { success: false, error: 'Failed to delete user' };
+    }
+  },
+
+  // Get all users (admin only)
+  getAll: () => {
+    const stmt = db.prepare('SELECT id, email, name, plan, is_admin, created_at, updated_at FROM users ORDER BY created_at DESC');
+    return stmt.all() as Omit<User, 'password_hash'>[];
+  },
+
+  // Update admin status
+  updateAdminStatus: (id: string, isAdmin: boolean) => {
+    const stmt = db.prepare('UPDATE users SET is_admin = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+    try {
+      const result = stmt.run(isAdmin ? 1 : 0, id);
+      return { success: result.changes > 0 };
+    } catch (error) {
+      return { success: false, error: 'Failed to update admin status' };
     }
   }
 };
@@ -936,6 +955,36 @@ export const migratePollCountColumns = () => {
   }
 };
 
+// Migration function to add admin role column to users table
+export const migrateAdminRole = () => {
+  try {
+    // Check if is_admin column already exists
+    const columnInfo = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+    const isAdminExists = columnInfo.some((col) => col.name === 'is_admin');
+    
+    if (!isAdminExists) {
+      console.log('Adding is_admin column to users table...');
+      db.prepare('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0').run();
+      // Update existing rows to have default value
+      db.prepare('UPDATE users SET is_admin = 0 WHERE is_admin IS NULL').run();
+      console.log('is_admin column added successfully');
+      
+      // Make the demo user an admin if it exists
+      const demoUser = userOperations.findByEmail('demo@reelcraft.com');
+      if (demoUser) {
+        db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run('demo@reelcraft.com');
+        console.log('Demo user promoted to admin');
+      }
+    } else {
+      console.log('is_admin column already exists');
+    }
+    
+    console.log('Admin role migration completed');
+  } catch (error) {
+    console.error('Error migrating admin role:', error);
+  }
+};
+
 // Migration function to populate database with initial reel configurations
 export const migrateInitialReelData = () => {
   const categories = [
@@ -1179,7 +1228,8 @@ const initializeDemoData = async () => {
       email: 'demo@reelcraft.com',
       password_hash: hashedPassword,
       name: 'Demo User',
-      plan: 'pro'
+      plan: 'pro',
+      is_admin: true
     });
 
     const hashedPassword2 = await passwordUtils.hash('test123');
@@ -1187,7 +1237,8 @@ const initializeDemoData = async () => {
       email: 'test@example.com',
       password_hash: hashedPassword2,
       name: 'Test User',
-      plan: 'free'
+      plan: 'free',
+      is_admin: false
     });
   }
 
@@ -1195,6 +1246,7 @@ const initializeDemoData = async () => {
   migratePollCountColumns();
   migrateReelTypesCaptionSettings();
   migrateMinMaxCaptionLength();
+  migrateAdminRole();
   
   // Run reel data migration (disabled - use /admin to manage data)
   // migrateInitialReelData();

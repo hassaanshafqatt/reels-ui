@@ -1,10 +1,15 @@
 import { NextRequest } from 'next/server';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
+import { userOperations } from './database';
 
 export interface AuthUser {
   id: string;
   email: string;
+}
+
+export interface AuthUserWithAdmin extends AuthUser {
+  is_admin: boolean;
 }
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -59,4 +64,39 @@ export async function createToken(user: AuthUser): Promise<string> {
     .sign(JWT_SECRET);
 
   return token;
+}
+
+export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUserWithAdmin | null> {
+  try {
+    const authUser = await verifyAuth(request);
+    if (!authUser) {
+      return null;
+    }
+
+    // Get user details from database to check admin status
+    const user = userOperations.findById(authUser.id);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: authUser.id,
+      email: authUser.email,
+      is_admin: user.is_admin
+    };
+  } catch (error) {
+    console.error('Admin auth verification failed:', error);
+    return null;
+  }
+}
+
+export async function requireAdmin(request?: NextRequest): Promise<AuthUserWithAdmin> {
+  const user = await verifyAuthWithAdmin(request);
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+  if (!user.is_admin) {
+    throw new Error('Admin access required');
+  }
+  return user;
 }

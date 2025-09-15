@@ -9,6 +9,7 @@ interface User {
   name: string;
   avatar?: string;
   plan: 'free' | 'pro' | 'enterprise';
+  is_admin: boolean;
   createdAt: string;
 }
 

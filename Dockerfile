@@ -47,6 +47,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL=/app/data/reelcraft.db
 ENV PORT=4761
 ENV HOSTNAME="0.0.0.0"
+ENV PUBLIC_HOSTNAME=https://reels.arachnix.io
+ENV API_KEY=123456
 
 # Install sqlite3 for production
 RUN apk add --no-cache sqlite

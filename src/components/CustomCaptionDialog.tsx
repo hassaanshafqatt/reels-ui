@@ -58,26 +58,26 @@ export default function CustomCaptionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="">
+      <DialogContent className="p-8">
         <DialogClose onClose={onClose}>
           <span className="sr-only">Close</span>
         </DialogClose>
-        <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg font-semibold">Custom Caption</DialogTitle>
-          <DialogDescription className="text-sm">
+        <DialogHeader className="pb-6">
+          <DialogTitle className="text-lg font-semibold">Custom Caption</DialogTitle>
+          <DialogDescription className="text-base">
             Write your own caption for the reel. This will override the AI-generated caption.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="p-4 pt-0">
-          <div className="space-y-4">
+        <div className="py-2">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-3">
                 Caption
               </label>
               <textarea
                 rows={4}
-                className="w-full min-h-[100px] max-h-[200px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm leading-relaxed"
+                className="w-full min-h-[120px] max-h-[200px] px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-base leading-relaxed"
                 placeholder={`Write your custom caption here... (${minCaptionLength}-${maxCaptionLength} words required)`}
                 value={tempCustomCaption}
                 onChange={(e) => {
@@ -90,15 +90,15 @@ export default function CustomCaptionDialog({
                   }
                 }}
               />
-              <div className="flex justify-end items-center mt-2">
+              <div className="flex justify-end items-center mt-3">
                 {tempCustomCaption.trim().length > 0 && (
-                  <div className={`text-xs font-medium ${getWordCountColor()}`}>
+                  <div className={`text-sm font-medium ${getWordCountColor()}`}>
                     {wordCount}/{minCaptionLength}-{maxCaptionLength} words
                   </div>
                 )}
               </div>
               {getWordCountMessage() && (
-                <div className="text-xs text-red-500 mt-1">
+                <div className="text-sm text-red-500 mt-2">
                   {getWordCountMessage()}
                 </div>
               )}
@@ -107,18 +107,18 @@ export default function CustomCaptionDialog({
             {/* Author field - show based on reel type setting */}
             {includeAuthor && (
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Author <span className="text-gray-500 text-xs">(optional)</span>
+                <label className="block text-sm font-medium text-gray-900 mb-3">
+                  Author <span className="text-gray-500 text-sm">(optional)</span>
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-base h-12"
                   placeholder="e.g., Sun Tzu, Marcus Aurelius, etc."
                   value={tempAuthor}
                   onChange={(e) => setTempAuthor(e.target.value)}
                   maxLength={50}
                 />
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-sm text-gray-500 mt-2">
                   Attribution for quotes or wisdom
                 </div>
               </div>
@@ -126,18 +126,18 @@ export default function CustomCaptionDialog({
           </div>
         </div>
 
-        <DialogFooter className="p-4 pt-2 flex-col sm:flex-row gap-2 sm:gap-0">
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-4 pt-8 border-t border-gray-200 mt-8">
           <Button
             variant="outline"
             onClick={onClose}
-            className="w-full sm:w-auto text-sm h-10"
+            className="w-full sm:w-auto text-base h-12 px-6"
           >
             Cancel
           </Button>
           <Button
             onClick={onSave}
             disabled={!isValidLength}
-            className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm h-10"
+            className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 disabled:cursor-not-allowed text-base h-12 px-6"
           >
             Save Caption
           </Button>
