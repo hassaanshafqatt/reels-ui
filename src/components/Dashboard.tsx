@@ -734,6 +734,8 @@ export default function Dashboard({
         tempAuthor={tempAuthor}
         setTempAuthor={setTempAuthor}
         activeTab={activeTab}
+        minCaptionLength={selectedReel?.min_caption_length}
+        maxCaptionLength={selectedReel?.max_caption_length}
         onSave={() => {
           setCustomCaption(tempCustomCaption);
           setCustomAuthor(tempAuthor);

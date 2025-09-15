@@ -65,6 +65,9 @@ interface ReelType {
   icon: string;
   message: string;
   caption: string;
+  min_caption_length: number;
+  max_caption_length: number;
+  include_author: boolean;
   external_url?: string;
   status_url?: string;
   posting_url?: string;
@@ -166,6 +169,9 @@ const createReelTypesTable = () => {
       icon TEXT NOT NULL,
       message TEXT NOT NULL,
       caption TEXT NOT NULL,
+      min_caption_length INTEGER DEFAULT 10,
+      max_caption_length INTEGER DEFAULT 100,
+      include_author BOOLEAN DEFAULT 1,
       external_url TEXT,
       status_url TEXT,
       posting_url TEXT,
@@ -197,6 +203,21 @@ const createAdminSettingsTable = () => {
       key: 'global_polling_enabled',
       value: 'true',
       description: 'Enable or disable global job status polling'
+    },
+    {
+      key: 'default_min_caption_length',
+      value: '10',
+      description: 'Default minimum length for reel captions in characters'
+    },
+    {
+      key: 'default_max_caption_length',
+      value: '100',
+      description: 'Default maximum length for reel captions in characters'
+    },
+    {
+      key: 'include_author_by_default',
+      value: 'true',
+      description: 'Whether to include author information in reels by default'
     }
   ];
 
@@ -589,8 +610,8 @@ export const reelTypeOperations = {
   create: (typeData: Omit<ReelType, 'id' | 'created_at' | 'updated_at'>) => {
     const id = crypto.randomUUID();
     const stmt = db.prepare(`
-      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, external_url, status_url, posting_url, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, external_url, status_url, posting_url, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       id, 
@@ -601,6 +622,9 @@ export const reelTypeOperations = {
       typeData.icon, 
       typeData.message, 
       typeData.caption,
+      typeData.min_caption_length || 10,
+      typeData.max_caption_length || 100,
+      typeData.include_author ? 1 : 0,
       typeData.external_url,
       typeData.status_url,
       typeData.posting_url,
@@ -733,6 +757,76 @@ export const migrateCaptionColumn = () => {
     console.log('Jobs table caption migration completed');
   } catch (error) {
     console.error('Error migrating caption column:', error);
+  }
+};
+
+// Migration function to add caption_length and include_author columns to reel_types table
+export const migrateReelTypesCaptionSettings = () => {
+  try {
+    // Check if columns already exist
+    const columnInfo = db.prepare("PRAGMA table_info(reel_types)").all() as { name: string }[];
+    const captionLengthExists = columnInfo.some((col) => col.name === 'caption_length');
+    const includeAuthorExists = columnInfo.some((col) => col.name === 'include_author');
+    
+    if (!captionLengthExists) {
+      console.log('Adding caption_length column to reel_types table...');
+      db.prepare('ALTER TABLE reel_types ADD COLUMN caption_length INTEGER DEFAULT 100').run();
+      console.log('Caption_length column added successfully');
+    } else {
+      console.log('Caption_length column already exists');
+    }
+    
+    if (!includeAuthorExists) {
+      console.log('Adding include_author column to reel_types table...');
+      db.prepare('ALTER TABLE reel_types ADD COLUMN include_author BOOLEAN DEFAULT 1').run();
+      console.log('Include_author column added successfully');
+    } else {
+      console.log('Include_author column already exists');
+    }
+    
+    console.log('Reel types caption settings migration completed');
+  } catch (error) {
+    console.error('Error migrating reel types caption settings:', error);
+  }
+};
+
+// Migration function to add min/max caption length columns to reel_types table
+export const migrateMinMaxCaptionLength = () => {
+  try {
+    // Check if columns already exist
+    const columnInfo = db.prepare("PRAGMA table_info(reel_types)").all() as { name: string }[];
+    const minCaptionLengthExists = columnInfo.some((col) => col.name === 'min_caption_length');
+    const maxCaptionLengthExists = columnInfo.some((col) => col.name === 'max_caption_length');
+    const oldCaptionLengthExists = columnInfo.some((col) => col.name === 'caption_length');
+    
+    if (!minCaptionLengthExists) {
+      console.log('Adding min_caption_length column to reel_types table...');
+      db.prepare('ALTER TABLE reel_types ADD COLUMN min_caption_length INTEGER DEFAULT 10').run();
+      console.log('Min_caption_length column added successfully');
+    } else {
+      console.log('Min_caption_length column already exists');
+    }
+    
+    if (!maxCaptionLengthExists) {
+      console.log('Adding max_caption_length column to reel_types table...');
+      
+      // If old caption_length exists, use its value as max_caption_length default
+      if (oldCaptionLengthExists) {
+        console.log('Migrating existing caption_length values to max_caption_length...');
+        db.prepare('ALTER TABLE reel_types ADD COLUMN max_caption_length INTEGER').run();
+        db.prepare('UPDATE reel_types SET max_caption_length = COALESCE(caption_length, 100)').run();
+        console.log('Caption_length values migrated to max_caption_length');
+      } else {
+        db.prepare('ALTER TABLE reel_types ADD COLUMN max_caption_length INTEGER DEFAULT 100').run();
+      }
+      console.log('Max_caption_length column added successfully');
+    } else {
+      console.log('Max_caption_length column already exists');
+    }
+    
+    console.log('Min/max caption length migration completed');
+  } catch (error) {
+    console.error('Error migrating min/max caption length:', error);
   }
 };
 
@@ -1049,7 +1143,10 @@ export const migrateInitialReelData = () => {
       const { category_name, ...typeData } = type;
       reelTypeOperations.create({
         ...typeData,
-        category_id: categoryId
+        category_id: categoryId,
+        min_caption_length: 10,
+        max_caption_length: 100,
+        include_author: true
       });
       console.log(`Created type: ${type.title}`);
     }
@@ -1081,6 +1178,8 @@ const initializeDemoData = async () => {
 
   // Run database migrations
   migratePollCountColumns();
+  migrateReelTypesCaptionSettings();
+  migrateMinMaxCaptionLength();
   
   // Run reel data migration (disabled - use /admin to manage data)
   // migrateInitialReelData();

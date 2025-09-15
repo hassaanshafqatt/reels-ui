@@ -19,6 +19,8 @@ interface CustomCaptionDialogProps {
   setTempAuthor: (author: string) => void;
   activeTab: string;
   onSave: () => void;
+  minCaptionLength?: number;
+  maxCaptionLength?: number;
 }
 
 export default function CustomCaptionDialog({
@@ -29,23 +31,25 @@ export default function CustomCaptionDialog({
   tempAuthor,
   setTempAuthor,
   activeTab,
-  onSave
+  onSave,
+  minCaptionLength = 110,
+  maxCaptionLength = 140
 }: CustomCaptionDialogProps) {
   const wordCount = tempCustomCaption.trim().split(/\s+/).filter(word => word.length > 0).length;
-  const isValidLength = wordCount >= 110 && wordCount <= 140 && tempCustomCaption.trim().length > 0;
+  const isValidLength = wordCount >= minCaptionLength && wordCount <= maxCaptionLength && tempCustomCaption.trim().length > 0;
 
   const getWordCountColor = () => {
-    if (wordCount < 110) return 'text-red-500';
-    if (wordCount > 140) return 'text-red-500';
+    if (wordCount < minCaptionLength) return 'text-red-500';
+    if (wordCount > maxCaptionLength) return 'text-red-500';
     return 'text-green-600';
   };
 
   const getWordCountMessage = () => {
-    if (wordCount < 110 && tempCustomCaption.trim().length > 0) {
-      return `Caption needs at least ${110 - wordCount} more words`;
+    if (wordCount < minCaptionLength && tempCustomCaption.trim().length > 0) {
+      return `Caption needs at least ${minCaptionLength - wordCount} more words`;
     }
-    if (wordCount > 140) {
-      return `Caption exceeds limit by ${wordCount - 140} words`;
+    if (wordCount > maxCaptionLength) {
+      return `Caption exceeds limit by ${wordCount - maxCaptionLength} words`;
     }
     return null;
   };
@@ -72,14 +76,14 @@ export default function CustomCaptionDialog({
               <textarea
                 rows={4}
                 className="w-full min-h-[100px] max-h-[200px] px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-sm leading-relaxed"
-                placeholder="Write your custom caption here... (110-140 words required)"
+                placeholder={`Write your custom caption here... (${minCaptionLength}-${maxCaptionLength} words required)`}
                 value={tempCustomCaption}
                 onChange={(e) => {
                   const newValue = e.target.value;
                   const newWordCount = newValue.trim().split(/\s+/).filter(word => word.length > 0).length;
                   
-                  // Only allow the change if word count is 140 or less
-                  if (newWordCount <= 140) {
+                  // Only allow the change if word count is at or below the maximum
+                  if (newWordCount <= maxCaptionLength) {
                     setTempCustomCaption(newValue);
                   }
                 }}
@@ -87,7 +91,7 @@ export default function CustomCaptionDialog({
               <div className="flex justify-end items-center mt-2">
                 {tempCustomCaption.trim().length > 0 && (
                   <div className={`text-xs font-medium ${getWordCountColor()}`}>
-                    {wordCount}/110-140 words
+                    {wordCount}/{minCaptionLength}-{maxCaptionLength} words
                   </div>
                 )}
               </div>

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader, Save, AlertCircle, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader, Save, AlertCircle, Settings, Type, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminSetting {
@@ -22,6 +23,9 @@ export function SystemSettings() {
 
   // Get global polling setting
   const pollingEnabled = settings.find(s => s.key === 'global_polling_enabled')?.value === 'true';
+  const defaultMinCaptionLength = parseInt(settings.find(s => s.key === 'default_min_caption_length')?.value || '10');
+  const defaultMaxCaptionLength = parseInt(settings.find(s => s.key === 'default_max_caption_length')?.value || '100');
+  const includeAuthorByDefault = settings.find(s => s.key === 'include_author_by_default')?.value === 'true';
 
   const fetchSettings = async () => {
     if (!token) return;
@@ -99,6 +103,42 @@ export function SystemSettings() {
       'global_polling_enabled', 
       enabled.toString(), 
       'Enable or disable global job status polling'
+    );
+  };
+
+  const handleMinCaptionLengthChange = (length: string) => {
+    const numLength = parseInt(length);
+    if (!isNaN(numLength) && numLength > 0 && numLength <= 1000) {
+      // Ensure min is not greater than max
+      if (numLength <= defaultMaxCaptionLength) {
+        updateSetting(
+          'default_min_caption_length',
+          numLength.toString(),
+          'Default minimum length for reel captions in characters'
+        );
+      }
+    }
+  };
+
+  const handleMaxCaptionLengthChange = (length: string) => {
+    const numLength = parseInt(length);
+    if (!isNaN(numLength) && numLength > 0 && numLength <= 1000) {
+      // Ensure max is not less than min
+      if (numLength >= defaultMinCaptionLength) {
+        updateSetting(
+          'default_max_caption_length',
+          numLength.toString(),
+          'Default maximum length for reel captions in characters'
+        );
+      }
+    }
+  };
+
+  const handleAuthorToggle = (enabled: boolean) => {
+    updateSetting(
+      'include_author_by_default',
+      enabled.toString(),
+      'Whether to include author information in reels by default'
     );
   };
 
@@ -187,6 +227,130 @@ export function SystemSettings() {
               id="polling-toggle"
               checked={pollingEnabled}
               onCheckedChange={handlePollingToggle}
+              disabled={saving}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Caption Length Control */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Type className="h-5 w-5 text-white" />
+            </div>
+            <Label className="text-xl font-bold text-gray-900">
+              Default Caption Length Range
+            </Label>
+          </div>
+          <p className="text-base text-gray-600 leading-relaxed">
+            Set the default minimum and maximum length for reel captions in characters. These will be applied to new reel types but can be overridden per reel type.
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Minimum Caption Length */}
+            <div className="space-y-3">
+              <Label htmlFor="min-caption-length" className="text-base font-semibold text-gray-800">
+                Minimum Length
+              </Label>
+              <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                <span className="font-medium">Current minimum:</span> 
+                <span className="font-bold ml-1 text-blue-600">{defaultMinCaptionLength} characters</span>
+                {settings.find(s => s.key === 'default_min_caption_length') && (
+                  <span className="block mt-1 text-xs">
+                    Last updated: {new Date(
+                      settings.find(s => s.key === 'default_min_caption_length')!.updated_at
+                    ).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <Input
+                id="min-caption-length"
+                type="number"
+                min="1"
+                max="1000"
+                value={defaultMinCaptionLength}
+                onChange={(e) => handleMinCaptionLengthChange(e.target.value)}
+                disabled={saving}
+                className="w-full"
+              />
+            </div>
+
+            {/* Maximum Caption Length */}
+            <div className="space-y-3">
+              <Label htmlFor="max-caption-length" className="text-base font-semibold text-gray-800">
+                Maximum Length
+              </Label>
+              <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+                <span className="font-medium">Current maximum:</span> 
+                <span className="font-bold ml-1 text-blue-600">{defaultMaxCaptionLength} characters</span>
+                {settings.find(s => s.key === 'default_max_caption_length') && (
+                  <span className="block mt-1 text-xs">
+                    Last updated: {new Date(
+                      settings.find(s => s.key === 'default_max_caption_length')!.updated_at
+                    ).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              <Input
+                id="max-caption-length"
+                type="number"
+                min="1"
+                max="1000"
+                value={defaultMaxCaptionLength}
+                onChange={(e) => handleMaxCaptionLengthChange(e.target.value)}
+                disabled={saving}
+                className="w-full"
+              />
+            </div>
+          </div>
+          
+          {defaultMinCaptionLength >= defaultMaxCaptionLength && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ Warning: Minimum length should be less than maximum length for proper validation.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Author Field Control */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="space-y-3 flex-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                <User className="h-5 w-5 text-white" />
+              </div>
+              <Label htmlFor="author-toggle" className="text-xl font-bold text-gray-900">
+                Include Author by Default
+              </Label>
+            </div>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Determine whether author information should be included in reels by default. This setting applies to new reel types but can be customized for each reel type individually.
+            </p>
+            <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+              <span className="font-medium">Status:</span> 
+              <span className={`font-bold ml-1 ${includeAuthorByDefault ? 'text-green-600' : 'text-red-600'}`}>
+                {includeAuthorByDefault ? '✓ Include Author' : '✗ No Author'}
+              </span>
+              {settings.find(s => s.key === 'include_author_by_default') && (
+                <span className="block mt-1 text-xs">
+                  Last updated: {new Date(
+                    settings.find(s => s.key === 'include_author_by_default')!.updated_at
+                  ).toLocaleString()}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <Switch
+              id="author-toggle"
+              checked={includeAuthorByDefault}
+              onCheckedChange={handleAuthorToggle}
               disabled={saving}
             />
           </div>

@@ -54,6 +54,9 @@ export default function ReelManagement() {
     icon: '',
     message: '',
     caption: '',
+    min_caption_length: 10,
+    max_caption_length: 100,
+    include_author: true,
     external_url: '',
     status_url: '',
     posting_url: '',
@@ -178,6 +181,9 @@ export default function ReelManagement() {
       icon: '',
       message: '',
       caption: '',
+      min_caption_length: 10,
+      max_caption_length: 100,
+      include_author: true,
       external_url: '',
       status_url: '',
       posting_url: '',
@@ -207,6 +213,9 @@ export default function ReelManagement() {
       icon: type.icon || '',
       message: type.message || '',
       caption: type.caption || '',
+      min_caption_length: type.min_caption_length || 10,
+      max_caption_length: type.max_caption_length || 100,
+      include_author: type.include_author !== undefined ? type.include_author : true,
       external_url: type.external_url || '',
       status_url: type.status_url || '',
       posting_url: type.posting_url || '',
@@ -797,6 +806,60 @@ export default function ReelManagement() {
                     placeholder="Default caption template"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Min Caption Length</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={typeForm.min_caption_length}
+                      onChange={(e) => setTypeForm({...typeForm, min_caption_length: parseInt(e.target.value) || 10})}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm sm:text-base transition-all duration-200 bg-white"
+                      placeholder="10"
+                    />
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">Minimum characters for captions</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">Max Caption Length</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={typeForm.max_caption_length}
+                      onChange={(e) => setTypeForm({...typeForm, max_caption_length: parseInt(e.target.value) || 100})}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm sm:text-base transition-all duration-200 bg-white"
+                      placeholder="100"
+                    />
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">Maximum characters for captions</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="includeAuthor"
+                      checked={typeForm.include_author}
+                      onChange={(e) => setTypeForm({...typeForm, include_author: e.target.checked})}
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600 bg-white border-gray-300 rounded focus:ring-teal-500 focus:ring-2"
+                    />
+                    <div>
+                      <label htmlFor="includeAuthor" className="text-sm sm:text-base font-medium text-gray-800">
+                        Include Author
+                      </label>
+                      <p className="text-xs text-gray-500">Add author info to reels</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {typeForm.min_caption_length >= typeForm.max_caption_length && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Warning: Minimum caption length should be less than maximum caption length.
+                    </p>
+                  </div>
+                )}
                 
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">External URL</label>

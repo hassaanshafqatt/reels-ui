@@ -21,6 +21,9 @@ export interface ReelType {
   icon?: string;
   message?: string;
   caption?: string;
+  min_caption_length?: number;
+  max_caption_length?: number;
+  include_author?: boolean;
   external_url?: string;
   status_url?: string;
   posting_url?: string;
