@@ -60,14 +60,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Posting reel request:', {
-      jobId,
-      category,
-      type,
-      videoUrl,
-      caption: caption ? caption.substring(0, 50) + '...' : 'No caption'
-    });
-
     // Get the reel type configuration to validate the posting configuration
     const reelType = reelTypeOperations.getByNameOnly(type);
     if (!reelType) {
@@ -76,12 +68,6 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    console.log('Reel type configuration found:', {
-      name: reelType.name,
-      title: reelType.title,
-      posting_url: reelType.posting_url
-    });
 
     // Prepare the posting payload for external service
     const postingPayload = {
@@ -105,7 +91,6 @@ export async function POST(request: NextRequest) {
         !reelType.posting_url.startsWith('/api/reels/post')) {
       
       try {
-        console.log('Calling external posting service:', reelType.posting_url);
         
         // Make the actual request to the external posting service
         const postingResponse = await fetch(reelType.posting_url, {
@@ -119,11 +104,6 @@ export async function POST(request: NextRequest) {
 
         if (!postingResponse.ok) {
           const errorText = await postingResponse.text();
-          console.error('External posting service error:', {
-            status: postingResponse.status,
-            statusText: postingResponse.statusText,
-            error: errorText
-          });
           
           // Update job status to failed with error message
           jobOperations.updateStatus(
@@ -144,7 +124,6 @@ export async function POST(request: NextRequest) {
         }
 
         const postingResult = await postingResponse.json();
-        console.log('External posting service response:', postingResult);
         
         // Update job status to 'posted' on success
         jobOperations.updateStatus(jobId, 'posted', videoUrl, undefined, caption);
@@ -159,7 +138,6 @@ export async function POST(request: NextRequest) {
         });
 
       } catch (fetchError) {
-        console.error('Error calling external posting service:', fetchError);
         
         // Update job status to failed
         jobOperations.updateStatus(
@@ -180,16 +158,9 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // No external posting URL configured, handle posting internally
-      console.log('No external posting URL configured, handling internally');
       
       // Simulate internal posting logic
       // You can add specific logic here for different reel types
-      console.log('Processing posting for:', {
-        type: reelType.name,
-        title: reelType.title,
-        category,
-        payload: postingPayload
-      });
       
       // Simulate some processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -209,7 +180,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Post reel error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

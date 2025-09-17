@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching users:', error);
     
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {

@@ -23,13 +23,7 @@ export default function GeneratedReelsSection({
 }: GeneratedReelsSectionProps) {
   // Debug: Log when jobs change
   React.useEffect(() => {
-    console.log('GeneratedReelsSection: Jobs prop changed', {
-      total: jobs.length,
-      completed: jobs.filter(j => j.status === 'completed').length,
-      processing: jobs.filter(j => j.status === 'processing').length,
-      failed: jobs.filter(j => j.status === 'failed').length,
-      jobs: jobs.map(j => ({ id: j.job_id.slice(-8), status: j.status, result_url: !!j.result_url }))
-    });
+    // Jobs prop changed tracking
   }, [jobs]);
   
   const completedJobs = jobs.filter(job => job.status === 'completed');

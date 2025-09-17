@@ -36,7 +36,7 @@ async function findExistingFileByHash(targetHash: string, uploadsDir: string): P
       }
     }
   } catch (error) {
-    console.error('Error checking for duplicate files:', error);
+    // Error checking for duplicate files
   }
   return null;
 }
@@ -59,16 +59,12 @@ async function cleanupOldFiles(uploadsDir: string) {
         if (fileAge > maxAge) {
           await unlink(filePath);
           cleanedCount++;
-          console.log(`Cleaned up old file: ${file}`);
         }
       }
     }
 
-    if (cleanedCount > 0) {
-      console.log(`Cleanup completed: ${cleanedCount} files removed`);
-    }
   } catch (error) {
-    console.error('Error during file cleanup:', error);
+    // Error during file cleanup
   }
 }
 
@@ -158,7 +154,6 @@ export async function POST(request: NextRequest) {
       // Use existing file
       uniqueFilename = existingFile;
       filePath = path.join(uploadsDir, uniqueFilename);
-      console.log(`Duplicate file detected, using existing: ${uniqueFilename}`);
     } else {
       // Create new file
       const fileExtension = path.extname(audioFile.name);
@@ -167,19 +162,16 @@ export async function POST(request: NextRequest) {
 
       // Save the new file
       await writeFile(filePath, buffer);
-      console.log(`New audio file uploaded: ${uniqueFilename}, size: ${audioFile.size} bytes`);
     }
 
     // Run cleanup in background (don't await to avoid blocking response)
-    cleanupOldFiles(uploadsDir).catch(error => {
-      console.error('Background cleanup error:', error);
+    cleanupOldFiles(uploadsDir).catch(() => {
+      // Background cleanup error
     });
 
     // Generate streamable URL using hostname from environment
     const hostname = process.env.PUBLIC_HOSTNAME || process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const streamableUrl = `${hostname}/api/uploads/audio/${uniqueFilename}`;
-
-    console.log(`Streamable URL: ${streamableUrl}`);
 
     return NextResponse.json({
       success: true,
@@ -192,7 +184,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Audio upload error:', error);
     return NextResponse.json(
       { error: 'Failed to upload audio file' },
       { status: 500 }

@@ -34,25 +34,19 @@ export const jobService = {
   async getJobs(): Promise<StoredJob[]> {
     try {
       const token = getAuthToken();
-      console.log('JobService: Getting jobs, token exists:', !!token);
       
       const response = await fetch('/api/jobs', {
         headers: getAuthHeaders(),
       });
 
-      console.log('JobService: Response status:', response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('JobService: Failed to fetch jobs:', response.status, errorText);
         throw new Error('Failed to fetch jobs');
       }
 
       const data = await response.json();
-      console.log('JobService: Received data:', data);
       return data.jobs || [];
     } catch (error) {
-      console.error('JobService: Error fetching jobs:', error);
       return [];
     }
   },
@@ -72,7 +66,6 @@ export const jobService = {
 
       return true;
     } catch (error) {
-      console.error('Error creating job:', error);
       return false;
     }
   },
@@ -92,7 +85,6 @@ export const jobService = {
 
       return true;
     } catch (error) {
-      console.error('Error updating job:', error);
       return false;
     }
   },
@@ -111,7 +103,6 @@ export const jobService = {
 
       return true;
     } catch (error) {
-      console.error('Error clearing job history:', error);
       return false;
     }
   },
@@ -131,7 +122,6 @@ export const jobService = {
 
       return true;
     } catch (error) {
-      console.error('Error clearing job history:', error);
       return false;
     }
   },
@@ -140,22 +130,18 @@ export const jobService = {
   async checkJobStatus(jobId: string, type: string): Promise<{ status: string; result_url?: string; shouldStopPolling?: boolean }> {
     try {
       const url = `/api/reels/status?jobId=${encodeURIComponent(jobId)}&type=${encodeURIComponent(type)}`;
-      console.log(`JobService: Checking status for job ${jobId} via ${url}`);
       
       const response = await fetch(url, {
         headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        console.warn(`JobService: Status check failed for job ${jobId}: ${response.status}`);
         return { status: 'failed', shouldStopPolling: true };
       }
 
       const result = await response.json();
-      console.log(`JobService: Status check result for ${jobId}:`, result);
       return result;
     } catch (error) {
-      console.error(`JobService: Error checking status for job ${jobId}:`, error);
       return { status: 'failed', shouldStopPolling: true };
     }
   },
@@ -169,7 +155,6 @@ export const jobService = {
       const filename = pathParts[pathParts.length - 1];
 
       if (!filename) {
-        console.error('JobService: Could not extract filename from URL:', audioUrl);
         return false;
       }
 
@@ -182,15 +167,12 @@ export const jobService = {
       });
 
       if (!response.ok) {
-        console.warn(`JobService: Audio file deletion failed: ${response.status}`);
         return false;
       }
 
       const result = await response.json();
-      console.log(`JobService: Audio file deleted successfully:`, result);
       return true;
     } catch (error) {
-      console.error('JobService: Error deleting audio file:', error);
       return false;
     }
   }

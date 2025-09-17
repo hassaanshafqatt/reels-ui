@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
       note: 'Check the main route console logs for job storage information'
     });
   } catch (error) {
-    console.error('Debug endpoint error:', error);
     return NextResponse.json({ error: 'Debug endpoint failed' }, { status: 500 });
   }
 }

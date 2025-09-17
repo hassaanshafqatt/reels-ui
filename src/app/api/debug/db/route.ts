@@ -16,7 +16,6 @@ export async function GET() {
       }
     });
   } catch (error) {
-    console.error('Database test error:', error);
     return NextResponse.json({ 
       error: 'Database test failed', 
       details: error instanceof Error ? error.message : 'Unknown error' 

@@ -64,7 +64,6 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Update job error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         if (fileAge > maxAge) {
           await unlink(filePath);
           cleanedFiles.push(file);
-          console.log(`Cleaned up old file: ${file}`);
         }
       }
     }
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Cleanup error:', error);
     return NextResponse.json(
       { error: 'Failed to cleanup files' },
       { status: 500 }

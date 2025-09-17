@@ -34,7 +34,6 @@ function AppContent() {
   }));
 
   const handleReelSelect = (categoryId: string, typeId: string) => {
-    console.log('Selected reel:', { categoryId, typeId });
     // Handle reel selection logic here
   };
 

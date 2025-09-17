@@ -122,7 +122,6 @@ export default function HistorySection({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  console.log(`Frontend: Refresh button clicked for job ${job.job_id}`);
                   onRefreshJob(job);
                 }}
                 disabled={refreshingJobs.has(job.job_id)}

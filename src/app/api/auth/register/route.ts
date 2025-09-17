@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
     const sessionResult = sessionOperations.create(newUser.id, token, expiresAt);
     
     if (!sessionResult.success) {
-      console.error('Failed to create session:', sessionResult.error);
       return NextResponse.json(
         { message: 'Failed to create session' },
         { status: 500 }
@@ -110,7 +109,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Registration error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

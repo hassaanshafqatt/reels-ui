@@ -63,7 +63,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             logout();
           }
         } catch (error) {
-          console.error('Error parsing saved user data:', error);
           logout();
         }
       }
@@ -86,7 +85,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return response.ok;
     } catch (error) {
-      console.error('Token verification failed:', error);
       return false;
     }
   };
@@ -106,12 +104,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.token && data.user) {
-        console.log('🔐 Login successful, setting token and user');
         setToken(data.token);
         setUser(data.user);
         
         // Save to cookies (expires in 7 days)
-        console.log('🍪 Setting cookies with token:', data.token.substring(0, 20) + '...');
         Cookies.set('auth_token', data.token, { 
           expires: 7, 
           sameSite: 'lax',
@@ -125,14 +121,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Verify the cookie was set
         const savedToken = Cookies.get('auth_token');
-        console.log('🔍 Verification - Cookie saved:', !!savedToken);
         
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Login failed' };
       }
     } catch (error) {
-      console.error('Login error:', error);
       return { success: false, error: 'Network error occurred' };
     } finally {
       setIsLoading(false);
@@ -174,7 +168,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error: data.message || 'Registration failed' };
       }
     } catch (error) {
-      console.error('Registration error:', error);
       return { success: false, error: 'Network error occurred' };
     } finally {
       setIsLoading(false);
@@ -192,7 +185,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
         });
       } catch (error) {
-        console.error('Logout API error:', error);
         // Continue with local logout even if API fails
       }
     }
@@ -226,7 +218,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return false;
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
       logout();
       return false;
     }

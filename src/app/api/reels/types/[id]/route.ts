@@ -26,7 +26,6 @@ export async function GET(
 
     return NextResponse.json({ type });
   } catch (error) {
-    console.error('Failed to fetch reel type:', error);
     return NextResponse.json({ error: 'Failed to fetch reel type' }, { status: 500 });
   }
 }
@@ -86,7 +85,6 @@ export async function PUT(
     const type = reelTypeOperations.getById(id);
     return NextResponse.json({ type });
   } catch (error) {
-    console.error('Failed to update reel type:', error);
     return NextResponse.json({ error: 'Failed to update reel type' }, { status: 500 });
   }
 }
@@ -111,7 +109,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Reel type deleted successfully' });
   } catch (error) {
-    console.error('Failed to delete reel type:', error);
     return NextResponse.json({ error: 'Failed to delete reel type' }, { status: 500 });
   }
 }

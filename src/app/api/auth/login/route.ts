@@ -10,11 +10,8 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
     
-    console.log('Login attempt:', { email, password: password ? '[REDACTED]' : 'missing' });
-
     // Validate input
     if (!email || !password) {
-      console.log('Missing email or password');
       return NextResponse.json(
         { message: 'Email and password are required' },
         { status: 400 }
@@ -24,10 +21,7 @@ export async function POST(request: NextRequest) {
     // Find user in database
     const user = userOperations.findByEmail(email);
     
-    console.log('User found:', !!user);
-
     if (!user) {
-      console.log('User not found for email:', email);
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 }
@@ -35,14 +29,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    console.log('User found:', !!user);
-    console.log('Password hash exists:', !!user.password_hash);
-    console.log('Password hash length:', user.password_hash?.length || 0);
     
     const isValidPassword = await passwordUtils.verify(password, user.password_hash);
     
     if (!isValidPassword) {
-      console.log('Invalid password for user:', email);
       return NextResponse.json(
         { message: 'Invalid email or password' },
         { status: 401 }
@@ -66,7 +56,6 @@ export async function POST(request: NextRequest) {
     const sessionResult = sessionOperations.create(user.id, token, expiresAt);
     
     if (!sessionResult.success) {
-      console.error('Failed to create session:', sessionResult.error);
       return NextResponse.json(
         { message: 'Failed to create session' },
         { status: 500 }
@@ -86,7 +75,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

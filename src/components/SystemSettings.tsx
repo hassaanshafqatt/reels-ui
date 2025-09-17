@@ -49,7 +49,6 @@ export function SystemSettings() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
-      console.error('Error fetching settings:', err);
     } finally {
       setLoading(false);
     }
@@ -92,7 +91,6 @@ export function SystemSettings() {
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update setting');
-      console.error('Error updating setting:', err);
     } finally {
       setSaving(false);
     }

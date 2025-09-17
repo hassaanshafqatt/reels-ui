@@ -12,8 +12,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    console.log('Password reset for:', email);
-    
     // Find user
     const user = userOperations.findByEmail(email);
     
@@ -26,7 +24,6 @@ export async function POST(request: NextRequest) {
     
     // Hash the new password
     const hashedPassword = await passwordUtils.hash(newPassword);
-    console.log('New password hashed, length:', hashedPassword.length);
     
     // Update user password
     const updateResult = userOperations.update(user.id, {
@@ -40,8 +37,6 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
     
-    console.log('Password updated successfully for:', email);
-    
     return NextResponse.json({
       success: true,
       message: 'Password updated successfully',
@@ -53,7 +48,6 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Password reset error:', error);
     return NextResponse.json({
       success: false,
       error: 'Password reset failed',

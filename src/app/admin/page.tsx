@@ -606,9 +606,8 @@ export default function AdminPanel() {
                             });
                             const stats = await response.json();
                             // You can display these stats in a dialog or update state
-                            console.log('File stats:', stats);
                           } catch (err) {
-                            console.error('Failed to get file stats');
+                            // Failed to get file stats
                           }
                         }}
                         variant="outline"

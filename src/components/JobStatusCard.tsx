@@ -45,13 +45,11 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
   const handlePostReel = async () => {
     setIsPosting(true);
     try {
-      console.log('Posting reel:', job.job_id);
       
       // Get token from cookies (same method as auth context)
       const authToken = token || Cookies.get('auth_token');
       
       if (!authToken) {
-        console.error('No authentication token found');
         // Could add a notification system here if needed
         return;
       }
@@ -73,23 +71,20 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Post response:', result);
         
         // Refresh the job to get updated status
         onRefresh(job);
         
-        console.log('Reel posted successfully!');
       } else {
         const errorText = await response.text();
-        console.error('Failed to post reel:', response.status, errorText);
         
         // Handle specific error cases
         if (response.status === 401) {
-          console.error('Authentication failed - token may be expired');
+          // Authentication failed - token may be expired
         }
       }
     } catch (error) {
-      console.error('Error posting reel:', error || 'Unknown error');
+      // Error posting reel
     } finally {
       setIsPosting(false);
     }

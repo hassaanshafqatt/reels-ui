@@ -32,7 +32,6 @@ export const useReelData = () => {
       setCategories(categoriesWithTypes);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch reel data');
-      console.error('Error fetching reel data:', err);
     } finally {
       setLoading(false);
     }

@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Get jobs error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -95,7 +94,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Create job error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -145,7 +143,6 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Clear jobs error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

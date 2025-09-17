@@ -38,10 +38,6 @@ export interface ReelType {
 class ReelService {
   private getAuthHeaders() {
     const token = Cookies.get('auth_token');
-    console.log('🔑 ReelService: Getting auth headers, token exists:', !!token);
-    if (token) {
-      console.log('🔑 ReelService: Token preview:', token.substring(0, 20) + '...');
-    }
     return {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})

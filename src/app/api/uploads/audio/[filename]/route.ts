@@ -31,11 +31,10 @@ function scheduleFileDeletion(filename: string, filePath: string) {
     try {
       if (existsSync(filePath)) {
         await unlink(filePath);
-        console.log(`Auto-deleted file after access: ${filename}`);
       }
       fileAccessTracker.delete(filename);
     } catch (error) {
-      console.error(`Failed to delete file ${filename}:`, error);
+      // Failed to delete file
     }
   }, 60 * 60 * 1000); // 1 hour
 
@@ -111,7 +110,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Audio file serving error:', error);
     return NextResponse.json(
       { error: 'Failed to serve audio file' },
       { status: 500 }
@@ -154,8 +152,6 @@ export async function DELETE(
     // Delete the file
     await unlink(filePath);
 
-    console.log(`Audio file deleted: ${filename} by external service`);
-
     return NextResponse.json({
       success: true,
       message: 'Audio file deleted successfully',
@@ -163,7 +159,6 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Audio deletion error:', error);
     return NextResponse.json(
       { error: 'Failed to delete audio file' },
       { status: 500 }

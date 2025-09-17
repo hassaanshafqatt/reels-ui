@@ -11,15 +11,12 @@ if (!fs.existsSync(dataDir)) {
 
 // Initialize database
 const dbPath = path.join(dataDir, 'reelcraft.db');
-console.log('Database path:', dbPath);
 
 // Check if we can write to the directory
 try {
   fs.accessSync(dataDir, fs.constants.W_OK);
-  console.log('Data directory is writable');
 } catch (error) {
-  console.error('Data directory is not writable:', error);
-  console.log('Data directory stats:', fs.statSync(dataDir));
+  // Directory is not writable, but continue anyway
 }
 
 const db = new Database(dbPath);
@@ -335,12 +332,9 @@ export const sessionOperations = {
     
     try {
       const isoString = expiresAt.toISOString();
-      console.log('Creating session:', { id, userId, tokenLength: token.length, expiresAt: isoString });
       stmt.run(id, userId, token, isoString);
-      console.log('Session created successfully:', id);
       return { success: true, sessionId: id };
     } catch (error) {
-      console.error('Session creation error:', error);
       return { success: false, error: `Failed to create session: ${error}` };
     }
   },
@@ -386,7 +380,6 @@ export const jobOperations = {
       const dbError = error as { code?: string };
       if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         // Job with this job_id already exists, find and return the existing record
-        console.warn(`Job with job_id ${jobData.jobId} already exists, returning existing record`);
         const existing = db.prepare('SELECT id FROM jobs WHERE job_id = ?').get(jobData.jobId) as { id: string } | undefined;
         if (existing) {
           return existing.id;
@@ -434,11 +427,9 @@ export const jobOperations = {
       if (newFailureCount < 10) {
         // Keep the current status (probably 'pending' or 'processing')
         finalStatus = currentJob?.status || 'pending';
-        console.log(`Job ${jobId} failure ${newFailureCount}/10 - keeping status as ${finalStatus}`);
       } else {
         // 10 failures reached, set to failed
         finalStatus = 'failed';
-        console.log(`Job ${jobId} reached 10 failures - setting to failed`);
       }
     } else {
       // Success status, reset failure count
@@ -461,7 +452,6 @@ export const jobOperations = {
     const currentJob = db.prepare('SELECT poll_count, last_status, failure_count, status FROM jobs WHERE job_id = ?').get(jobId) as { poll_count: number; last_status: string; failure_count: number; status: string } | undefined;
     
     if (!currentJob) {
-      console.warn(`Job ${jobId} not found for poll tracking`);
       return { status: 'failed', pollCount: 0, shouldStopPolling: true };
     }
     
@@ -478,12 +468,10 @@ export const jobOperations = {
       // Stop polling if we've checked the same status 50 times
       if (newPollCount >= 50) {
         shouldStopPolling = true;
-        console.log(`Job ${jobId} polled 50 times with same status '${status}' - stopping polling`);
       }
     } else {
       // Status changed, reset poll count
       newPollCount = 1;
-      console.log(`Job ${jobId} status changed from '${lastStatus}' to '${status}' - resetting poll count`);
     }
     
     // Handle failure tracking as well
@@ -498,18 +486,15 @@ export const jobOperations = {
       if (newFailureCount < 10) {
         // Keep the current status (probably 'pending' or 'processing')
         finalStatus = currentJob.status || 'pending';
-        console.log(`Job ${jobId} failure ${newFailureCount}/10 - keeping status as ${finalStatus}`);
       } else {
         // 10 failures reached, set to failed
         finalStatus = 'failed';
         shouldStopPolling = true;
-        console.log(`Job ${jobId} reached 10 failures - setting to failed and stopping polling`);
       }
     } else if (status === 'completed' || status === 'posted') {
       // Success status, reset failure count and stop polling
       newFailureCount = 0;
       shouldStopPolling = true;
-      console.log(`Job ${jobId} completed successfully - stopping polling`);
     } else {
       // Other statuses, reset failure count
       newFailureCount = 0;
@@ -781,16 +766,11 @@ export const migrateCaptionColumn = () => {
     const captionExists = columnInfo.some((col) => col.name === 'caption');
     
     if (!captionExists) {
-      console.log('Adding caption column to jobs table...');
       db.prepare('ALTER TABLE jobs ADD COLUMN caption TEXT').run();
-      console.log('Caption column added successfully');
-    } else {
-      console.log('Caption column already exists');
     }
     
-    console.log('Jobs table caption migration completed');
   } catch (error) {
-    console.error('Error migrating caption column:', error);
+    // Migration error handled silently
   }
 };
 
@@ -803,24 +783,15 @@ export const migrateReelTypesCaptionSettings = () => {
     const includeAuthorExists = columnInfo.some((col) => col.name === 'include_author');
     
     if (!captionLengthExists) {
-      console.log('Adding caption_length column to reel_types table...');
       db.prepare('ALTER TABLE reel_types ADD COLUMN caption_length INTEGER DEFAULT 100').run();
-      console.log('Caption_length column added successfully');
-    } else {
-      console.log('Caption_length column already exists');
     }
     
     if (!includeAuthorExists) {
-      console.log('Adding include_author column to reel_types table...');
       db.prepare('ALTER TABLE reel_types ADD COLUMN include_author BOOLEAN DEFAULT 1').run();
-      console.log('Include_author column added successfully');
-    } else {
-      console.log('Include_author column already exists');
     }
     
-    console.log('Reel types caption settings migration completed');
   } catch (error) {
-    console.error('Error migrating reel types caption settings:', error);
+    // Migration error handled silently
   }
 };
 
@@ -834,40 +805,28 @@ export const migrateMinMaxCaptionLength = () => {
     const oldCaptionLengthExists = columnInfo.some((col) => col.name === 'caption_length');
     
     if (!minCaptionLengthExists) {
-      console.log('Adding min_caption_length column to reel_types table...');
       db.prepare('ALTER TABLE reel_types ADD COLUMN min_caption_length INTEGER DEFAULT 10').run();
-      console.log('Min_caption_length column added successfully');
-    } else {
-      console.log('Min_caption_length column already exists');
     }
     
     if (!maxCaptionLengthExists) {
-      console.log('Adding max_caption_length column to reel_types table...');
       
       // If old caption_length exists, use its value as max_caption_length default
       if (oldCaptionLengthExists) {
-        console.log('Migrating existing caption_length values to max_caption_length...');
         db.prepare('ALTER TABLE reel_types ADD COLUMN max_caption_length INTEGER').run();
         db.prepare('UPDATE reel_types SET max_caption_length = COALESCE(caption_length, 100)').run();
-        console.log('Caption_length values migrated to max_caption_length');
       } else {
         db.prepare('ALTER TABLE reel_types ADD COLUMN max_caption_length INTEGER DEFAULT 100').run();
       }
-      console.log('Max_caption_length column added successfully');
-    } else {
-      console.log('Max_caption_length column already exists');
     }
     
-    console.log('Min/max caption length migration completed');
   } catch (error) {
-    console.error('Error migrating min/max caption length:', error);
+    // Migration error handled silently
   }
 };
 
 // Migration function to update status constraint to include new status values
 export const migrateStatusConstraint = () => {
   try {
-    console.log('Updating jobs table status constraint...');
     
     // SQLite doesn't support ALTER TABLE to modify constraints directly
     // We need to recreate the table with the new constraint
@@ -903,9 +862,7 @@ export const migrateStatusConstraint = () => {
     // Rename the new table to the original name
     db.prepare('ALTER TABLE jobs_new RENAME TO jobs').run();
     
-    console.log('Status constraint migration completed successfully');
   } catch (error) {
-    console.error('Error migrating status constraint:', error);
     // If migration fails, we should continue without crashing
   }
 };
@@ -920,38 +877,25 @@ export const migratePollCountColumns = () => {
     const lastStatusExists = columnInfo.some((col) => col.name === 'last_status');
     
     if (!failureCountExists) {
-      console.log('Adding failure_count column to jobs table...');
       db.prepare('ALTER TABLE jobs ADD COLUMN failure_count INTEGER DEFAULT 0').run();
       // Update existing rows to have default value
       db.prepare('UPDATE jobs SET failure_count = 0 WHERE failure_count IS NULL').run();
-      console.log('failure_count column added successfully');
-    } else {
-      console.log('failure_count column already exists');
     }
     
     if (!pollCountExists) {
-      console.log('Adding poll_count column to jobs table...');
       db.prepare('ALTER TABLE jobs ADD COLUMN poll_count INTEGER DEFAULT 0').run();
       // Update existing rows to have default value
       db.prepare('UPDATE jobs SET poll_count = 0 WHERE poll_count IS NULL').run();
-      console.log('poll_count column added successfully');
-    } else {
-      console.log('poll_count column already exists');
     }
     
     if (!lastStatusExists) {
-      console.log('Adding last_status column to jobs table...');
       db.prepare('ALTER TABLE jobs ADD COLUMN last_status TEXT').run();
       // Update existing rows to have their current status as last_status
       db.prepare('UPDATE jobs SET last_status = status WHERE last_status IS NULL').run();
-      console.log('last_status column added successfully');
-    } else {
-      console.log('last_status column already exists');
     }
     
-    console.log('Jobs table polling control migration completed');
   } catch (error) {
-    console.error('Error migrating polling control columns:', error);
+    // Migration error handled silently
   }
 };
 
@@ -963,25 +907,19 @@ export const migrateAdminRole = () => {
     const isAdminExists = columnInfo.some((col) => col.name === 'is_admin');
     
     if (!isAdminExists) {
-      console.log('Adding is_admin column to users table...');
       db.prepare('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0').run();
       // Update existing rows to have default value
       db.prepare('UPDATE users SET is_admin = 0 WHERE is_admin IS NULL').run();
-      console.log('is_admin column added successfully');
       
       // Make the demo user an admin if it exists
       const demoUser = userOperations.findByEmail('demo@reelcraft.com');
       if (demoUser) {
         db.prepare('UPDATE users SET is_admin = 1 WHERE email = ?').run('demo@reelcraft.com');
-        console.log('Demo user promoted to admin');
       }
-    } else {
-      console.log('is_admin column already exists');
     }
     
-    console.log('Admin role migration completed');
   } catch (error) {
-    console.error('Error migrating admin role:', error);
+    // Migration error handled silently
   }
 };
 
@@ -1188,7 +1126,6 @@ export const migrateInitialReelData = () => {
     if (!existingCategory) {
       const categoryId = reelCategoryOperations.create(category);
       categoryMap[category.name] = categoryId;
-      console.log(`Created category: ${category.title}`);
     } else {
       categoryMap[category.name] = existingCategory.id;
     }
@@ -1198,7 +1135,6 @@ export const migrateInitialReelData = () => {
   for (const type of types) {
     const categoryId = categoryMap[type.category_name];
     if (!categoryId) {
-      console.error(`Category not found: ${type.category_name}`);
       continue;
     }
 
@@ -1212,11 +1148,9 @@ export const migrateInitialReelData = () => {
         max_caption_length: 100,
         include_author: true
       });
-      console.log(`Created type: ${type.title}`);
     }
   }
 
-  console.log('Initial reel data migration completed');
 };
 
 // Initialize with some demo data if empty
@@ -1257,9 +1191,13 @@ const initializeDemoData = async () => {
 };
 
 // Initialize the database when this module is imported
-initializeDemoData().catch(console.error);
+initializeDemoData().catch(() => {
+  // Initialization error handled silently
+});
 
 // Initialize demo data
-initializeDemoData().catch(console.error);
+initializeDemoData().catch(() => {
+  // Initialization error handled silently
+});
 
 export default db;

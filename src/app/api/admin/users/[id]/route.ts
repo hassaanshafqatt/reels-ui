@@ -60,7 +60,6 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('Error updating user admin status:', error);
     
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {

@@ -18,24 +18,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { type } = await params;
 
-    console.log(`POST request received for type: ${type}`);
-    console.log(`Request payload:`, { reelType, category, generateCaption, customCaption, timestamp, useCustomAudio, customAudioUrl });
-
     // Get configuration for this reel type from database
     const reelTypeData = reelTypeOperations.getByNameOnly(type);
     if (!reelTypeData) {
-      console.log(`Unknown reel type: ${type}`);
       return NextResponse.json({ error: `Unknown reel type: ${type}` }, { status: 400 });
     }
 
     if (!reelTypeData.is_active) {
-      console.log(`Inactive reel type: ${type}`);
       return NextResponse.json({ error: `Reel type is not active: ${type}` }, { status: 400 });
     }
 
     // Generate a unique job ID
     const jobId = randomUUID();
-    console.log(`Generated job ID: ${jobId}`);
 
     // Store job in database first (persistent storage)
     const dbJobId = jobOperations.create(user.id, {
@@ -43,7 +37,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       category,
       type
     });
-    console.log(`Stored job in database with ID: ${dbJobId}`);
 
     // Store initial job record in memory store (for current request processing)
     const jobRecord: JobRecord = {
@@ -55,7 +48,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       updatedAt: new Date().toISOString()
     };
     setJob(jobId, jobRecord);
-    console.log(`Stored job record with ID: ${jobId}, store size: ${getJobStoreSize()}`);
 
     // Prepare the payload with job ID
     const payload = {
@@ -81,12 +73,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     
     // Also update database
     jobOperations.updateStatus(jobId, 'processing');
-    console.log(`Updated job status to processing for: ${jobId}`);
 
     // If this reel type has an external URL, make a request to it
     if (reelTypeData.external_url) {
       try {
-        console.log(`Making external API call to: ${reelTypeData.external_url}`);
         
         // Always send JSON (with audio URL if present)
         const externalResponse = await fetch(reelTypeData.external_url, {
@@ -111,8 +101,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             errorMessage = 'The external service is temporarily unavailable. Please try again later.';
           }
           
-          console.log(`External API call failed: ${errorMessage}`);
-          
           // Update job status to failed
           jobRecord.status = 'failed';
           jobRecord.error = errorMessage;
@@ -127,8 +115,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         
         // Don't immediately set to completed - let the job stay processing
         // The status will be updated via the status polling endpoint
-        console.log(`External API call successful for job: ${jobId}, keeping status as processing`);
-        console.log(`External API response:`, externalResult);
         
         // Update job record with the external result but keep processing status
         jobRecord.result = externalResult;
@@ -154,7 +140,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           }
         });
       } catch (externalError) {
-        console.error('External API call failed:', externalError);
         
         // Update job record with failure
         jobRecord.status = 'failed';
@@ -180,7 +165,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // If we reach here, there's no external URL configured
-    console.log(`No external URL configured for reel type: ${type}`);
     
     // Update job record with failure
     jobRecord.status = 'failed';
@@ -202,7 +186,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       { status: 400 }
     );
   } catch (error) {
-    console.error('Error generating reel:', error);
     return NextResponse.json({ error: 'Failed to generate reel' }, { status: 500 });
   }
 }

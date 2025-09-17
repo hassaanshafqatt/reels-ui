@@ -239,7 +239,6 @@ export default function Dashboard({
         setError('Failed to clear job history. Please try again.');
       }
     } catch (error) {
-      console.error('Error clearing job history:', error || 'Unknown error');
       setError('Failed to clear job history. Please try again.');
     } finally {
       setIsClearingHistory(false);
@@ -251,12 +250,12 @@ export default function Dashboard({
     try {
       const success = await jobService.deleteAudioFile(audioUrl);
       if (success) {
-        console.log('Audio file cleaned up successfully:', audioUrl);
+        // Audio file cleaned up successfully
       } else {
-        console.warn('Failed to cleanup audio file:', audioUrl);
+        // Failed to cleanup audio file
       }
     } catch (error) {
-      console.error('Error cleaning up audio file:', error);
+      // Error cleaning up audio file
     }
   };
 
@@ -264,23 +263,19 @@ export default function Dashboard({
   const checkJobStatus = async (job: StoredJob) => {
     if (refreshingJobs.has(job.job_id)) return;
     
-    console.log(`Frontend: Checking job status for ${job.job_id}`);
     setRefreshingJobs(prev => new Set(prev).add(job.job_id));
     
     try {
       const url = `/api/reels/status?jobId=${encodeURIComponent(job.job_id)}&type=${encodeURIComponent(job.type)}`;
-      console.log(`Frontend: Making request to ${url}`);
       
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') || Cookies.get('auth_token')}`
         }
       });
-      console.log(`Frontend: Got response with status ${response.status}`);
       
       if (response.ok) {
         const result = await response.json();
-        console.log(`Frontend: Full response data:`, JSON.stringify(result, null, 2));
         
         // Handle the actual API response format
         if (result.jobId && (result.status || result.result?.status)) {
@@ -292,11 +287,6 @@ export default function Dashboard({
           // Use the most relevant status (prefer result.status if available, otherwise top-level status)
           const rawStatus = resultStatus || topLevelStatus;
           const jobStatus = rawStatus.toLowerCase(); // Convert "Pending" to "pending"
-          
-          console.log(`Frontend: Job ${result.jobId} status: ${jobStatus}`);
-          if (caption) {
-            console.log(`Frontend: Job ${result.jobId} caption: ${caption}`);
-          }
           
           // Update job status using the job service
           await jobService.updateJobStatus(result.jobId, jobStatus, videoUrl, undefined, caption);
@@ -323,11 +313,6 @@ export default function Dashboard({
           const jobStatus = result.Status.toLowerCase(); // Convert "Pending" to "pending"
           const videoUrl = result.videoURL;
           const caption = result.caption; // Extract caption
-          
-          console.log(`Frontend: Job ${result.job_id} status: ${jobStatus}`);
-          if (caption) {
-            console.log(`Frontend: Job ${result.job_id} caption: ${caption}`);
-          }
           
           // Update job status using the job service
           await jobService.updateJobStatus(result.job_id, jobStatus, videoUrl, undefined, caption);
@@ -357,14 +342,10 @@ export default function Dashboard({
           if (result.error || result.message?.includes('error') || result.message?.includes('Error')) {
             jobStatus = 'failed';
             errorMessage = result.error || result.message || 'Unknown error in response';
-            console.log(`Frontend: Error found in response, setting status to failed:`, errorMessage);
           } else if (!jobStatus) {
             jobStatus = 'failed';
             errorMessage = 'No status found in response';
-            console.log(`Frontend: No status found in response, setting to failed`);
           }
-          
-          console.log(`Frontend: Final job status:`, jobStatus);
           
           // Extract reel link from multiple possible sources
           const reelLink = result.reelLink || 
@@ -373,8 +354,6 @@ export default function Dashboard({
                           result.result?.downloadUrl || 
                           result.result?.url || 
                           result.result?.link;
-          
-          console.log(`Frontend: Extracted reel link:`, reelLink);
           
           // Update job status using the job service
           await jobService.updateJobStatus(job.job_id, jobStatus, reelLink, errorMessage);
@@ -397,18 +376,15 @@ export default function Dashboard({
           }
         }
       } else {
-        console.error(`Frontend: Request failed with status ${response.status}`);
         const errorText = await response.text();
-        console.error(`Frontend: Error response body:`, errorText || 'No error text available');
         
         // Try to parse error response as JSON for more details
         let errorDetails = errorText;
         try {
           const errorJson = JSON.parse(errorText);
-          console.log(`Frontend: Parsed error JSON:`, errorJson);
           errorDetails = errorJson.error || errorJson.message || errorText;
         } catch (parseError) {
-          console.log(`Frontend: Could not parse error response as JSON, using raw text`);
+          // Could not parse error response as JSON, using raw text
         }
         
         // Set job status to failed for non-OK responses
@@ -418,7 +394,6 @@ export default function Dashboard({
         setError(`Failed to check job status: ${response.status} ${response.statusText} - ${errorDetails}`);
       }
     } catch (error) {
-      console.error('Frontend: Failed to check job status:', error || 'Unknown error');
       setError('Failed to check job status: ' + (error instanceof Error ? error.message : String(error || 'Unknown error')));
     } finally {
       setRefreshingJobs(prev => {
@@ -454,18 +429,11 @@ export default function Dashboard({
     try {
       // Always use local dynamic route - external URLs are handled server-side
       const targetUrl = `/api/reels/${selectedReel.name}`;
-      console.log('🎯 Target URL:', targetUrl);
-      console.log('🔍 Selected reel details:', {
-        name: selectedReel.name,
-        external_url: selectedReel.external_url,
-        id: selectedReel.id
-      });
       
       let response: Response;
       let customAudioUrl = null;
       
       if (useCustomAudio && customAudioFile) {
-        console.log('Uploading custom audio file first...');
         
         // First upload the audio file to get a streamable URL
         const audioFormData = new FormData();
@@ -489,7 +457,6 @@ export default function Dashboard({
 
         const uploadResult = await uploadResponse.json();
         customAudioUrl = uploadResult.url;
-        console.log('Audio uploaded successfully:', customAudioUrl);
       }
 
       // Now make the reel generation request with JSON (including audio URL if present)
@@ -504,9 +471,6 @@ export default function Dashboard({
         timestamp: new Date().toISOString()
       };
 
-      console.log('Making fetch request to:', targetUrl);
-      console.log('Request payload:', payload);
-
       // eslint-disable-next-line prefer-const
       response = await fetch(targetUrl, {
         method: 'POST',
@@ -515,9 +479,6 @@ export default function Dashboard({
         },
         body: JSON.stringify(payload),
       });
-      
-      console.log('Fetch response status:', response.status);
-      console.log('Fetch response ok:', response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -538,14 +499,8 @@ export default function Dashboard({
       
       setSuccess(`Reel generated successfully! Job ID: ${result.jobId || 'N/A'}`);
       
-      console.log("Reel generation response:", result);
     } catch (error) {
-      console.error('Detailed error in handleGenerate:', error || 'Unknown error');
-      console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-      console.error('Error message:', error instanceof Error ? error.message : String(error || 'Unknown'));
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       setError("Error generating reel: " + (error instanceof Error ? error.message : String(error || 'Unknown error')));
-      console.error("Error generating reel:", error || 'Unknown error');
     } finally {
       setIsGenerating(false);
     }

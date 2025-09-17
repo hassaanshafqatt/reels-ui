@@ -6,15 +6,12 @@ export async function GET() {
     const stmt = db.prepare('SELECT id, email, name, plan, created_at FROM users');
     const users = stmt.all();
     
-    console.log('All users in database:', users);
-    
     return NextResponse.json({
       success: true,
       users: users
     });
     
   } catch (error) {
-    console.error('List users error:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to list users',

@@ -25,7 +25,6 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
       const authHeader = request.headers.get('authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
-        console.log('Got token from Authorization header');
       } else {
         // Try getting from cookies
         const cookieStore = request.cookies;
@@ -48,7 +47,6 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
       email: payload.email as string
     };
   } catch (error) {
-    console.error('Token verification failed:', error);
     return null;
   }
 }
@@ -85,7 +83,6 @@ export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUs
       is_admin: user.is_admin
     };
   } catch (error) {
-    console.error('Admin auth verification failed:', error);
     return null;
   }
 }
