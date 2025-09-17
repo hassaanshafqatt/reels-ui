@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Generate streamable URL using hostname from environment
     const hostname = process.env.PUBLIC_HOSTNAME || process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    const streamableUrl = `${hostname}/uploads/audio/${uniqueFilename}`;
+    const streamableUrl = `${hostname}/api/uploads/audio/${uniqueFilename}`;
 
     console.log(`Audio file uploaded: ${uniqueFilename}, size: ${audioFile.size} bytes`);
     console.log(`Streamable URL: ${streamableUrl}`);
