@@ -2,10 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  // Enable experimental features for better static file handling
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  // External packages for server components
+  serverExternalPackages: [],
   // Ensure proper headers for audio files
   async headers() {
     return [
