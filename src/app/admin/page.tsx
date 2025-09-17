@@ -29,7 +29,8 @@ import {
   CheckCircle,
   Settings,
   Users,
-  Database
+  Database,
+  FileAudio
 } from "lucide-react";
 
 export default function AdminPanel() {
@@ -335,7 +336,7 @@ export default function AdminPanel() {
 
           {/* Tabs Layout */}
           <Tabs defaultValue="settings" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto p-1 bg-gray-100 rounded-lg">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1 bg-gray-100 rounded-lg">
               <TabsTrigger value="settings" className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">System Settings</span>
@@ -350,6 +351,11 @@ export default function AdminPanel() {
                 <Database className="h-4 w-4" />
                 <span className="hidden sm:inline">Reel Management</span>
                 <span className="sm:hidden">Database</span>
+              </TabsTrigger>
+              <TabsTrigger value="files" className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                <FileAudio className="h-4 w-4" />
+                <span className="hidden sm:inline">File Management</span>
+                <span className="sm:hidden">Files</span>
               </TabsTrigger>
             </TabsList>
 
@@ -545,6 +551,120 @@ export default function AdminPanel() {
                   </Card>
                 </div>
               )}
+            </TabsContent>
+
+            {/* File Management Tab */}
+            <TabsContent value="files" className="space-y-6">
+              <Card className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+                <CardHeader className="bg-gray-50 border-b border-gray-100 pb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="space-y-2">
+                      <CardTitle className="text-lg sm:text-xl flex items-center gap-3">
+                        <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
+                          <FileAudio className="h-4 w-4 text-white" />
+                        </div>
+                        Audio File Management
+                      </CardTitle>
+                      <CardDescription className="text-sm sm:text-base">
+                        Monitor uploaded audio files, manage storage, and cleanup old files
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/uploads/audio/cleanup', {
+                              method: 'POST',
+                              headers: {
+                                'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456'
+                              }
+                            });
+                            const result = await response.json();
+                            if (result.success) {
+                              setSuccess(`Cleaned up ${result.cleanedFiles.length} files`);
+                            } else {
+                              setError('Failed to cleanup files');
+                            }
+                          } catch (err) {
+                            setError('Failed to cleanup files');
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-300 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Cleanup Old Files
+                      </Button>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/uploads/audio/stats', {
+                              headers: {
+                                'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456'
+                              }
+                            });
+                            const stats = await response.json();
+                            // You can display these stats in a dialog or update state
+                            console.log('File stats:', stats);
+                          } catch (err) {
+                            console.error('Failed to get file stats');
+                          }
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Database className="h-4 w-4 mr-2" />
+                        View Stats
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileAudio className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Duplicate Detection</span>
+                        </div>
+                        <p className="text-xs text-blue-700">
+                          Automatically detects and reuses identical files to save storage space
+                        </p>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Trash2 className="h-5 w-5 text-green-600" />
+                          <span className="text-sm font-medium text-green-900">Auto Cleanup</span>
+                        </div>
+                        <p className="text-xs text-green-700">
+                          Files are automatically deleted 1 hour after first access to free up space
+                        </p>
+                      </div>
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Database className="h-5 w-5 text-orange-600" />
+                          <span className="text-sm font-medium text-orange-900">Storage Management</span>
+                        </div>
+                        <p className="text-xs text-orange-700">
+                          Manual cleanup removes files older than 24 hours
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">File Management Features:</h4>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        <li>• <strong>Duplicate Prevention:</strong> Same file uploaded twice returns existing URL</li>
+                        <li>• <strong>Auto Cleanup:</strong> Files deleted 1 hour after first access</li>
+                        <li>• <strong>Manual Cleanup:</strong> Remove files older than 24 hours</li>
+                        <li>• <strong>Storage Monitoring:</strong> Track file count, size, and age statistics</li>
+                        <li>• <strong>Secure Access:</strong> Files served through API with proper authentication</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>

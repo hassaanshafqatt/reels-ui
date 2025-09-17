@@ -3,6 +3,9 @@ import { readFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
+// File tracking for cleanup
+const fileAccessTracker = new Map<string, { lastAccessed: Date; accessCount: number; scheduledDeletion?: NodeJS.Timeout }>();
+
 // Helper function to verify API key for external services only
 async function verifyApiKey(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key');
@@ -13,6 +16,34 @@ async function verifyApiKey(request: NextRequest) {
   }
 
   return true;
+}
+
+// Helper function to schedule file deletion after first access
+function scheduleFileDeletion(filename: string, filePath: string) {
+  // Cancel any existing deletion timer
+  const existingTracker = fileAccessTracker.get(filename);
+  if (existingTracker?.scheduledDeletion) {
+    clearTimeout(existingTracker.scheduledDeletion);
+  }
+
+  // Schedule deletion after 1 hour
+  const deletionTimer = setTimeout(async () => {
+    try {
+      if (existsSync(filePath)) {
+        await unlink(filePath);
+        console.log(`Auto-deleted file after access: ${filename}`);
+      }
+      fileAccessTracker.delete(filename);
+    } catch (error) {
+      console.error(`Failed to delete file ${filename}:`, error);
+    }
+  }, 60 * 60 * 1000); // 1 hour
+
+  fileAccessTracker.set(filename, {
+    lastAccessed: new Date(),
+    accessCount: (existingTracker?.accessCount || 0) + 1,
+    scheduledDeletion: deletionTimer
+  });
 }
 
 // GET - Serve audio file by filename
@@ -45,6 +76,9 @@ export async function GET(
     const fileBuffer = await readFile(filePath);
     const uint8Array = new Uint8Array(fileBuffer);
 
+    // Track file access and schedule deletion
+    scheduleFileDeletion(filename, filePath);
+
     // Determine content type based on file extension
     const ext = path.extname(filename).toLowerCase();
     let contentType = 'application/octet-stream';
@@ -70,8 +104,9 @@ export async function GET(
       headers: {
         'Content-Type': contentType,
         'Content-Length': fileBuffer.length.toString(),
-        'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+        'Cache-Control': 'public, max-age=3600', // Cache for 1 hour (reduced for cleanup)
         'Accept-Ranges': 'bytes',
+        'X-File-Access-Count': fileAccessTracker.get(filename)?.accessCount?.toString() || '1',
       },
     });
 

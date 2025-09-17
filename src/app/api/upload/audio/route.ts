@@ -1,14 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readdir, stat, readFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import { createHash } from 'crypto';
 import { sessionOperations } from '@/lib/database';
 import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
+
+// File tracking for cleanup
+const fileAccessTracker = new Map<string, { lastAccessed: Date; accessCount: number }>();
+
+// Helper function to calculate file hash
+async function calculateFileHash(buffer: Buffer): Promise<string> {
+  const hash = createHash('sha256');
+  hash.update(buffer);
+  return hash.digest('hex');
+}
+
+// Helper function to find existing file by hash
+async function findExistingFileByHash(targetHash: string, uploadsDir: string): Promise<string | null> {
+  try {
+    const files = await readdir(uploadsDir);
+    for (const file of files) {
+      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')) {
+        const filePath = path.join(uploadsDir, file);
+        const fileBuffer = await readFile(filePath);
+        const fileHash = await calculateFileHash(fileBuffer);
+        if (fileHash === targetHash) {
+          return file;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error checking for duplicate files:', error);
+  }
+  return null;
+}
+
+// Helper function to cleanup old files
+async function cleanupOldFiles(uploadsDir: string) {
+  try {
+    const files = await readdir(uploadsDir);
+    const now = new Date();
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    let cleanedCount = 0;
+
+    for (const file of files) {
+      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')) {
+        const filePath = path.join(uploadsDir, file);
+        const stats = await stat(filePath);
+        const fileAge = now.getTime() - stats.mtime.getTime();
+
+        // Delete files older than max age
+        if (fileAge > maxAge) {
+          await unlink(filePath);
+          cleanedCount++;
+          console.log(`Cleaned up old file: ${file}`);
+        }
+      }
+    }
+
+    if (cleanedCount > 0) {
+      console.log(`Cleanup completed: ${cleanedCount} files removed`);
+    }
+  } catch (error) {
+    console.error('Error during file cleanup:', error);
+  }
+}
 
 // Helper function to verify JWT token
 async function verifyToken(token: string) {
@@ -81,21 +143,42 @@ export async function POST(request: NextRequest) {
       await mkdir(uploadsDir, { recursive: true });
     }
 
-    // Generate unique filename
-    const fileExtension = path.extname(audioFile.name);
-    const uniqueFilename = `${randomUUID()}${fileExtension}`;
-    const filePath = path.join(uploadsDir, uniqueFilename);
-
-    // Convert file to buffer and save
+    // Convert file to buffer and calculate hash
     const bytes = await audioFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    const fileHash = await calculateFileHash(buffer);
+
+    // Check if file with same content already exists
+    const existingFile = await findExistingFileByHash(fileHash, uploadsDir);
+
+    let uniqueFilename: string;
+    let filePath: string;
+
+    if (existingFile) {
+      // Use existing file
+      uniqueFilename = existingFile;
+      filePath = path.join(uploadsDir, uniqueFilename);
+      console.log(`Duplicate file detected, using existing: ${uniqueFilename}`);
+    } else {
+      // Create new file
+      const fileExtension = path.extname(audioFile.name);
+      uniqueFilename = `${randomUUID()}${fileExtension}`;
+      filePath = path.join(uploadsDir, uniqueFilename);
+
+      // Save the new file
+      await writeFile(filePath, buffer);
+      console.log(`New audio file uploaded: ${uniqueFilename}, size: ${audioFile.size} bytes`);
+    }
+
+    // Run cleanup in background (don't await to avoid blocking response)
+    cleanupOldFiles(uploadsDir).catch(error => {
+      console.error('Background cleanup error:', error);
+    });
 
     // Generate streamable URL using hostname from environment
     const hostname = process.env.PUBLIC_HOSTNAME || process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const streamableUrl = `${hostname}/api/uploads/audio/${uniqueFilename}`;
 
-    console.log(`Audio file uploaded: ${uniqueFilename}, size: ${audioFile.size} bytes`);
     console.log(`Streamable URL: ${streamableUrl}`);
 
     return NextResponse.json({
@@ -104,7 +187,8 @@ export async function POST(request: NextRequest) {
       originalName: audioFile.name,
       size: audioFile.size,
       type: audioFile.type,
-      url: streamableUrl
+      url: streamableUrl,
+      isDuplicate: !!existingFile
     });
 
   } catch (error) {
