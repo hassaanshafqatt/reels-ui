@@ -58,10 +58,7 @@ export async function POST(request: NextRequest) {
       cleanedFiles
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to cleanup files' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to cleanup files' }, { status: 500 });
   }
 }

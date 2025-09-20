@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import db from '@/lib/database';
 
 export async function GET() {
@@ -11,11 +11,11 @@ export async function GET() {
       users: users
     });
     
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       success: false,
       error: 'Failed to list users',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: 'Unknown error'
     }, { status: 500 });
   }
 }

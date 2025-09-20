@@ -20,11 +20,8 @@ export async function GET(request: NextRequest) {
       settings
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch admin settings' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch admin settings' }, { status: 500 });
   }
 }
 
@@ -65,10 +62,7 @@ export async function PATCH(request: NextRequest) {
       setting: updatedSetting
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update admin setting' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to update admin setting' }, { status: 500 });
   }
 }

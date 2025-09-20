@@ -3,7 +3,7 @@ import React from "react";
 interface CustomCaptionDisplayProps {
   customCaption: string;
   customAuthor?: string;
-  activeTab: string;
+  activeTab?: string;
   includeAuthor?: boolean;
 }
 
@@ -13,6 +13,7 @@ export default function CustomCaptionDisplay({
   activeTab,
   includeAuthor = false
 }: CustomCaptionDisplayProps) {
+  void activeTab;
   if (!customCaption) return null;
 
   return (

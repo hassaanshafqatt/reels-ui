@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     
     const categories = reelCategoryOperations.getAll(activeOnly);
     return NextResponse.json({ categories });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
   }
 }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const category = reelCategoryOperations.getById(categoryId);
     return NextResponse.json({ category }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
   }
 }

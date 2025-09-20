@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { reelService, type ReelCategory, type ReelType } from '@/lib/reelService';
 
 export interface ReelCategoryWithTypes extends ReelCategory {
@@ -10,7 +10,7 @@ export const useReelData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReelData = async () => {
+  const fetchReelData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -35,11 +35,11 @@ export const useReelData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchReelData();
-  }, []);
+  }, [fetchReelData]);
 
   return {
     categories,

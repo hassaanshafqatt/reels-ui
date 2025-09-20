@@ -8,10 +8,10 @@ export async function POST() {
     return NextResponse.json({
       message: 'Reel data migration completed successfully'
     });
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json({ 
       error: 'Migration failed', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: err instanceof Error ? err.message : 'Unknown error' 
     }, { status: 500 });
   }
 }

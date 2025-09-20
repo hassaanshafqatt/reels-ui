@@ -5,14 +5,15 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
 import { sessionOperations } from '@/lib/database';
-import { SignJWT, jwtVerify } from 'jose';
+import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
 
-// File tracking for cleanup
+// File tracking for cleanup (kept for potential background cleanup but currently unused)
 const fileAccessTracker = new Map<string, { lastAccessed: Date; accessCount: number }>();
+void fileAccessTracker;
 
 // Helper function to calculate file hash
 async function calculateFileHash(buffer: Buffer): Promise<string> {
@@ -35,7 +36,7 @@ async function findExistingFileByHash(targetHash: string, uploadsDir: string): P
         }
       }
     }
-  } catch (error) {
+  } catch {
     // Error checking for duplicate files
   }
   return null;
@@ -59,12 +60,17 @@ async function cleanupOldFiles(uploadsDir: string) {
         if (fileAge > maxAge) {
           await unlink(filePath);
           cleanedCount++;
+          console.log(`Cleaned up old file: ${file}`);
         }
       }
     }
 
-  } catch (error) {
-    // Error during file cleanup
+    if (cleanedCount > 0) {
+      console.log(`Automatic cleanup completed: ${cleanedCount} files removed`);
+    }
+
+  } catch {
+    console.error('Error during automatic file cleanup:');
   }
 }
 
@@ -73,8 +79,8 @@ async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
-  } catch (error) {
-    return null;
+  } catch {
+     return null;
   }
 }
 
@@ -183,10 +189,7 @@ export async function POST(request: NextRequest) {
       isDuplicate: !!existingFile
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to upload audio file' },
-      { status: 500 }
-    );
+  } catch {
+      return NextResponse.json({ error: 'Failed to upload audio file' }, { status: 500 });
   }
 }

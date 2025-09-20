@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { User, CheckCircle, LogOut, Sparkles, Menu, X } from "lucide-react";
+import { LogOut, Sparkles, Menu, X } from "lucide-react";
 import Dashboard from "@/components/Dashboard";
 import { LoginPage } from "@/components/LoginPage";
 import { AccountSwitcher, InstagramAccount } from "@/components/AccountSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-interface Account {
-  id: string;
-  name: string;
-  followers: string;
-  avatar?: string;
-}
 
 const accounts: InstagramAccount[] = [
   { id: 'main_account', username: '@main_account', followers: '12.5K', isActive: true },
@@ -24,6 +18,7 @@ const accounts: InstagramAccount[] = [
 
 function AppContent() {
   const { logout, user } = useAuth();
+  void user;
   const [selectedAccount, setSelectedAccount] = useState<InstagramAccount>(accounts[0]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -33,8 +28,9 @@ function AppContent() {
     isActive: account.id === selectedAccount.id
   }));
 
-  const handleReelSelect = (categoryId: string, typeId: string) => {
+  const handleReelSelect = (_categoryId: string, _typeId: string) => {
     // Handle reel selection logic here
+    void _categoryId; void _typeId;
   };
 
   const handleAccountChange = (account: InstagramAccount) => {

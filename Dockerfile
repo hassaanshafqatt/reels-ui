@@ -1,19 +1,28 @@
-# Use Node.js 20 Alpine as base image
-FROM node:20-alpine AS base
+# Use Node.js 20 slim (Debian) as base image — Debian has better support for building native modules
+FROM node:20-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat python3 make g++ sqlite
+# Install build dependencies required by native modules (better-sqlite3) and sqlite headers
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      python3 \
+      python3-dev \
+      build-essential \
+      pkg-config \
+      libsqlite3-dev \
+      sqlite3 \
+      ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 RUN \
   if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f package-lock.json ]; then npm ci && npm rebuild --build-from-source better-sqlite3; \
   elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
+  else echo "Lockfile not found. Please commit package-lock.json/yarn.lock/pnpm-lock.yaml for reproducible builds." && exit 1; \
   fi
 
 
@@ -32,10 +41,11 @@ RUN \
   if [ -f yarn.lock ]; then yarn run build; \
   elif [ -f package-lock.json ]; then npm run build; \
   elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
+  else echo "Lockfile not found. Please commit package-lock.json/yarn.lock/pnpm-lock.yaml for reproducible builds." && exit 1; \
   fi
 
 # Production image, copy all the files and run next
+# Production runner image based on Debian slim
 FROM base AS runner
 WORKDIR /app
 
@@ -50,8 +60,10 @@ ENV HOSTNAME="0.0.0.0"
 ENV PUBLIC_HOSTNAME=https://reels.arachnix.io
 ENV API_KEY=123456
 
-# Install sqlite3 for production
-RUN apk add --no-cache sqlite
+# Install sqlite3 runtime for production
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends sqlite3 libsqlite3-0 && \
+  rm -rf /var/lib/apt/lists/*
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -90,3 +102,8 @@ EXPOSE 4761
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
 ENTRYPOINT ["/usr/local/bin/docker-init.sh"]
 CMD ["node", "server.js"]
+
+# Lightweight healthcheck to ensure the server process responds on the expected port.
+# This keeps the container status visible to orchestrators and auto-restarts unhealthy containers.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --spider --quiet http://localhost:4761/ || exit 1

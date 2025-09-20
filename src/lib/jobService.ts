@@ -33,20 +33,20 @@ export const jobService = {
   // Get all jobs for the current user
   async getJobs(): Promise<StoredJob[]> {
     try {
-      const token = getAuthToken();
+  const token = getAuthToken();
+      void token;
       
       const response = await fetch('/api/jobs', {
         headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
         throw new Error('Failed to fetch jobs');
       }
 
       const data = await response.json();
       return data.jobs || [];
-    } catch (error) {
+    } catch {
       return [];
     }
   },
@@ -65,7 +65,7 @@ export const jobService = {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -84,7 +84,7 @@ export const jobService = {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -102,7 +102,7 @@ export const jobService = {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -121,7 +121,7 @@ export const jobService = {
       }
 
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   },
@@ -141,7 +141,7 @@ export const jobService = {
 
       const result = await response.json();
       return result;
-    } catch (error) {
+    } catch {
       return { status: 'failed', shouldStopPolling: true };
     }
   },
@@ -170,9 +170,10 @@ export const jobService = {
         return false;
       }
 
-      const result = await response.json();
-      return true;
-    } catch (error) {
+  // response body not needed here
+  void token;
+  return true;
+    } catch {
       return false;
     }
   }

@@ -15,10 +15,10 @@ export async function GET() {
         types
       }
     });
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json({ 
       error: 'Database test failed', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: err instanceof Error ? err.message : 'Unknown error' 
     }, { status: 500 });
   }
 }

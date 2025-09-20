@@ -96,8 +96,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return user data (without password hash) and token
-    const { password_hash, ...userWithoutPassword } = newUser;
+  // Return user data (without password hash) and token
+  const { password_hash, ...userWithoutPassword } = newUser;
+  // password_hash intentionally omitted from response
+  void password_hash;
 
     return NextResponse.json({
       success: true,
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

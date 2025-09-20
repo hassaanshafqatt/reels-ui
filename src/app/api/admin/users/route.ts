@@ -15,17 +15,16 @@ export async function GET(request: NextRequest) {
       users
     });
 
-  } catch (error) {
-    
-    if (error instanceof Error) {
-      if (error.message === 'Authentication required') {
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === 'Authentication required') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Admin access required') {
+      if (err.message === 'Admin access required') {
         return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }

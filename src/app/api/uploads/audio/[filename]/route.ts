@@ -33,8 +33,8 @@ function scheduleFileDeletion(filename: string, filePath: string) {
         await unlink(filePath);
       }
       fileAccessTracker.delete(filename);
-    } catch (error) {
-      // Failed to delete file
+    } catch {
+      // Failed to delete file - ignore in background
     }
   }, 60 * 60 * 1000); // 1 hour
 
@@ -109,11 +109,8 @@ export async function GET(
       },
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to serve audio file' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to serve audio file' }, { status: 500 });
   }
 }
 
@@ -158,10 +155,7 @@ export async function DELETE(
       filename: filename
     });
 
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete audio file' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: 'Failed to delete audio file' }, { status: 500 });
   }
 }

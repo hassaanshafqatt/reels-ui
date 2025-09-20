@@ -15,7 +15,7 @@ const dbPath = path.join(dataDir, 'reelcraft.db');
 // Check if we can write to the directory
 try {
   fs.accessSync(dataDir, fs.constants.W_OK);
-} catch (error) {
+} catch {
   // Directory is not writable, but continue anyway
 }
 
@@ -251,11 +251,7 @@ export const userOperations = {
     try {
       stmt.run(id, userData.email, userData.password_hash, userData.name, userData.plan, userData.is_admin ? 1 : 0, userData.avatar);
       return { success: true, userId: id };
-    } catch (error: unknown) {
-      const dbError = error as { code?: string };
-      if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return { success: false, error: 'Email already exists' };
-      }
+    } catch {
       return { success: false, error: 'Failed to create user' };
     }
   },
@@ -286,7 +282,7 @@ export const userOperations = {
     try {
       stmt.run(...values, id);
       return { success: true };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Failed to update user' };
     }
   },
@@ -297,7 +293,7 @@ export const userOperations = {
     try {
       stmt.run(id);
       return { success: true };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Failed to delete user' };
     }
   },
@@ -314,7 +310,7 @@ export const userOperations = {
     try {
       const result = stmt.run(isAdmin ? 1 : 0, id);
       return { success: result.changes > 0 };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Failed to update admin status' };
     }
   }
@@ -334,8 +330,8 @@ export const sessionOperations = {
       const isoString = expiresAt.toISOString();
       stmt.run(id, userId, token, isoString);
       return { success: true, sessionId: id };
-    } catch (error) {
-      return { success: false, error: `Failed to create session: ${error}` };
+    } catch {
+      return { success: false, error: `Failed to create session` };
     }
   },
 
@@ -376,16 +372,8 @@ export const jobOperations = {
     try {
       stmt.run(id, userId, jobData.jobId, jobData.category, jobData.type);
       return id;
-    } catch (error: unknown) {
-      const dbError = error as { code?: string };
-      if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        // Job with this job_id already exists, find and return the existing record
-        const existing = db.prepare('SELECT id FROM jobs WHERE job_id = ?').get(jobData.jobId) as { id: string } | undefined;
-        if (existing) {
-          return existing.id;
-        }
-      }
-      throw error;
+    } catch {
+      throw new Error('Failed to create job');
     }
   },
 
@@ -769,7 +757,7 @@ export const migrateCaptionColumn = () => {
       db.prepare('ALTER TABLE jobs ADD COLUMN caption TEXT').run();
     }
     
-  } catch (error) {
+  } catch {
     // Migration error handled silently
   }
 };
@@ -790,7 +778,7 @@ export const migrateReelTypesCaptionSettings = () => {
       db.prepare('ALTER TABLE reel_types ADD COLUMN include_author BOOLEAN DEFAULT 1').run();
     }
     
-  } catch (error) {
+  } catch {
     // Migration error handled silently
   }
 };
@@ -819,7 +807,7 @@ export const migrateMinMaxCaptionLength = () => {
       }
     }
     
-  } catch (error) {
+  } catch {
     // Migration error handled silently
   }
 };
@@ -862,7 +850,7 @@ export const migrateStatusConstraint = () => {
     // Rename the new table to the original name
     db.prepare('ALTER TABLE jobs_new RENAME TO jobs').run();
     
-  } catch (error) {
+  } catch {
     // If migration fails, we should continue without crashing
   }
 };
@@ -894,7 +882,7 @@ export const migratePollCountColumns = () => {
       db.prepare('UPDATE jobs SET last_status = status WHERE last_status IS NULL').run();
     }
     
-  } catch (error) {
+  } catch {
     // Migration error handled silently
   }
 };
@@ -918,7 +906,7 @@ export const migrateAdminRole = () => {
       }
     }
     
-  } catch (error) {
+  } catch {
     // Migration error handled silently
   }
 };
@@ -1133,14 +1121,14 @@ export const migrateInitialReelData = () => {
 
   // Insert types
   for (const type of types) {
-    const categoryId = categoryMap[type.category_name];
+    const { category_name, ...typeData } = type;
+    const categoryId = categoryMap[category_name];
     if (!categoryId) {
       continue;
     }
 
     const existingType = reelTypeOperations.getByName(type.name, categoryId);
     if (!existingType) {
-      const { category_name, ...typeData } = type;
       reelTypeOperations.create({
         ...typeData,
         category_id: categoryId,
@@ -1191,11 +1179,6 @@ const initializeDemoData = async () => {
 };
 
 // Initialize the database when this module is imported
-initializeDemoData().catch(() => {
-  // Initialization error handled silently
-});
-
-// Initialize demo data
 initializeDemoData().catch(() => {
   // Initialization error handled silently
 });

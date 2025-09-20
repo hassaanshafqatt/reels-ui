@@ -11,7 +11,7 @@ async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -63,7 +63,7 @@ export async function PUT(
       message: 'Job updated successfully'
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

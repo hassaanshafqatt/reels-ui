@@ -10,7 +10,7 @@ import {
   RefreshCw,
   ExternalLink,
   Instagram,
-  Sparkles,
+  
   Play,
   Maximize,
   Minimize,
@@ -70,20 +70,18 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
       });
 
       if (response.ok) {
-        const result = await response.json();
-        
+        await response.json();
+
         // Refresh the job to get updated status
         onRefresh(job);
-        
+
       } else {
-        const errorText = await response.text();
-        
-        // Handle specific error cases
+        // Handle specific error cases (token expired etc.)
         if (response.status === 401) {
           // Authentication failed - token may be expired
         }
       }
-    } catch (error) {
+    } catch {
       // Error posting reel
     } finally {
       setIsPosting(false);

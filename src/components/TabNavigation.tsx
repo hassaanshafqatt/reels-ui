@@ -16,42 +16,12 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ categories, activeTab, onTabChange }: TabNavigationProps) {
   // Category color schemes for visual distinction - all teal-based flat colors
-  const getCategoryColors = (categoryName: string, isActive: boolean) => {
-    const colorMap: Record<string, { active: string; inactive: string; gradient: string }> = {
-      'fitness': {
-        active: 'bg-teal-500 text-white shadow-teal-200',
-        inactive: 'text-teal-600 hover:bg-teal-50 border-teal-200',
-        gradient: 'from-teal-500 to-emerald-600'
-      },
-      'motivation': {
-        active: 'bg-teal-600 text-white shadow-teal-200',
-        inactive: 'text-teal-700 hover:bg-teal-50 border-teal-300',
-        gradient: 'from-teal-600 to-cyan-600'
-      },
-      'proverbs': {
-        active: 'bg-emerald-600 text-white shadow-emerald-200',
-        inactive: 'text-emerald-600 hover:bg-emerald-50 border-emerald-200',
-        gradient: 'from-emerald-500 to-teal-600'
-      },
-      'anime': {
-        active: 'bg-cyan-600 text-white shadow-cyan-200',
-        inactive: 'text-cyan-600 hover:bg-cyan-50 border-cyan-200',
-        gradient: 'from-cyan-500 to-teal-600'
-      },
-      'asmr': {
-        active: 'bg-teal-700 text-white shadow-teal-200',
-        inactive: 'text-teal-500 hover:bg-teal-50 border-teal-200',
-        gradient: 'from-teal-400 to-teal-700'
-      },
-      'default': {
-        active: 'bg-teal-600 text-white shadow-teal-200',
-        inactive: 'text-teal-600 hover:bg-teal-50 border-teal-200',
-        gradient: 'from-teal-500 to-cyan-600'
-      }
-    };
-    const colors = colorMap[categoryName] || colorMap['default'];
-    return isActive ? colors.active : colors.inactive;
+  // getCategoryColors intentionally omitted - keep for future UI theming
+  const getCategoryColors = (name: string) => {
+    void name;
+    return 'bg-gray-400';
   };
+  void getCategoryColors;
 
   return (
     <div className="mb-6 sm:mb-8">

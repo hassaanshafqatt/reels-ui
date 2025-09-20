@@ -17,7 +17,7 @@ interface CustomCaptionDialogProps {
   setTempCustomCaption: (caption: string) => void;
   tempAuthor: string;
   setTempAuthor: (author: string) => void;
-  activeTab: string;
+  activeTab?: string;
   onSave: () => void;
   minCaptionLength?: number;
   maxCaptionLength?: number;
@@ -37,6 +37,7 @@ export default function CustomCaptionDialog({
   maxCaptionLength = 140,
   includeAuthor = false
 }: CustomCaptionDialogProps) {
+  void activeTab;
   const wordCount = tempCustomCaption.trim().split(/\s+/).filter(word => word.length > 0).length;
   const isValidLength = wordCount >= minCaptionLength && wordCount <= maxCaptionLength && tempCustomCaption.trim().length > 0;
 

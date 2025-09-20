@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Enforce ESLint and TypeScript checks during build for production readiness.
   // External packages for server components
   serverExternalPackages: [],
   // Ensure proper headers for audio files

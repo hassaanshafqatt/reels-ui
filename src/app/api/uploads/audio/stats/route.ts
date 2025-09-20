@@ -2,25 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-
-// Helper function to verify API key
-async function verifyApiKey(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key');
-
-  // Check if API key matches the one in environment variables
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-    return false;
-  }
-
-  return true;
-}
+import { apiSecurityMiddleware, getSecurityHeaders } from '@/lib/security';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify API key for stats operations
-    const isValidApiKey = await verifyApiKey(request);
-    if (!isValidApiKey) {
-      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
+    // Apply comprehensive security middleware
+    const securityResult = await apiSecurityMiddleware(request, {
+      requireApiKey: true,
+      rateLimit: true,
+      allowedMethods: ['GET']
+    });
+
+    if (!securityResult.success) {
+      return securityResult.response!;
     }
 
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'audio');
@@ -32,7 +26,7 @@ export async function GET(request: NextRequest) {
         files: [],
         oldestFile: null,
         newestFile: null
-      });
+      }, { headers: getSecurityHeaders() });
     }
 
     const files = await readdir(uploadsDir);
@@ -78,12 +72,13 @@ export async function GET(request: NextRequest) {
       oldestFile,
       newestFile,
       cleanupThreshold: '24 hours'
-    });
+    }, { headers: getSecurityHeaders() });
 
-  } catch (error) {
+  } catch (err) {
+    console.error('Stats API error:', err);
     return NextResponse.json(
       { error: 'Failed to get file statistics' },
-      { status: 500 }
+      { status: 500, headers: getSecurityHeaders() }
     );
   }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobOperations, sessionOperations } from '@/lib/database';
-import { SignJWT, jwtVerify } from 'jose';
+import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
@@ -11,7 +11,7 @@ async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       jobs
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       message: 'Job created successfully'
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -142,7 +142,7 @@ export async function DELETE(request: NextRequest) {
       category: category || null
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

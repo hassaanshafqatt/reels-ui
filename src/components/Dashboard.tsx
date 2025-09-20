@@ -1,52 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import Cookies from 'js-cookie';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
-import {
-  Zap,
-  Crown,
-  Users,
-  BookOpen,
-  Heart,
-  Shield,
-  Brain,
-  Palette,
-  Clock,
-  Settings,
-  Sparkles,
-  Dumbbell,
-  Sword,
-  Lightbulb,
-  HandHeart,
-  PaintBucket,
-  Utensils,
-  PawPrint,
-  Instagram,
-  ChevronDown,
-  Plus,
-  RefreshCw,
-  CheckCircle,
-  AlertCircle,
-  Loader,
-  ExternalLink,
-  Music,
-  Upload,
-  X
-} from "lucide-react";
+import { Sparkles, Clock } from "lucide-react";
 import { jobService, type StoredJob } from "@/lib/jobService";
 import { useReelData } from "@/hooks/useReelData";
 import { useJobs } from "@/hooks/useJobs";
@@ -54,7 +12,7 @@ import { getIconFromDatabase } from "@/lib/iconUtils";
 import { type ReelType as DatabaseReelType } from "@/lib/reelService";
 
 // Extracted components
-import { iconMap } from "@/components/IconMap";
+// iconMap intentionally omitted (not used here)
 import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import Message from "@/components/Message";
@@ -67,9 +25,7 @@ import AudioToggle from "@/components/AudioToggle";
 import AudioUpload from "@/components/AudioUpload";
 import CustomCaptionDisplay from "@/components/CustomCaptionDisplay";
 import CustomCaptionDialog from "@/components/CustomCaptionDialog";
-import JobStatusCard from "@/components/JobStatusCard";
 import HistorySection from "@/components/HistorySection";
-import PostingScheduleSection from "@/components/PostingScheduleSection";
 import GeneratedReelsSection from "@/components/GeneratedReelsSection";
 
 interface DashboardProps {
@@ -79,10 +35,9 @@ interface DashboardProps {
 export default function Dashboard({
   onReelSelect = () => {}
 }: DashboardProps) {
-  const { user, isLoading: authLoading } = useAuth();
+  // auth not needed in this component; keep minimal local state
   const { categories: reelCategories, loading: reelDataLoading, error: reelDataError } = useReelData();
-  const { jobs: storedJobs, loading: jobsLoading, error: jobsError, refetch: refetchJobs, isPolling } = useJobs();
-  
+  const { jobs: storedJobs, refetch: refetchJobs, isPolling } = useJobs();
   const [activeTab, setActiveTab] = useState("");
   const [selectedReel, setSelectedReel] = useState<DatabaseReelType | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -100,7 +55,6 @@ export default function Dashboard({
   const [useCustomAudio, setUseCustomAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<Record<string, string>>({});
-  const [activeSubSection, setActiveSubSection] = useState<Record<string, Record<string, string>>>({});
   const [isClearingHistory, setIsClearingHistory] = useState(false);
 
   // Auto-clear success and error messages after 7 seconds
@@ -122,21 +76,6 @@ export default function Dashboard({
     }
   }, [error]);
 
-  // Initialize sub-sections for each category and sub-tab
-  useEffect(() => {
-    if (reelCategories.length > 0) {
-      const initialSubSections: Record<string, Record<string, string>> = {};
-      reelCategories.forEach(category => {
-        initialSubSections[category.name] = {
-          generate: 'quick',
-          post: 'schedule',
-          history: 'recent'
-        };
-      });
-      setActiveSubSection(initialSubSections);
-    }
-  }, [reelCategories]);
-
   // Set initial activeTab when categories load
   useEffect(() => {
     if (reelCategories.length > 0 && !activeTab) {
@@ -153,17 +92,10 @@ export default function Dashboard({
       
       // Initialize sub-tabs with "Generate" as default for each category
       const initialSubTabs: Record<string, string> = {};
-      const initialSubSections: Record<string, Record<string, string>> = {};
       reelCategories.forEach(category => {
         initialSubTabs[category.name] = 'generate';
-        initialSubSections[category.name] = {
-          generate: 'quick',
-          post: 'schedule',
-          history: 'recent'
-        };
       });
       setActiveSubTab(initialSubTabs);
-      setActiveSubSection(initialSubSections);
     }
   }, [reelCategories, activeTab, onReelSelect]);
 
@@ -238,7 +170,7 @@ export default function Dashboard({
       } else {
         setError('Failed to clear job history. Please try again.');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to clear job history. Please try again.');
     } finally {
       setIsClearingHistory(false);
@@ -246,18 +178,7 @@ export default function Dashboard({
   };
 
   // Function to cleanup audio file for a job
-  const cleanupAudioFile = async (audioUrl: string) => {
-    try {
-      const success = await jobService.deleteAudioFile(audioUrl);
-      if (success) {
-        // Audio file cleaned up successfully
-      } else {
-        // Failed to cleanup audio file
-      }
-    } catch (error) {
-      // Error cleaning up audio file
-    }
-  };
+  // cleanupAudioFile removed; currently not used
 
   // Function to check job status
   const checkJobStatus = async (job: StoredJob) => {
@@ -383,7 +304,7 @@ export default function Dashboard({
         try {
           const errorJson = JSON.parse(errorText);
           errorDetails = errorJson.error || errorJson.message || errorText;
-        } catch (parseError) {
+        } catch {
           // Could not parse error response as JSON, using raw text
         }
         
@@ -393,8 +314,8 @@ export default function Dashboard({
         
         setError(`Failed to check job status: ${response.status} ${response.statusText} - ${errorDetails}`);
       }
-    } catch (error) {
-      setError('Failed to check job status: ' + (error instanceof Error ? error.message : String(error || 'Unknown error')));
+    } catch (err) {
+      setError('Failed to check job status: ' + (err instanceof Error ? err.message : String(err || 'Unknown error')));
     } finally {
       setRefreshingJobs(prev => {
         const newSet = new Set(prev);
@@ -404,7 +325,7 @@ export default function Dashboard({
     }
   };
 
-  const handleReelSelect = (categoryId: string, typeId: string) => {
+  const handleReelSelect = React.useCallback((categoryId: string, typeId: string) => {
     const category = reelCategories.find(c => c.name === categoryId);
     const type = category?.types.find(t => t.name === typeId);
     if (type) {
@@ -414,7 +335,7 @@ export default function Dashboard({
       setSuccess(null);
       onReelSelect(categoryId, typeId);
     }
-  };
+  }, [reelCategories, onReelSelect]);
 
   const handleGenerate = async () => {
     if (!selectedReel) {
@@ -499,12 +420,31 @@ export default function Dashboard({
       
       setSuccess(`Reel generated successfully! Job ID: ${result.jobId || 'N/A'}`);
       
-    } catch (error) {
-      setError("Error generating reel: " + (error instanceof Error ? error.message : String(error || 'Unknown error')));
+    } catch (err) {
+      setError("Error generating reel: " + (err instanceof Error ? err.message : String(err || 'Unknown error')));
     } finally {
       setIsGenerating(false);
     }
   };
+
+  // Stable callbacks to avoid calling hooks conditionally inside JSX
+  const handleToggleCaption = React.useCallback((generate: boolean) => {
+    setGenerateCaption(generate);
+    if (generate) setCustomCaption("");
+  }, []);
+
+  const openCustomDialog = React.useCallback(() => {
+    setTempCustomCaption(customCaption);
+    setTempAuthor(customAuthor);
+    setShowCaptionDialog(true);
+  }, [customCaption, customAuthor]);
+
+  const handleToggleAudio = React.useCallback((useCustom: boolean) => {
+    setUseCustomAudio(useCustom);
+    if (!useCustom) setCustomAudioFile(null);
+  }, []);
+
+  const handleTabChange = React.useCallback((v: string) => setActiveTab(v), []);
 
   return (
     <div className="w-full min-h-screen flex flex-col">
@@ -517,9 +457,9 @@ export default function Dashboard({
 
         {/* Main Content */}
         {!reelDataLoading && !reelDataError && reelCategories.length > 0 && (
-        <div>
-        {/* Clean & Elegant Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+  <div>
+  {/* Clean & Elegant Tabs */}
+  <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Desktop Tab Navigation */}
           <div className="hidden sm:block">
             <TabNavigation 
@@ -565,18 +505,11 @@ export default function Dashboard({
                           
                           <div className="space-y-3 sm:space-y-4">
                             {/* Caption Toggle Button Group */}
-                            <CaptionToggle 
-                              generateCaption={generateCaption}
-                              onToggleCaption={(generate) => {
-                                setGenerateCaption(generate);
-                                if (generate) setCustomCaption("");
-                              }}
-                              onOpenCustomDialog={() => {
-                                setTempCustomCaption(customCaption);
-                                setTempAuthor(customAuthor);
-                                setShowCaptionDialog(true);
-                              }}
-                            />
+                              <CaptionToggle 
+                                generateCaption={generateCaption}
+                                onToggleCaption={handleToggleCaption}
+                                onOpenCustomDialog={openCustomDialog}
+                              />
 
                             {/* Show current custom caption if set */}
                             {!generateCaption && (
@@ -591,10 +524,7 @@ export default function Dashboard({
                             {/* Audio Options Toggle */}
                             <AudioToggle 
                               useCustomAudio={useCustomAudio}
-                              onToggleAudio={(useCustom) => {
-                                setUseCustomAudio(useCustom);
-                                if (!useCustom) setCustomAudioFile(null);
-                              }}
+                              onToggleAudio={handleToggleAudio}
                             />
 
                             {/* File Upload Section */}

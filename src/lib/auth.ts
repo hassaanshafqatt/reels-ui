@@ -46,7 +46,7 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
       id: payload.userId as string,
       email: payload.email as string
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -82,7 +82,7 @@ export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUs
       email: authUser.email,
       is_admin: user.is_admin
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

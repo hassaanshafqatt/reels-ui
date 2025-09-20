@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
-import { JobRecord, jobStore, setJob, getJobStoreSize, getAllJobIds } from '@/lib/jobStore';
+import { JobRecord, setJob } from '@/lib/jobStore';
 import { reelTypeOperations, jobOperations } from '@/lib/database';
 import { verifyAuth } from '@/lib/auth';
 
@@ -13,8 +13,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Check if request is JSON (now all requests are JSON with optional audio URL)
-    const jsonData = await request.json();
-    const { reelType, category, generateCaption, customCaption, timestamp, customAuthor, useCustomAudio, customAudioUrl } = jsonData;
+  const jsonData = await request.json();
+  const { reelType, category, generateCaption, customCaption, timestamp, customAuthor, useCustomAudio, customAudioUrl } = jsonData;
+  void useCustomAudio; // intentionally unused in this request handler
 
     const { type } = await params;
 
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       category,
       type
     });
+    void dbJobId;
 
     // Store initial job record in memory store (for current request processing)
     const jobRecord: JobRecord = {
@@ -185,7 +187,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }, 
       { status: 400 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to generate reel' }, { status: 500 });
   }
 }

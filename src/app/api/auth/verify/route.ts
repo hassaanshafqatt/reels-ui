@@ -20,8 +20,9 @@ export async function POST(request: NextRequest) {
     const token = authHeader.substring(7);
 
     try {
-      // Verify the JWT token
-      const { payload } = await jwtVerify(token, JWT_SECRET);
+  // Verify the JWT token
+  const { payload } = await jwtVerify(token, JWT_SECRET);
+  void payload;
       
       // Check if session exists in database and is valid
       const session = sessionOperations.findByToken(token);
@@ -43,8 +44,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Remove password hash from user data
-      const { password_hash, ...userWithoutPassword } = user;
+  // Remove password hash from user data
+  const { password_hash, ...userWithoutPassword } = user;
+  // password_hash intentionally omitted
+  void password_hash;
       
       return NextResponse.json({
         success: true,
@@ -54,14 +57,14 @@ export async function POST(request: NextRequest) {
           createdAt: user.created_at
         },
       });
-    } catch (jwtError) {
+    } catch {
       return NextResponse.json(
         { message: 'Invalid or expired token' },
         { status: 401 }
       );
     }
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

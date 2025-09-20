@@ -79,15 +79,17 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   )
 }
 
-const DialogContent = ({ children, className = "" }: DialogContentProps) => (
-  <div 
-    role="dialog" 
-    aria-modal="true"
-    className={`relative bg-white rounded-xl shadow-lg w-full mx-auto max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] overflow-auto ${className}`}
-  >
-    {children}
-  </div>
-)
+const DialogContent = ({ children, className = "" }: DialogContentProps) => {
+  return (
+    <div 
+      role="dialog" 
+      aria-modal="true"
+      className={`relative bg-white rounded-xl shadow-lg w-full mx-auto max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] overflow-auto ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
 
 const DialogHeader = ({ children, className = "" }: DialogHeaderProps) => (
   <div className={`p-4 sm:p-6 pb-2 sm:pb-4 pr-8 sm:pr-12 ${className}`}>
@@ -113,12 +115,13 @@ const DialogFooter = ({ children, className = "" }: DialogFooterProps) => (
   </div>
 )
 
-const DialogClose = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
+const DialogClose = ({ children, onClose }: { children?: React.ReactNode; onClose: () => void }) => (
   <button
     onClick={onClose}
-    className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded-md hover:bg-gray-100 z-10"
+    className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 transition-colors rounded-md hover:bg-gray-100 z-10 flex items-center"
   >
     <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+    {children}
   </button>
 )
 

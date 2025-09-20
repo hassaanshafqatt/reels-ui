@@ -51,7 +51,8 @@ export async function PATCH(
 
     // Get updated user data
     const updatedUser = userOperations.findById(id);
-    const { password_hash, ...userWithoutPassword } = updatedUser!;
+  const { password_hash, ...userWithoutPassword } = updatedUser!;
+  void password_hash;
 
     return NextResponse.json({
       success: true,
@@ -59,17 +60,16 @@ export async function PATCH(
       message: is_admin ? 'User promoted to admin' : 'User removed from admin'
     });
 
-  } catch (error) {
-    
-    if (error instanceof Error) {
-      if (error.message === 'Authentication required') {
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === 'Authentication required') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (error.message === 'Admin access required') {
+      if (err.message === 'Admin access required') {
         return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to update user admin status' },
       { status: 500 }

@@ -11,7 +11,7 @@ async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -137,21 +137,20 @@ export async function POST(request: NextRequest) {
           externalResult: postingResult
         });
 
-      } catch (fetchError) {
-        
-        // Update job status to failed
+      } catch {
+        // Update job status to failed (network error)
         jobOperations.updateStatus(
-          jobId, 
-          'failed', 
-          videoUrl, 
-          `Network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`,
+          jobId,
+          'failed',
+          videoUrl,
+          `Network error: Unknown error`,
           caption
         );
-        
+
         return NextResponse.json(
-          { 
+          {
             message: 'Failed to connect to external posting service',
-            error: fetchError instanceof Error ? fetchError.message : 'Unknown error'
+            error: 'Unknown error'
           },
           { status: 500 }
         );
@@ -179,9 +178,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: 'Internal server error', details: err instanceof Error ? err.message : undefined },
       { status: 500 }
     );
   }

@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
         success: true,
         token: newToken,
       });
-    } catch (jwtError) {
+    } catch {
       return NextResponse.json(
         { message: 'Invalid or expired token' },
         { status: 401 }
       );
     }
 
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

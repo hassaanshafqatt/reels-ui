@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { JobRecord, getJob, getJobStoreSize, getAllJobIds, setJob } from '@/lib/jobStore';
+import { JobRecord, getJob, setJob } from '@/lib/jobStore';
 import { jobOperations, reelTypeOperations } from '@/lib/database';
 
 export async function GET(request: NextRequest) {
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
       result: jobRecord.result,
       error: jobRecord.error
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to check job status' }, { status: 500 });
   }
 }

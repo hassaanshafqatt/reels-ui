@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie';
 
 interface User {
@@ -62,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (!isValid) {
             logout();
           }
-        } catch (error) {
+        } catch {
           logout();
         }
       }
@@ -71,6 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     initializeAuth();
+    // logout is stable via useCallback and we intentionally run initialization once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyToken = async (token: string): Promise<boolean> => {
@@ -84,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       return response.ok;
-    } catch (error) {
+    } catch {
       return false;
     }
   };
@@ -121,12 +123,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Verify the cookie was set
         const savedToken = Cookies.get('auth_token');
+  void savedToken;
         
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Login failed' };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Network error occurred' };
     } finally {
       setIsLoading(false);
@@ -167,14 +170,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         return { success: false, error: data.message || 'Registration failed' };
       }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Network error occurred' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     // Call logout API to invalidate session in database
     if (token) {
       try {
@@ -184,7 +187,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             'Authorization': `Bearer ${token}`,
           },
         });
-      } catch (error) {
+      } catch {
         // Continue with local logout even if API fails
       }
     }
@@ -193,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     Cookies.remove('auth_token');
     Cookies.remove('user_data');
-  };
+  }, [token]);
 
   const refreshToken = async (): Promise<boolean> => {
     if (!token) return false;
@@ -217,7 +220,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         logout();
         return false;
       }
-    } catch (error) {
+    } catch {
       logout();
       return false;
     }

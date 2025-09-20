@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader, Save, AlertCircle, Settings, Type, User } from 'lucide-react';
+import { Loader, AlertCircle, Settings, Type, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminSetting {
@@ -27,12 +27,12 @@ export function SystemSettings() {
   const defaultMaxCaptionLength = parseInt(settings.find(s => s.key === 'default_max_caption_length')?.value || '100');
   const includeAuthorByDefault = settings.find(s => s.key === 'include_author_by_default')?.value === 'true';
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     if (!token) return;
-    
+
     try {
       setLoading(true);
-      
+
       const response = await fetch('/api/admin/settings', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -52,7 +52,7 @@ export function SystemSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   const updateSetting = async (key: string, value: string, description?: string) => {
     if (!token) return;
@@ -142,7 +142,7 @@ export function SystemSettings() {
 
   useEffect(() => {
     fetchSettings();
-  }, [token]);
+  }, [fetchSettings]);
 
   if (loading) {
     return (

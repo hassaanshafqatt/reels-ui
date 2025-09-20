@@ -70,6 +70,14 @@ If you encounter build issues with `better-sqlite3`:
 2. The Dockerfile includes Python and build tools
 3. Clear Docker cache: `docker system prune -a`
 
+#### Reproducible installs
+
+- This project uses npm with a committed `package-lock.json` for reproducible installs. The Dockerfile runs `npm ci` in the build stage. If you see "Lockfile not found" errors, ensure `package-lock.json` is committed.
+
+#### Native addons and host mismatch
+
+- Native addon mismatch (invalid ELF header) happens when `node_modules` from your host are copied into the image. Make sure `.dockerignore` excludes `node_modules` and `.next` so the image contains binaries built for the correct target.
+
 ### Container Not Starting
 
 Check the logs:

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
     
     return NextResponse.json({ types });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch reel types' }, { status: 500 });
   }
 }
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const type = reelTypeOperations.getById(typeId);
     return NextResponse.json({ type }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to create reel type' }, { status: 500 });
   }
 }

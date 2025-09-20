@@ -95,7 +95,7 @@ export const LoginPage = () => {
           return;
         }
       }
-    } catch (error) {
+    } catch {
       // Redirect to login page with error parameter
       router.push(`/?error=${encodeURIComponent("An unexpected error occurred")}`);
     }

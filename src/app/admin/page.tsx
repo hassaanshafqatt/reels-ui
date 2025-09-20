@@ -46,6 +46,15 @@ export default function AdminPanel() {
   const [editingCategory, setEditingCategory] = useState<ReelCategory | null>(null);
   const [editingType, setEditingType] = useState<ReelType | null>(null);
 
+  const [fileStats, setFileStats] = useState({
+    totalFiles: 0,
+    totalSize: 0,
+    totalSizeMB: '0',
+    files: [],
+    oldestFile: null,
+    newestFile: null
+  });
+
   const [categoryForm, setCategoryForm] = useState({
     name: '',
     title: '',
@@ -104,6 +113,22 @@ export default function AdminPanel() {
       
       setCategories(categoriesData);
       setTypes(typesData);
+
+      // Load file stats
+      try {
+        const response = await fetch('/api/uploads/audio/stats', {
+          headers: {
+            'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456'
+          }
+        });
+        if (response.ok) {
+          const stats = await response.json();
+          setFileStats(stats);
+        }
+      } catch (statsErr) {
+        // File stats failed to load, but don't fail the whole page
+        console.warn('Failed to load file stats:', statsErr);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
@@ -286,7 +311,7 @@ export default function AdminPanel() {
               </div>
               
               {/* Stats Cards */}
-              <div className="grid grid-cols-2 gap-4 lg:gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow duration-200">
                   <div className="text-sm font-medium text-gray-500">Categories</div>
                   <div className="text-2xl font-bold text-teal-600">{categories.length}</div>
@@ -294,6 +319,16 @@ export default function AdminPanel() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow duration-200">
                   <div className="text-sm font-medium text-gray-500">Types</div>
                   <div className="text-2xl font-bold text-teal-600">{types.length}</div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow duration-200">
+                  <div className="text-sm font-medium text-gray-500">Audio Files</div>
+                  <div className="text-2xl font-bold text-orange-600">{fileStats.totalFiles}</div>
+                  <div className="text-xs text-gray-500 mt-1">{fileStats.totalSizeMB} MB</div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow duration-200">
+                  <div className="text-sm font-medium text-gray-500">Storage Used</div>
+                  <div className="text-2xl font-bold text-purple-600">{fileStats.totalSizeMB}</div>
+                  <div className="text-xs text-gray-500 mt-1">MB total</div>
                 </div>
               </div>
             </div>
@@ -582,10 +617,24 @@ export default function AdminPanel() {
                             const result = await response.json();
                             if (result.success) {
                               setSuccess(`Cleaned up ${result.cleanedFiles.length} files`);
+                              // Refresh stats after cleanup
+                              try {
+                                const statsResponse = await fetch('/api/uploads/audio/stats', {
+                                  headers: {
+                                    'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456'
+                                  }
+                                });
+                                if (statsResponse.ok) {
+                                  const stats = await statsResponse.json();
+                                  setFileStats(stats);
+                                }
+                              } catch {
+                                    // Stats refresh failed, but cleanup succeeded
+                                  }
                             } else {
                               setError('Failed to cleanup files');
                             }
-                          } catch (err) {
+                          } catch {
                             setError('Failed to cleanup files');
                           }
                         }}
@@ -604,10 +653,15 @@ export default function AdminPanel() {
                                 'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456'
                               }
                             });
-                            const stats = await response.json();
-                            // You can display these stats in a dialog or update state
-                          } catch (err) {
-                            // Failed to get file stats
+                            if (response.ok) {
+                              const stats = await response.json();
+                              setFileStats(stats);
+                              setSuccess('File stats updated successfully');
+                            } else {
+                              setError('Failed to fetch file stats');
+                            }
+                          } catch {
+                            setError('Failed to get file stats');
                           }
                         }}
                         variant="outline"
