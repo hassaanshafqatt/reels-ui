@@ -276,6 +276,22 @@ volumes:
   reels_uploads:
 ```
 
+## CI/CD
+
+This repository includes GitHub Actions workflows under `.github/workflows/`:
+
+- `ci.yml` — runs on every push and pull request. It installs dependencies, lints, runs tests (if present), builds the Next.js app and uploads the build artifact.
+- `docker-deploy.yml` — builds a multi-platform Docker image using Buildx, caches layers in GitHub Actions cache, pushes the image to GitHub Container Registry (GHCR) and optionally deploys to a remote host via SSH.
+
+Required GitHub secrets for publishing/deploying (add under repository Settings → Secrets):
+
+- `GITHUB_TOKEN` — automatically provided by Actions; used for GHCR login.
+- `SSH_PRIVATE_KEY` — (optional) private key for SSH deploy.
+- `SSH_HOST` and `SSH_USER` — (optional) remote host and username for SSH deploy.
+
+Customize `docker-deploy.yml` if you prefer Docker Hub or another registry; replace the login step and `IMAGE_NAME` accordingly.
+```
+
 ### Production Checklist
 
 - [ ] Environment variables configured
