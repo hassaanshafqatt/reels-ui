@@ -24,6 +24,7 @@ export interface ReelType {
   min_caption_length?: number;
   max_caption_length?: number;
   include_author?: boolean;
+  allow_custom_audio?: boolean;
   external_url?: string;
   status_url?: string;
   posting_url?: string;

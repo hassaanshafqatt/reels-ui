@@ -4,20 +4,22 @@ import { Music, Upload } from "lucide-react";
 interface AudioToggleProps {
   useCustomAudio: boolean;
   onToggleAudio: (useCustom: boolean) => void;
+  disabled?: boolean;
 }
 
-export default function AudioToggle({ useCustomAudio, onToggleAudio }: AudioToggleProps) {
+export default function AudioToggle({ useCustomAudio, onToggleAudio, disabled = false }: AudioToggleProps) {
   return (
     <div className="bg-gray-50 p-1 rounded-xl">
       <div className="grid grid-cols-2 gap-1">
         {/* Auto Audio Toggle */}
         <button
-          onClick={() => onToggleAudio(false)}
+          onClick={() => !disabled && onToggleAudio(false)}
           className={`p-3 rounded-lg transition-all duration-200 text-left ${
             !useCustomAudio
               ? 'bg-white shadow-sm border border-gray-200'
               : 'hover:bg-gray-100'
-          }`}
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={disabled}
         >
           <div className="flex items-center space-x-3">
             <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -40,12 +42,13 @@ export default function AudioToggle({ useCustomAudio, onToggleAudio }: AudioTogg
 
         {/* Custom Audio Toggle */}
         <button
-          onClick={() => onToggleAudio(true)}
+          onClick={() => !disabled && onToggleAudio(true)}
           className={`p-3 rounded-lg transition-all duration-200 text-left ${
             useCustomAudio
               ? 'bg-white shadow-sm border border-gray-200'
               : 'hover:bg-gray-100'
-          }`}
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={disabled}
         >
           <div className="flex items-center space-x-3">
             <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${

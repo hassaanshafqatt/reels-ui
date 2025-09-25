@@ -74,6 +74,7 @@ export default function AdminPanel() {
     min_caption_length: 50,
     max_caption_length: 300,
     include_author: false,
+    allow_custom_audio: true,
     external_url: '',
     status_url: '',
     posting_url: '',
@@ -91,6 +92,7 @@ export default function AdminPanel() {
     min_caption_length: 50,
     max_caption_length: 300,
     include_author: false,
+    allow_custom_audio: true,
     external_url: '',
     status_url: '',
     posting_url: '',
@@ -251,6 +253,7 @@ export default function AdminPanel() {
         min_caption_length: type.min_caption_length || 50,
         max_caption_length: type.max_caption_length || 300,
         include_author: type.include_author || false,
+        allow_custom_audio: type.allow_custom_audio !== false,
         external_url: type.external_url || '',
         status_url: type.status_url || '',
         posting_url: type.posting_url || '',
@@ -1023,6 +1026,19 @@ export default function AdminPanel() {
                   />
                   <Label htmlFor="includeAuthor" className="text-base font-medium text-gray-700">
                     Include Author
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="allowCustomAudio"
+                    checked={typeForm.allow_custom_audio}
+                    onChange={(e) => setTypeForm({...typeForm, allow_custom_audio: e.target.checked})}
+                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                  />
+                  <Label htmlFor="allowCustomAudio" className="text-base font-medium text-gray-700">
+                    Allow Custom Audio
                   </Label>
                 </div>
                 

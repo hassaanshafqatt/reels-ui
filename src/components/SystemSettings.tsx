@@ -26,6 +26,7 @@ export function SystemSettings() {
   const defaultMinCaptionLength = parseInt(settings.find(s => s.key === 'default_min_caption_length')?.value || '10');
   const defaultMaxCaptionLength = parseInt(settings.find(s => s.key === 'default_max_caption_length')?.value || '100');
   const includeAuthorByDefault = settings.find(s => s.key === 'include_author_by_default')?.value === 'true';
+  const allowCustomAudioGlobally = settings.find(s => s.key === 'allow_custom_audio_globally')?.value === 'true';
 
   const fetchSettings = useCallback(async () => {
     if (!token) return;
@@ -137,6 +138,14 @@ export function SystemSettings() {
       'include_author_by_default',
       enabled.toString(),
       'Whether to include author information in reels by default'
+    );
+  };
+
+  const handleAllowCustomAudioToggle = (enabled: boolean) => {
+    updateSetting(
+      'allow_custom_audio_globally',
+      enabled.toString(),
+      'If false, disables custom audio uploads for all reel types'
     );
   };
 
@@ -349,6 +358,53 @@ export function SystemSettings() {
               id="author-toggle"
               checked={includeAuthorByDefault}
               onCheckedChange={handleAuthorToggle}
+              disabled={saving}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Custom Audio Global Control */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="space-y-3 flex-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
+                <Settings className="h-5 w-5 text-white" />
+              </div>
+              <Label htmlFor="custom-audio-toggle" className="text-xl font-bold text-gray-900">
+                Allow Custom Audio (Global)
+              </Label>
+            </div>
+            <p className="text-base text-gray-600 leading-relaxed">
+              Enable or disable custom audio uploads across the entire system. When disabled, users cannot select or upload custom audio for any reel type.
+            </p>
+            <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
+              <span className="font-medium">Status:</span>
+              <span className={`font-bold ml-1 ${allowCustomAudioGlobally ? 'text-green-600' : 'text-red-600'}`}>
+                {allowCustomAudioGlobally ? '✓ Enabled' : '✗ Disabled'}
+              </span>
+              {settings.find(s => s.key === 'allow_custom_audio_globally') && (
+                <span className="block mt-1 text-xs">
+                  Last updated: {new Date(
+                    settings.find(s => s.key === 'allow_custom_audio_globally')!.updated_at
+                  ).toLocaleString()}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {saving && (
+              <div className="flex items-center gap-2 text-teal-600">
+                <Loader className="h-5 w-5 animate-spin" />
+                <span className="text-sm font-medium">Saving...</span>
+              </div>
+            )}
+            <Switch
+              id="custom-audio-toggle"
+              checked={allowCustomAudioGlobally}
+              onCheckedChange={handleAllowCustomAudioToggle}
               disabled={saving}
             />
           </div>

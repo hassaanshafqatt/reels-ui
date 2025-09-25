@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { JobRecord, setJob } from '@/lib/jobStore';
-import { reelTypeOperations, jobOperations } from '@/lib/database';
+import { reelTypeOperations, jobOperations, adminSettingsOperations } from '@/lib/database';
 import { verifyAuth } from '@/lib/auth';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ type: string }> }) {
@@ -28,6 +28,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!reelTypeData.is_active) {
       return NextResponse.json({ error: `Reel type is not active: ${type}` }, { status: 400 });
     }
+
+    // Determine whether custom audio is allowed
+    const allowCustomAudioGlobally = adminSettingsOperations.getBoolean('allow_custom_audio_globally', true);
+    const isCustomAudioAllowed = allowCustomAudioGlobally && (reelTypeData.allow_custom_audio !== false);
 
     // Generate a unique job ID
     const jobId = randomUUID();
@@ -64,8 +68,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       includeAuthor: reelTypeData.include_author !== undefined ? reelTypeData.include_author : true,
       timestamp,
       type,
-      useCustomAudio: !!customAudioUrl,
-      customAudioUrl: customAudioUrl || null
+      useCustomAudio: isCustomAudioAllowed && !!customAudioUrl,
+      customAudioUrl: isCustomAudioAllowed ? (customAudioUrl || null) : null
     };
 
     // Update job status to processing

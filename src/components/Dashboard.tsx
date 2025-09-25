@@ -54,6 +54,7 @@ export default function Dashboard({
   const [customAudioFile, setCustomAudioFile] = useState<File | null>(null);
   const [useCustomAudio, setUseCustomAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [allowCustomAudioGlobally, setAllowCustomAudioGlobally] = useState<boolean>(true);
   const [activeSubTab, setActiveSubTab] = useState<Record<string, string>>({});
   const [isClearingHistory, setIsClearingHistory] = useState(false);
 
@@ -78,6 +79,25 @@ export default function Dashboard({
 
   // Set initial activeTab when categories load
   useEffect(() => {
+    // Fetch global setting for custom audio
+    (async () => {
+      try {
+        const response = await fetch('/api/admin/settings', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || Cookies.get('auth_token')}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const setting = (data.settings || []).find((s: any) => s.key === 'allow_custom_audio_globally');
+          if (setting) {
+            setAllowCustomAudioGlobally(setting.value === 'true');
+          }
+        }
+      } catch {
+        // Ignore error, keep default true
+      }
+    })();
     if (reelCategories.length > 0 && !activeTab) {
       const firstCategory = reelCategories[0];
       setActiveTab(firstCategory.name);
@@ -354,7 +374,7 @@ export default function Dashboard({
       let response: Response;
       let customAudioUrl = null;
       
-      if (useCustomAudio && customAudioFile) {
+      if (useCustomAudio && customAudioFile && allowCustomAudioGlobally && selectedReel?.allow_custom_audio !== false) {
         
         // First upload the audio file to get a streamable URL
         const audioFormData = new FormData();
@@ -525,10 +545,11 @@ export default function Dashboard({
                             <AudioToggle 
                               useCustomAudio={useCustomAudio}
                               onToggleAudio={handleToggleAudio}
+                              disabled={!allowCustomAudioGlobally || selectedReel?.allow_custom_audio === false}
                             />
 
                             {/* File Upload Section */}
-                            {useCustomAudio && (
+                            {useCustomAudio && allowCustomAudioGlobally && selectedReel?.allow_custom_audio !== false && (
                               <AudioUpload 
                                 customAudioFile={customAudioFile}
                                 audioError={audioError}

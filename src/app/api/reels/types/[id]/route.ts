@@ -54,6 +54,7 @@ export async function PUT(
       min_caption_length,
       max_caption_length,
       include_author,
+      allow_custom_audio,
       external_url,
       status_url,
       posting_url,
@@ -71,6 +72,7 @@ export async function PUT(
     if (min_caption_length !== undefined) updates.min_caption_length = min_caption_length;
     if (max_caption_length !== undefined) updates.max_caption_length = max_caption_length;
     if (include_author !== undefined) updates.include_author = include_author;
+    if (allow_custom_audio !== undefined) updates.allow_custom_audio = allow_custom_audio;
     if (external_url !== undefined) updates.external_url = external_url;
     if (status_url !== undefined) updates.status_url = status_url;
     if (posting_url !== undefined) updates.posting_url = posting_url;

@@ -66,6 +66,7 @@ interface ReelType {
   min_caption_length: number;
   max_caption_length: number;
   include_author: boolean;
+  allow_custom_audio: boolean;
   external_url?: string;
   status_url?: string;
   posting_url?: string;
@@ -171,6 +172,7 @@ const createReelTypesTable = () => {
       min_caption_length INTEGER DEFAULT 10,
       max_caption_length INTEGER DEFAULT 100,
       include_author BOOLEAN DEFAULT 1,
+      allow_custom_audio BOOLEAN DEFAULT 1,
       external_url TEXT,
       status_url TEXT,
       posting_url TEXT,
@@ -217,6 +219,11 @@ const createAdminSettingsTable = () => {
       key: 'include_author_by_default',
       value: 'true',
       description: 'Whether to include author information in reels by default'
+    },
+    {
+      key: 'allow_custom_audio_globally',
+      value: 'true',
+      description: 'If false, disables custom audio uploads for all reel types'
     }
   ];
 
@@ -602,7 +609,8 @@ const convertReelTypeBooleans = (row: unknown): ReelType => {
   return {
     ...data,
     is_active: Boolean(data.is_active),
-    include_author: Boolean(data.include_author)
+    include_author: Boolean(data.include_author),
+    allow_custom_audio: Boolean((data as any).allow_custom_audio ?? 1)
   } as ReelType;
 };
 
@@ -612,8 +620,8 @@ export const reelTypeOperations = {
   create: (typeData: Omit<ReelType, 'id' | 'created_at' | 'updated_at'>) => {
     const id = crypto.randomUUID();
     const stmt = db.prepare(`
-      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, external_url, status_url, posting_url, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, allow_custom_audio, external_url, status_url, posting_url, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       id, 
@@ -627,6 +635,7 @@ export const reelTypeOperations = {
       typeData.min_caption_length || 10,
       typeData.max_caption_length || 100,
       typeData.include_author ? 1 : 0,
+      (typeData as any).allow_custom_audio === false ? 0 : 1,
       typeData.external_url,
       typeData.status_url,
       typeData.posting_url,
@@ -807,6 +816,20 @@ export const migrateMinMaxCaptionLength = () => {
       }
     }
     
+  } catch {
+    // Migration error handled silently
+  }
+};
+
+// Migration function to add allow_custom_audio column to reel_types table
+export const migrateAllowCustomAudio = () => {
+  try {
+    const columnInfo = db.prepare("PRAGMA table_info(reel_types)").all() as { name: string }[];
+    const allowCustomAudioExists = columnInfo.some((col) => col.name === 'allow_custom_audio');
+    if (!allowCustomAudioExists) {
+      db.prepare('ALTER TABLE reel_types ADD COLUMN allow_custom_audio BOOLEAN DEFAULT 1').run();
+      db.prepare('UPDATE reel_types SET allow_custom_audio = 1 WHERE allow_custom_audio IS NULL').run();
+    }
   } catch {
     // Migration error handled silently
   }
@@ -1134,7 +1157,8 @@ export const migrateInitialReelData = () => {
         category_id: categoryId,
         min_caption_length: 10,
         max_caption_length: 100,
-        include_author: true
+        include_author: true,
+        allow_custom_audio: true
       });
     }
   }
@@ -1168,6 +1192,7 @@ const initializeDemoData = async () => {
   migratePollCountColumns();
   migrateReelTypesCaptionSettings();
   migrateMinMaxCaptionLength();
+  migrateAllowCustomAudio();
   migrateAdminRole();
   
   // Run reel data migration (disabled - use /admin to manage data)
