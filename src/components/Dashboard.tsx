@@ -468,7 +468,7 @@ export default function Dashboard({
 
   return (
     <div className="w-full min-h-screen flex flex-col">
-      <div className="max-w-7xl w-full mx-auto px-1 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-16 sm:pb-8">
+      <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-16 sm:pb-8">
         {/* Loading State */}
         {reelDataLoading && <LoadingState />}
 
@@ -506,10 +506,10 @@ export default function Dashboard({
                 />
 
                 {/* Sub-tab Content */}
-                <div className="p-4 sm:p-6">
+                <div className="p-3 sm:p-4 lg:p-6">
                   {/* Generate Tab Content */}
                   {activeSubTab[category.name] === 'generate' && (
-                    <div className="p-4 sm:p-6">
+                    <div className="p-3 sm:p-4 lg:p-6">
                       <ReelTypeGrid 
                         types={category.types}
                         selectedReel={selectedReel}
@@ -520,7 +520,7 @@ export default function Dashboard({
 
                       {/* Responsive Generation Options */}
                       {selectedReel && selectedCategory === category.name && (
-                        <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-100">
+                        <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-100">
                           <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Generation Settings</h4>
                           
                           <div className="space-y-3 sm:space-y-4">

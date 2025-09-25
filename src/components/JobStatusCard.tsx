@@ -155,6 +155,14 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
     }
   };
 
+  // Keyboard accessibility for fullscreen toggle
+  const onKeyActivate = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleFullscreen();
+    }
+  };
+
   // Listen for fullscreen changes and keyboard events
   React.useEffect(() => {
     const handleFullscreenChange = () => {
@@ -250,10 +258,26 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
       return fileId ? `https://drive.google.com/file/d/${fileId}/view` : url;
     };
 
+    // Build media list: support single URL or JSON array of URLs stored in result_url
+    const getMediaList = (raw?: string): string[] => {
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.every((v) => typeof v === 'string')) {
+          return parsed as string[];
+        }
+      } catch {
+        // Not JSON, fall through
+      }
+      return [raw];
+    };
+
     if ((job.status === 'completed' || job.status === 'approved' || job.status === 'posted') && job.result_url) {
-      const isGoogleDrive = isGoogleDriveLink(job.result_url);
-      const viewUrl = isGoogleDrive ? getGoogleDriveViewUrl(job.result_url) : job.result_url;
-      const embedUrl = isGoogleDrive ? getGoogleDriveEmbedUrl(job.result_url) : null;
+      const media = getMediaList(job.result_url);
+      const firstUrl = media[0];
+      const isGoogleDrive = isGoogleDriveLink(firstUrl);
+      const viewUrl = isGoogleDrive ? getGoogleDriveViewUrl(firstUrl) : firstUrl;
+      const embedUrl = isGoogleDrive ? getGoogleDriveEmbedUrl(firstUrl) : null;
       
       return (
         <div className="space-y-2">
@@ -278,7 +302,7 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
                 allowFullScreen
                 title="Reel Video"
               />
-            ) : job.result_url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i) ? (
+            ) : firstUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i) ? (
               // Direct video file with responsive design
               <video
                 ref={videoRef}
@@ -291,9 +315,25 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
                 preload="metadata"
                 controlsList="nodownload"
               >
-                <source src={job.result_url} type="video/mp4" />
+                <source src={firstUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
+            ) : firstUrl.match(/\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i) || isGoogleDrive ? (
+              // Image preview (direct or Drive)
+              isGoogleDrive && embedUrl ? (
+                <iframe
+                  src={embedUrl}
+                  className={`${isFullscreen ? 'w-full h-full' : 'w-full h-full'} rounded-lg`}
+                  allow="autoplay"
+                  title="Reel Image"
+                />
+              ) : (
+                <img 
+                  src={firstUrl}
+                  alt="Reel Media"
+                  className={`${isFullscreen ? 'w-full h-full object-contain' : 'w-full h-full object-cover'} rounded-lg`}
+                />
+              )
             ) : (
               // Fallback for other video types or preview not available
               <div className={`flex items-center justify-center relative ${
@@ -319,13 +359,15 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
             )}
             
             {/* Fullscreen toggle button */}
-            {(embedUrl || job.result_url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i)) && (
+            {(embedUrl || firstUrl.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i)) && (
               <button
                 onClick={toggleFullscreen}
+                onKeyDown={onKeyActivate}
                 className={`absolute top-2 right-2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full transition-all duration-200 ${
                   isFullscreen ? 'top-4 right-4' : ''
                 }`}
                 title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
               >
                 {isFullscreen ? (
                   <Minimize className="h-4 w-4" />
@@ -335,6 +377,45 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
               </button>
             )}
           </div>
+          {/* Media carousel/list if multiple */}
+          {!isFullscreen && media.length > 1 && (
+            <div className="mt-2">
+              <div className="flex gap-2 overflow-x-auto py-1">
+                {media.map((url, i) => {
+                  const isVideo = /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+                  const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url);
+                  const isDrive = isGoogleDriveLink(url);
+                  const thumbTarget = isDrive ? getGoogleDriveViewUrl(url) : url;
+                  const driveEmbed = isDrive ? getGoogleDriveEmbedUrl(url) : null;
+                  return (
+                    <button
+                      key={i}
+                      className="relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden border border-gray-200 hover:border-teal-400"
+                      onClick={() => window.open(thumbTarget || url, '_blank')}
+                      title={`Open media ${i+1}`}
+                    >
+                      {isDrive && driveEmbed ? (
+                        <iframe
+                          src={driveEmbed}
+                          className="w-full h-full"
+                          allow="autoplay"
+                          title={`Media ${i+1}`}
+                        />
+                      ) : isImage ? (
+                        <img src={url} alt={`Media ${i+1}`} className="w-full h-full object-cover" />
+                      ) : isVideo ? (
+                        <div className="w-full h-full bg-black flex items-center justify-center">
+                          <Play className="h-4 w-4 text-white" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full bg-gray-100" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {!isFullscreen && (
             <div className="flex space-x-2">
               <Button 

@@ -44,7 +44,7 @@ export default function GeneratedReelsSection({
             <CardDescription className="text-sm sm:text-base text-gray-600 mt-1">
               Review and post your generated content immediately
               {isPolling && (
-                <span className="inline-flex items-center ml-2 text-blue-600">
+                <span className="inline-flex items-center ml-2 text-blue-600" aria-live="polite" aria-atomic="true">
                   <Clock className="h-3 w-3 mr-1" />
                   Auto-updating...
                 </span>
@@ -52,7 +52,7 @@ export default function GeneratedReelsSection({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-teal-600 border-teal-200 bg-teal-50">
+            <Badge variant="outline" className="text-teal-600 border-teal-200 bg-teal-50" aria-label={`${completedJobs.length} reels ready`}>
               {completedJobs.length} Ready
             </Badge>
             {onManualRefresh && (
@@ -60,6 +60,7 @@ export default function GeneratedReelsSection({
                 variant="outline"
                 size="sm"
                 onClick={onManualRefresh}
+                aria-label="Refresh job statuses"
                 className="text-gray-600 hover:text-gray-900"
                 title="Refresh job statuses"
               >
@@ -71,7 +72,7 @@ export default function GeneratedReelsSection({
       </CardHeader>
       <CardContent>
         {displayJobs.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-10 sm:py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Instagram className="h-8 w-8 text-gray-400" />
             </div>
@@ -79,7 +80,8 @@ export default function GeneratedReelsSection({
             <p className="text-gray-600 mb-4">Generate your first reel in this category to see it here for immediate posting</p>
             <Button 
               className="bg-teal-600 hover:bg-teal-700 text-white"
-              onClick={() => document.querySelector('[role="tablist"]')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.querySelector('[role="tablist"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              aria-label="Scroll to generation section"
             >
               Generate Your First Reel
             </Button>
@@ -87,11 +89,12 @@ export default function GeneratedReelsSection({
         ) : (
           <div className="space-y-4">
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2 border-b pb-4">
+            <div className="flex flex-wrap gap-2 border-b pb-3">
               <Button 
                 variant="outline" 
                 size="sm"
                 className="text-xs"
+                aria-label={`Show all ${jobs.length} jobs`}
               >
                 All ({jobs.length})
               </Button>
@@ -99,6 +102,7 @@ export default function GeneratedReelsSection({
                 variant="outline" 
                 size="sm"
                 className="text-xs"
+                aria-label={`Show completed ${completedJobs.length} jobs`}
               >
                 Completed ({completedJobs.length})
               </Button>
@@ -106,6 +110,7 @@ export default function GeneratedReelsSection({
                 variant="outline" 
                 size="sm"
                 className="text-xs"
+                aria-label={`Show processing ${processingJobs.length} jobs`}
               >
                 Processing ({processingJobs.length})
               </Button>
@@ -113,13 +118,14 @@ export default function GeneratedReelsSection({
                 variant="outline" 
                 size="sm"
                 className="text-xs"
+                aria-label={`Show failed ${failedJobs.length} jobs`}
               >
                 Failed ({failedJobs.length})
               </Button>
             </div>
 
             {/* Jobs Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               {displayJobs.slice(0, 6).map((job, index) => (
                 <JobStatusCard
                   key={`${job.job_id}-${index}`}
@@ -132,8 +138,8 @@ export default function GeneratedReelsSection({
 
             {/* Show More Button */}
             {displayJobs.length > 6 && (
-              <div className="text-center pt-4 border-t">
-                <Button variant="outline" size="sm">
+              <div className="text-center pt-3 sm:pt-4 border-t">
+                <Button variant="outline" size="sm" aria-label={`View all ${displayJobs.length} reels`}>
                   View All {displayJobs.length} Reels
                 </Button>
               </div>

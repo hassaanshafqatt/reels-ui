@@ -62,12 +62,16 @@ export function useJobs(): UseJobsReturn {
   const lastFetchTimeRef = useRef<Date>(new Date());
   const stoppedPollingJobsRef = useRef<Set<string>>(new Set());
   const fetchJobsRef = useRef<(() => Promise<void>) | null>(null);
+  const isFetchingRef = useRef<boolean>(false);
 
   // Function to fetch fresh jobs from the database
   const fetchJobs = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     if (!user || authLoading) {
       setJobs([]);
       setLoading(false);
+      isFetchingRef.current = false;
       return;
     }
 
@@ -119,6 +123,7 @@ export function useJobs(): UseJobsReturn {
       setJobs([]);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [user, authLoading]); // Depend on user and authLoading state
 
@@ -163,12 +168,12 @@ export function useJobs(): UseJobsReturn {
     
     setIsPolling(true);
     
-    // Poll every 5 minutes (300 seconds) - use ref to avoid stale closures
+    // Poll every 60 seconds - use ref to avoid stale closures
     pollingIntervalRef.current = setInterval(() => {
       if (fetchJobsRef.current) {
         fetchJobsRef.current();
       }
-    }, 300000);
+    }, 60000);
   }, [hasIncompleteJobs, globalPollingEnabled]);
 
   // Stop polling

@@ -53,13 +53,15 @@ export async function GET(request: NextRequest) {
     // If there's a status URL, hit it with the job ID
     if (reelTypeData.status_url) {
       try {
-        const isExternalUrl = reelTypeData.status_url.startsWith('http');
-        const statusUrl = isExternalUrl ? reelTypeData.status_url : `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${reelTypeData.status_url}`;
+        const isExternalUrl = /^https?:\/\//i.test(reelTypeData.status_url);
+        const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || '';
+        const base = origin || 'http://localhost:3000';
+        const statusUrl = isExternalUrl ? reelTypeData.status_url : `${base}${reelTypeData.status_url}`;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
-        const statusResponse = await fetch(`${statusUrl}?jobId=${jobId}`, {
+        const statusResponse = await fetch(`${statusUrl}?jobId=${encodeURIComponent(jobId)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
