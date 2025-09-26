@@ -181,12 +181,12 @@ export function useJobs(): UseJobsReturn {
 
     setIsPolling(true);
 
-    // Poll every 60 seconds - use ref to avoid stale closures
+    // Poll every 3 minutes (180000 ms) - use ref to avoid stale closures
     pollingIntervalRef.current = setInterval(() => {
       if (fetchJobsRef.current) {
         fetchJobsRef.current();
       }
-    }, 60000);
+    }, 180000);
   }, [hasIncompleteJobs, globalPollingEnabled]);
 
   // Stop polling

@@ -43,6 +43,7 @@ export default function JobStatusCard({
   const [isFullscreen, setIsFullscreen] = useState(false); // kept for legacy variable use in classnames
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [postMessage, setPostMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -206,7 +207,20 @@ export default function JobStatusCard({
       });
 
       if (response.ok) {
-        await response.json();
+        const data = await response.json();
+
+        // If the response includes an 'approved' status, show queued message
+        const respStatus =
+          (data && (data.status || (data.result && data.result.status))) ||
+          null;
+        const normalized =
+          typeof respStatus === 'string' ? respStatus.toLowerCase() : null;
+
+        if (normalized === 'approved') {
+          setPostMessage('Job queued for posting');
+          // hide message after 4s
+          setTimeout(() => setPostMessage(null), 4000);
+        }
 
         // Refresh the job to get updated status
         onRefresh(job);
@@ -500,6 +514,11 @@ export default function JobStatusCard({
           </div>
 
           {/* Controls: Fullscreen dialog + Post button */}
+          {postMessage && (
+            <div className="text-xs text-teal-700 bg-teal-50 border border-teal-100 px-3 py-2 rounded-md">
+              {postMessage}
+            </div>
+          )}
           <div className="flex space-x-2">
             <Button
               size="sm"

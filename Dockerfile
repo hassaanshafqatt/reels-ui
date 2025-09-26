@@ -106,4 +106,4 @@ CMD ["node", "server.js"]
 # Lightweight healthcheck to ensure the server process responds on the expected port.
 # This keeps the container status visible to orchestrators and auto-restarts unhealthy containers.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --spider --quiet http://localhost:4761/ || exit 1
+  CMD wget --spider --quiet http://localhost:4761/api/health || exit 1

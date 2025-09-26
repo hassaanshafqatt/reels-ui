@@ -5,65 +5,23 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Sparkles, Menu, X } from 'lucide-react';
 import Dashboard from '@/components/Dashboard';
 import { LoginPage } from '@/components/LoginPage';
-import {
-  AccountSwitcher,
-  InstagramAccount,
-} from '@/components/AccountSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
-const accounts: InstagramAccount[] = [
-  {
-    id: 'main_account',
-    username: '@main_account',
-    followers: '12.5K',
-    isActive: true,
-  },
-  {
-    id: 'business_account',
-    username: '@business_account',
-    followers: '8.2K',
-    isActive: false,
-  },
-  {
-    id: 'personal_account',
-    username: '@personal_account',
-    followers: '25.1K',
-    isActive: false,
-  },
-];
-
 function AppContent() {
-  const { logout, user } = useAuth();
-  void user;
-  const [selectedAccount, setSelectedAccount] = useState<InstagramAccount>(
-    accounts[0]
-  );
+  const { logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Create dynamic accounts array with proper isActive state
-  const dynamicAccounts = accounts.map((account) => ({
-    ...account,
-    isActive: account.id === selectedAccount.id,
-  }));
-
   const handleReelSelect = (_categoryId: string, _typeId: string) => {
-    // Handle reel selection logic here
     void _categoryId;
     void _typeId;
-  };
-
-  const handleAccountChange = (account: InstagramAccount) => {
-    setSelectedAccount(account);
   };
 
   const handleLogout = () => {
     logout();
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen((s) => !s);
 
   return (
     <ProtectedRoute fallback={<LoginPage />}>
@@ -129,17 +87,10 @@ function AppContent() {
                     <X className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
-                <div className="h-full overflow-y-auto pb-20">
-                  <div className="p-3">
-                    <AccountSwitcher
-                      accounts={dynamicAccounts}
-                      onAccountChange={(account) => {
-                        handleAccountChange(account);
-                        setIsSidebarOpen(false);
-                      }}
-                      isMobile={true}
-                    />
-                  </div>
+                <div className="h-full overflow-y-auto p-4">
+                  <p className="text-sm text-gray-600">
+                    No accounts configured.
+                  </p>
                 </div>
               </div>
             </div>
@@ -155,13 +106,6 @@ function AppContent() {
 
         {/* Desktop Layout */}
         <div className="hidden lg:flex h-screen">
-          {/* Desktop Sidebar */}
-          <AccountSwitcher
-            accounts={dynamicAccounts}
-            onAccountChange={handleAccountChange}
-            isMobile={false}
-          />
-
           {/* Desktop Main Content */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Desktop Header */}
