@@ -401,6 +401,9 @@ export default function JobStatusCard({
       // Simplified preview card with arrow controls and a dialog-based fullscreen viewer
       return (
         <div className="space-y-2">
+          {/* Caption (moved above preview) */}
+          {job.caption && <div className="">{renderCaption(job.caption)}</div>}
+
           <div
             className="relative bg-gray-100 rounded-lg overflow-hidden transition-all duration-300 aspect-video"
             tabIndex={0}
@@ -504,12 +507,7 @@ export default function JobStatusCard({
                 </div>
               )}
 
-              {/* Caption overlay */}
-              {job.caption && (
-                <div className="absolute left-0 right-0 bottom-0 p-3 bg-gradient-to-t from-black/70 to-transparent text-white text-xs">
-                  <div className="max-w-full truncate">{job.caption}</div>
-                </div>
-              )}
+              {/* caption no longer overlays the media; it's rendered above the preview */}
             </div>
           </div>
 

@@ -27,6 +27,15 @@ import CustomCaptionDisplay from '@/components/CustomCaptionDisplay';
 import CustomCaptionDialog from '@/components/CustomCaptionDialog';
 import HistorySection from '@/components/HistorySection';
 import GeneratedReelsSection from '@/components/GeneratedReelsSection';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 interface DashboardProps {
   onReelSelect: (categoryId: string, typeId: string) => void;
@@ -86,6 +95,11 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
     useState<string | undefined>(undefined);
   const [activeSubTab, setActiveSubTab] = useState<Record<string, string>>({});
   const [isClearingHistory, setIsClearingHistory] = useState(false);
+  // Confirmation dialog state for clearing history
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [clearCategoryCandidate, setClearCategoryCandidate] = useState<
+    string | null
+  >(null);
 
   // Auto-clear success and error messages after 7 seconds
   useEffect(() => {
@@ -347,6 +361,20 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
       setError('Failed to clear job history. Please try again.');
     } finally {
       setIsClearingHistory(false);
+    }
+  };
+
+  const openConfirmClear = (categoryName?: string) => {
+    setClearCategoryCandidate(categoryName || null);
+    setConfirmClearOpen(true);
+  };
+
+  const handleConfirmClear = async () => {
+    setConfirmClearOpen(false);
+    try {
+      await clearJobHistory(clearCategoryCandidate || undefined);
+    } finally {
+      setClearCategoryCandidate(null);
     }
   };
 
@@ -707,7 +735,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         {/* Main Content */}
         {!reelDataLoading && !reelDataError && reelCategories.length > 0 && (
           <div>
-            {/* If there's only one category, render it directly without tabs */}
+            {/* If there's only one category, render it directly without tabs but keep TabNavigation for unified mobile/desktop behavior */}
             {reelCategories.length === 1 ? (
               (() => {
                 const category = reelCategories[0];
@@ -889,7 +917,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                               refreshingJobs={refreshingJobs}
                               onRefreshJob={checkJobStatus}
                               onClearHistory={() =>
-                                clearJobHistory(category.name)
+                                openConfirmClear(category.name)
                               }
                               isClearingHistory={isClearingHistory}
                             />
