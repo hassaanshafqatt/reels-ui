@@ -73,6 +73,15 @@ interface ReelType {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Optional per-type UI label overrides
+  label_caption_title?: string;
+  label_caption_description?: string;
+  label_caption_field?: string;
+  label_caption_placeholder?: string;
+  label_caption_toggle_auto?: string;
+  label_caption_toggle_auto_sub?: string;
+  label_caption_toggle_custom?: string;
+  label_caption_toggle_custom_sub?: string;
 }
 
 interface ReelCategory {
@@ -174,6 +183,15 @@ const createReelTypesTable = () => {
       include_author BOOLEAN DEFAULT 1,
       allow_custom_audio BOOLEAN DEFAULT 1,
       external_url TEXT,
+      -- Per-type UI label overrides
+      label_caption_title TEXT,
+      label_caption_description TEXT,
+      label_caption_field TEXT,
+      label_caption_placeholder TEXT,
+      label_caption_toggle_auto TEXT,
+      label_caption_toggle_auto_sub TEXT,
+      label_caption_toggle_custom TEXT,
+      label_caption_toggle_custom_sub TEXT,
       status_url TEXT,
       posting_url TEXT,
       is_active BOOLEAN DEFAULT 1,
@@ -606,11 +624,45 @@ export const reelCategoryOperations = {
 // Helper function to convert database boolean fields to actual booleans
 const convertReelTypeBooleans = (row: unknown): ReelType => {
   const data = row as Record<string, unknown>;
+
+  // Helper to coerce DB values which may be 0/1, '0'/'1', true/false, or null
+  const toBoolean = (val: unknown, defaultValue = true): boolean => {
+    if (val === undefined || val === null) return defaultValue;
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'number') return val !== 0;
+    if (typeof val === 'string') return val === '1' || val.toLowerCase() === 'true';
+    return Boolean(val);
+  };
+
   return {
-    ...data,
-    is_active: Boolean(data.is_active),
-    include_author: Boolean(data.include_author),
-    allow_custom_audio: Boolean((data as any).allow_custom_audio ?? 1)
+    // Copy known fields explicitly to keep types accurate
+    id: String(data.id),
+    category_id: String(data.category_id),
+    name: String(data.name),
+    title: String(data.title),
+    description: String(data.description),
+    icon: String(data.icon),
+    message: String(data.message),
+    caption: String(data.caption),
+    min_caption_length: Number(data.min_caption_length) || 10,
+    max_caption_length: Number(data.max_caption_length) || 100,
+    include_author: toBoolean(data.include_author, true),
+    allow_custom_audio: toBoolean(data.allow_custom_audio, true),
+    external_url: data.external_url ? String(data.external_url) : undefined,
+    status_url: data.status_url ? String(data.status_url) : undefined,
+    posting_url: data.posting_url ? String(data.posting_url) : undefined,
+    is_active: toBoolean(data.is_active, true),
+    created_at: String(data.created_at),
+    updated_at: String(data.updated_at),
+    // Optional per-type UI label overrides
+    label_caption_title: data.label_caption_title ? String(data.label_caption_title) : undefined,
+    label_caption_description: data.label_caption_description ? String(data.label_caption_description) : undefined,
+    label_caption_field: data.label_caption_field ? String(data.label_caption_field) : undefined,
+    label_caption_placeholder: data.label_caption_placeholder ? String(data.label_caption_placeholder) : undefined,
+    label_caption_toggle_auto: data.label_caption_toggle_auto ? String(data.label_caption_toggle_auto) : undefined,
+    label_caption_toggle_auto_sub: data.label_caption_toggle_auto_sub ? String(data.label_caption_toggle_auto_sub) : undefined,
+    label_caption_toggle_custom: data.label_caption_toggle_custom ? String(data.label_caption_toggle_custom) : undefined,
+    label_caption_toggle_custom_sub: data.label_caption_toggle_custom_sub ? String(data.label_caption_toggle_custom_sub) : undefined,
   } as ReelType;
 };
 
@@ -620,23 +672,33 @@ export const reelTypeOperations = {
   create: (typeData: Omit<ReelType, 'id' | 'created_at' | 'updated_at'>) => {
     const id = crypto.randomUUID();
     const stmt = db.prepare(`
-      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, allow_custom_audio, external_url, status_url, posting_url, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, allow_custom_audio, external_url,
+        label_caption_title, label_caption_description, label_caption_field, label_caption_placeholder, label_caption_toggle_auto, label_caption_toggle_auto_sub, label_caption_toggle_custom, label_caption_toggle_custom_sub,
+        status_url, posting_url, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
-      id, 
-      typeData.category_id, 
-      typeData.name, 
-      typeData.title, 
-      typeData.description, 
-      typeData.icon, 
-      typeData.message, 
+      id,
+      typeData.category_id,
+      typeData.name,
+      typeData.title,
+      typeData.description,
+      typeData.icon,
+      typeData.message,
       typeData.caption,
       typeData.min_caption_length || 10,
       typeData.max_caption_length || 100,
       typeData.include_author ? 1 : 0,
-      (typeData as any).allow_custom_audio === false ? 0 : 1,
+      typeData.allow_custom_audio === false ? 0 : 1,
       typeData.external_url,
+      typeData.label_caption_title || null,
+      typeData.label_caption_description || null,
+      typeData.label_caption_field || null,
+      typeData.label_caption_placeholder || null,
+      typeData.label_caption_toggle_auto || null,
+      typeData.label_caption_toggle_auto_sub || null,
+      typeData.label_caption_toggle_custom || null,
+      typeData.label_caption_toggle_custom_sub || null,
       typeData.status_url,
       typeData.posting_url,
       typeData.is_active ? 1 : 0
@@ -832,6 +894,31 @@ export const migrateAllowCustomAudio = () => {
     }
   } catch {
     // Migration error handled silently
+  }
+};
+
+// Migration to add per-type label columns to reel_types if missing
+export const migrateReelTypeLabels = () => {
+  try {
+    const columnInfo = db.prepare("PRAGMA table_info(reel_types)").all() as { name: string }[];
+    const cols = columnInfo.map(c => c.name);
+
+    const addIfMissing = (col: string, definition: string) => {
+      if (!cols.includes(col)) {
+        db.prepare(`ALTER TABLE reel_types ADD COLUMN ${col} ${definition}`).run();
+      }
+    };
+
+    addIfMissing('label_caption_title', 'TEXT');
+    addIfMissing('label_caption_description', 'TEXT');
+    addIfMissing('label_caption_field', 'TEXT');
+    addIfMissing('label_caption_placeholder', 'TEXT');
+    addIfMissing('label_caption_toggle_auto', 'TEXT');
+    addIfMissing('label_caption_toggle_auto_sub', 'TEXT');
+    addIfMissing('label_caption_toggle_custom', 'TEXT');
+    addIfMissing('label_caption_toggle_custom_sub', 'TEXT');
+  } catch {
+    // silently ignore migration errors
   }
 };
 
@@ -1193,6 +1280,7 @@ const initializeDemoData = async () => {
   migrateReelTypesCaptionSettings();
   migrateMinMaxCaptionLength();
   migrateAllowCustomAudio();
+  migrateReelTypeLabels();
   migrateAdminRole();
   
   // Run reel data migration (disabled - use /admin to manage data)

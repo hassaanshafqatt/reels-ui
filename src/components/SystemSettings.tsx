@@ -27,6 +27,15 @@ export function SystemSettings() {
   const defaultMaxCaptionLength = parseInt(settings.find(s => s.key === 'default_max_caption_length')?.value || '100');
   const includeAuthorByDefault = settings.find(s => s.key === 'include_author_by_default')?.value === 'true';
   const allowCustomAudioGlobally = settings.find(s => s.key === 'allow_custom_audio_globally')?.value === 'true';
+  // UI label settings (provide defaults if missing)
+  const captionTitleLabel = settings.find(s => s.key === 'label_caption_title')?.value || 'Custom Caption';
+  const captionDescriptionLabel = settings.find(s => s.key === 'label_caption_description')?.value || 'Write your own caption for the reel. This will override the AI-generated caption.';
+  const captionFieldLabel = settings.find(s => s.key === 'label_caption_field')?.value || 'Caption';
+  const captionPlaceholderLabel = settings.find(s => s.key === 'label_caption_placeholder')?.value || '';
+  const captionToggleAutoLabel = settings.find(s => s.key === 'label_caption_toggle_auto')?.value || 'Auto-Generate';
+  const captionToggleAutoSub = settings.find(s => s.key === 'label_caption_toggle_auto_sub')?.value || 'AI creates caption';
+  const captionToggleCustomLabel = settings.find(s => s.key === 'label_caption_toggle_custom')?.value || 'Custom Caption';
+  const captionToggleCustomSub = settings.find(s => s.key === 'label_caption_toggle_custom_sub')?.value || 'Write your own';
 
   const fetchSettings = useCallback(async () => {
     if (!token) return;
@@ -312,6 +321,86 @@ export function SystemSettings() {
               />
             </div>
           </div>
+
+            {/* Caption Label Customization */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                    <Type className="h-5 w-5 text-white" />
+                  </div>
+                  <Label className="text-xl font-bold text-gray-900">Caption UI Labels</Label>
+                </div>
+
+                <p className="text-base text-gray-600">Customize the UI text for caption-related buttons and fields shown to users during generation.</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Dialog Title</Label>
+                    <Input
+                      value={captionTitleLabel}
+                      onChange={(e) => updateSetting('label_caption_title', e.target.value, 'UI label: Custom caption dialog title')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Dialog Description</Label>
+                    <Input
+                      value={captionDescriptionLabel}
+                      onChange={(e) => updateSetting('label_caption_description', e.target.value, 'UI label: Custom caption dialog description')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Field Label</Label>
+                    <Input
+                      value={captionFieldLabel}
+                      onChange={(e) => updateSetting('label_caption_field', e.target.value, 'UI label: Caption field label')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Placeholder</Label>
+                    <Input
+                      value={captionPlaceholderLabel}
+                      onChange={(e) => updateSetting('label_caption_placeholder', e.target.value, 'UI label: Caption field placeholder')}
+                    />
+                  </div>
+          
+                  <div>
+                    <Label className="text-sm font-medium">Toggle - Auto Label</Label>
+                    <Input
+                      value={captionToggleAutoLabel}
+                      onChange={(e) => updateSetting('label_caption_toggle_auto', e.target.value, 'UI label: Caption toggle auto label')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Toggle - Auto Subtext</Label>
+                    <Input
+                      value={captionToggleAutoSub}
+                      onChange={(e) => updateSetting('label_caption_toggle_auto_sub', e.target.value, 'UI label: Caption toggle auto subtext')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Toggle - Custom Label</Label>
+                    <Input
+                      value={captionToggleCustomLabel}
+                      onChange={(e) => updateSetting('label_caption_toggle_custom', e.target.value, 'UI label: Caption toggle custom label')}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Toggle - Custom Subtext</Label>
+                    <Input
+                      value={captionToggleCustomSub}
+                      onChange={(e) => updateSetting('label_caption_toggle_custom_sub', e.target.value, 'UI label: Caption toggle custom subtext')}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           
           {defaultMinCaptionLength >= defaultMaxCaptionLength && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">

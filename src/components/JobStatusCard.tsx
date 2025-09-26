@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import Image from 'next/image';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -328,11 +329,16 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
                   title="Reel Image"
                 />
               ) : (
-                <img 
-                  src={firstUrl}
-                  alt="Reel Media"
-                  className={`${isFullscreen ? 'w-full h-full object-contain' : 'w-full h-full object-cover'} rounded-lg`}
-                />
+                <div className={`${isFullscreen ? 'w-full h-full' : 'w-full h-full'} rounded-lg relative`}> 
+                  <Image
+                    src={firstUrl}
+                    alt="Reel Media"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className={isFullscreen ? 'object-contain rounded-lg' : 'object-cover rounded-lg'}
+                    unoptimized
+                  />
+                </div>
               )
             ) : (
               // Fallback for other video types or preview not available
@@ -402,7 +408,9 @@ export default function JobStatusCard({ job, isRefreshing, onRefresh }: JobStatu
                           title={`Media ${i+1}`}
                         />
                       ) : isImage ? (
-                        <img src={url} alt={`Media ${i+1}`} className="w-full h-full object-cover" />
+                        <div className="w-full h-full relative">
+                          <Image src={url} alt={`Media ${i+1}`} fill sizes="80px" className="object-cover" unoptimized />
+                        </div>
                       ) : isVideo ? (
                         <div className="w-full h-full bg-black flex items-center justify-center">
                           <Play className="h-4 w-4 text-white" />

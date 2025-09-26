@@ -5,12 +5,21 @@ interface CaptionToggleProps {
   generateCaption: boolean;
   onToggleCaption: (generate: boolean) => void;
   onOpenCustomDialog: () => void;
+  // Optional override labels
+  labelAuto?: string;
+  labelAutoSub?: string;
+  labelCustom?: string;
+  labelCustomSub?: string;
 }
 
 export default function CaptionToggle({ 
   generateCaption, 
   onToggleCaption, 
-  onOpenCustomDialog 
+  onOpenCustomDialog,
+  labelAuto = 'Auto-Generate',
+  labelAutoSub = 'AI creates caption',
+  labelCustom = 'Custom Caption',
+  labelCustomSub = 'Write your own'
 }: CaptionToggleProps) {
   return (
     <div className="bg-gray-50 p-1 rounded-xl">
@@ -34,11 +43,11 @@ export default function CaptionToggle({
               <div className={`font-medium text-xs sm:text-sm ${
                 generateCaption ? 'text-gray-900' : 'text-gray-600'
               }`}>
-                Auto-Generate
+                {labelAuto}
               </div>
               <p className={`text-xs ${
                 generateCaption ? 'text-gray-600' : 'text-gray-500'
-              }`}>AI creates caption</p>
+              }`}>{labelAutoSub}</p>
             </div>
           </div>
         </button>
@@ -62,11 +71,11 @@ export default function CaptionToggle({
               <div className={`font-medium text-xs sm:text-sm ${
                 !generateCaption ? 'text-gray-900' : 'text-gray-600'
               }`}>
-                Custom Caption
+                {labelCustom}
               </div>
               <p className={`text-xs ${
                 !generateCaption ? 'text-gray-600' : 'text-gray-500'
-              }`}>Write your own</p>
+              }`}>{labelCustomSub}</p>
             </div>
           </div>
         </button>

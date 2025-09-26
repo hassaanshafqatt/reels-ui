@@ -5,6 +5,7 @@ interface CustomCaptionDisplayProps {
   customAuthor?: string;
   activeTab?: string;
   includeAuthor?: boolean;
+  captionLabel?: string;
 }
 
 export default function CustomCaptionDisplay({ 
@@ -12,13 +13,14 @@ export default function CustomCaptionDisplay({
   customAuthor, 
   activeTab,
   includeAuthor = false
+  , captionLabel
 }: CustomCaptionDisplayProps) {
   void activeTab;
   if (!customCaption) return null;
 
   return (
     <div className="bg-white border border-black rounded-lg p-3 shadow-sm">
-      <div className="text-xs sm:text-sm font-medium text-black mb-1">Current Custom Caption:</div>
+      <div className="text-xs sm:text-sm font-medium text-black mb-1">{captionLabel ? `Current ${captionLabel}:` : 'Current Custom Caption:'}</div>
       <div className="text-xs sm:text-sm text-black break-words">{customCaption}</div>
       {includeAuthor && customAuthor && (
         <div className="mt-2 pt-2 border-t border-gray-300">

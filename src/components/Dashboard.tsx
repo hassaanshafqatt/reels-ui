@@ -55,6 +55,15 @@ export default function Dashboard({
   const [useCustomAudio, setUseCustomAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [allowCustomAudioGlobally, setAllowCustomAudioGlobally] = useState<boolean>(true);
+  // Admin-provided label overrides
+  const [labelCaptionTitle, setLabelCaptionTitle] = useState<string | undefined>(undefined);
+  const [labelCaptionDescription, setLabelCaptionDescription] = useState<string | undefined>(undefined);
+  const [labelCaptionField, setLabelCaptionField] = useState<string | undefined>(undefined);
+  const [labelCaptionPlaceholder, setLabelCaptionPlaceholder] = useState<string | undefined>(undefined);
+  const [labelCaptionToggleAuto, setLabelCaptionToggleAuto] = useState<string | undefined>(undefined);
+  const [labelCaptionToggleAutoSub, setLabelCaptionToggleAutoSub] = useState<string | undefined>(undefined);
+  const [labelCaptionToggleCustom, setLabelCaptionToggleCustom] = useState<string | undefined>(undefined);
+  const [labelCaptionToggleCustomSub, setLabelCaptionToggleCustomSub] = useState<string | undefined>(undefined);
   const [activeSubTab, setActiveSubTab] = useState<Record<string, string>>({});
   const [isClearingHistory, setIsClearingHistory] = useState(false);
 
@@ -89,10 +98,29 @@ export default function Dashboard({
         });
         if (response.ok) {
           const data = await response.json();
-          const setting = (data.settings || []).find((s: any) => s.key === 'allow_custom_audio_globally');
-          if (setting) {
-            setAllowCustomAudioGlobally(setting.value === 'true');
-          }
+          type AdminSetting = { key: string; value: string; description?: string };
+          const settings: AdminSetting[] = Array.isArray(data?.settings) ? data.settings : [];
+            const setting = settings.find((s) => s.key === 'allow_custom_audio_globally');
+            if (setting) setAllowCustomAudioGlobally(setting.value === 'true');
+
+            // Label overrides
+            const captionTitle = settings.find((s) => s.key === 'label_caption_title')?.value;
+            const captionDesc = settings.find((s) => s.key === 'label_caption_description')?.value;
+            const captionField = settings.find((s) => s.key === 'label_caption_field')?.value;
+            const captionPlaceholder = settings.find((s) => s.key === 'label_caption_placeholder')?.value;
+
+            if (captionTitle) setLabelCaptionTitle(captionTitle);
+            if (captionDesc) setLabelCaptionDescription(captionDesc);
+            if (captionField) setLabelCaptionField(captionField);
+            if (captionPlaceholder) setLabelCaptionPlaceholder(captionPlaceholder);
+            const toggleAuto = settings.find((s) => s.key === 'label_caption_toggle_auto')?.value;
+            const toggleAutoSub = settings.find((s) => s.key === 'label_caption_toggle_auto_sub')?.value;
+            const toggleCustom = settings.find((s) => s.key === 'label_caption_toggle_custom')?.value;
+            const toggleCustomSub = settings.find((s) => s.key === 'label_caption_toggle_custom_sub')?.value;
+            if (toggleAuto) setLabelCaptionToggleAuto(toggleAuto);
+            if (toggleAutoSub) setLabelCaptionToggleAutoSub(toggleAutoSub);
+            if (toggleCustom) setLabelCaptionToggleCustom(toggleCustom);
+            if (toggleCustomSub) setLabelCaptionToggleCustomSub(toggleCustomSub);
         }
       } catch {
         // Ignore error, keep default true
@@ -134,6 +162,43 @@ export default function Dashboard({
       }
     }
   }, [activeTab, reelCategories, selectedReel, selectedCategory, onReelSelect]);
+
+  // Keep selectedReel in sync when reelCategories update (so label overrides apply after edits)
+  useEffect(() => {
+    if (!selectedReel) return;
+    try {
+      const updatedCategory = reelCategories.find(c => c.id === selectedReel.category_id || c.name === selectedReel.category_name);
+      const updatedType = updatedCategory?.types?.find(t => t.id === selectedReel.id || t.name === selectedReel.name);
+      if (updatedType) {
+        // shallow compare label fields to avoid unnecessary state updates
+        const labelsChanged = (
+          updatedType.label_caption_title !== selectedReel.label_caption_title ||
+          updatedType.label_caption_description !== selectedReel.label_caption_description ||
+          updatedType.label_caption_field !== selectedReel.label_caption_field ||
+          updatedType.label_caption_placeholder !== selectedReel.label_caption_placeholder ||
+          updatedType.label_caption_toggle_auto !== selectedReel.label_caption_toggle_auto ||
+          updatedType.label_caption_toggle_auto_sub !== selectedReel.label_caption_toggle_auto_sub ||
+          updatedType.label_caption_toggle_custom !== selectedReel.label_caption_toggle_custom ||
+          updatedType.label_caption_toggle_custom_sub !== selectedReel.label_caption_toggle_custom_sub
+        );
+        if (labelsChanged) {
+          setSelectedReel(updatedType);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [reelCategories, selectedReel]);
+
+  // Derived final labels: prefer per-type overrides, then global admin settings, then defaults
+  const finalCaptionTitle = selectedReel?.label_caption_title ?? labelCaptionTitle ?? 'Custom Caption';
+  const finalCaptionDescription = selectedReel?.label_caption_description ?? labelCaptionDescription ?? 'Write your own caption for the reel. This will override the AI-generated caption.';
+  const finalCaptionField = selectedReel?.label_caption_field ?? labelCaptionField ?? 'Caption';
+  const finalCaptionPlaceholder = selectedReel?.label_caption_placeholder ?? labelCaptionPlaceholder ?? '';
+  const finalToggleAuto = selectedReel?.label_caption_toggle_auto ?? labelCaptionToggleAuto ?? 'Auto-Generate';
+  const finalToggleAutoSub = selectedReel?.label_caption_toggle_auto_sub ?? labelCaptionToggleAutoSub ?? 'AI creates caption';
+  const finalToggleCustom = selectedReel?.label_caption_toggle_custom ?? labelCaptionToggleCustom ?? finalCaptionTitle;
+  const finalToggleCustomSub = selectedReel?.label_caption_toggle_custom_sub ?? labelCaptionToggleCustomSub ?? finalCaptionDescription;
 
   // Function to validate audio file duration and size
   const validateAudioDuration = (file: File): Promise<boolean> => {
@@ -477,159 +542,318 @@ export default function Dashboard({
 
         {/* Main Content */}
         {!reelDataLoading && !reelDataError && reelCategories.length > 0 && (
-  <div>
-  {/* Clean & Elegant Tabs */}
-  <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          {/* Desktop Tab Navigation */}
-          <div className="hidden sm:block">
-            <TabNavigation 
-              categories={reelCategories}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
+          <div>
+            {/* If there's only one category, render it directly without tabs */}
+            {reelCategories.length === 1 ? (
+              (() => {
+                const category = reelCategories[0];
+                return (
+                  <div className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200">
+                    {/* Responsive Error/Success Messages */}
+                    {error && <Message type="error" message={error} onClose={() => setError(null)} />}
+                    {success && <Message type="success" message={success} onClose={() => setSuccess(null)} />}
 
-          {reelCategories.map((category) => (
-            <TabsContent key={category.id} value={category.name} className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200">
-              {/* Responsive Error/Success Messages */}
-              {error && <Message type="error" message={error} onClose={() => setError(null)} />}
-              {success && <Message type="success" message={success} onClose={() => setSuccess(null)} />}
+                    {/* Category Overview - Full width on all screens */}
+                    <CategoryOverview title={category.title} description={category.description} />
 
-              {/* Category Overview - Full width on all screens */}
-              <CategoryOverview title={category.title} description={category.description} />
-
-              {/* Sub-tabs Navigation */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <SubTabNavigation 
-                  activeSubTab={activeSubTab[category.name] || 'generate'}
-                  onSubTabChange={(subTab) => setActiveSubTab(prev => ({ ...prev, [category.name]: subTab }))}
-                />
-
-                {/* Sub-tab Content */}
-                <div className="p-3 sm:p-4 lg:p-6">
-                  {/* Generate Tab Content */}
-                  {activeSubTab[category.name] === 'generate' && (
-                    <div className="p-3 sm:p-4 lg:p-6">
-                      <ReelTypeGrid 
-                        types={category.types}
-                        selectedReel={selectedReel}
-                        selectedCategory={selectedCategory}
-                        categoryName={category.name}
-                        onReelSelect={handleReelSelect}
+                    {/* Sub-tabs Navigation */}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                      <SubTabNavigation 
+                        activeSubTab={activeSubTab[category.name] || 'generate'}
+                        onSubTabChange={(subTab) => setActiveSubTab(prev => ({ ...prev, [category.name]: subTab }))}
                       />
 
-                      {/* Responsive Generation Options */}
-                      {selectedReel && selectedCategory === category.name && (
-                        <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-100">
-                          <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Generation Settings</h4>
-                          
-                          <div className="space-y-3 sm:space-y-4">
-                            {/* Caption Toggle Button Group */}
-                              <CaptionToggle 
-                                generateCaption={generateCaption}
-                                onToggleCaption={handleToggleCaption}
-                                onOpenCustomDialog={openCustomDialog}
-                              />
-
-                            {/* Show current custom caption if set */}
-                            {!generateCaption && (
-                              <CustomCaptionDisplay 
-                                customCaption={customCaption}
-                                customAuthor={customAuthor}
-                                activeTab={activeTab}
-                                includeAuthor={selectedReel?.include_author}
-                              />
-                            )}
-
-                            {/* Audio Options Toggle */}
-                            <AudioToggle 
-                              useCustomAudio={useCustomAudio}
-                              onToggleAudio={handleToggleAudio}
-                              disabled={!allowCustomAudioGlobally || selectedReel?.allow_custom_audio === false}
+                      {/* Sub-tab Content */}
+                      <div className="p-3 sm:p-4 lg:p-6">
+                        {/* Generate Tab Content */}
+                        {activeSubTab[category.name] === 'generate' && (
+                          <div className="p-3 sm:p-4 lg:p-6">
+                            <ReelTypeGrid 
+                              types={category.types}
+                              selectedReel={selectedReel}
+                              selectedCategory={selectedCategory}
+                              categoryName={category.name}
+                              onReelSelect={handleReelSelect}
                             />
 
-                            {/* File Upload Section */}
-                            {useCustomAudio && allowCustomAudioGlobally && selectedReel?.allow_custom_audio !== false && (
-                              <AudioUpload 
-                                customAudioFile={customAudioFile}
-                                audioError={audioError}
-                                onFileSelect={setCustomAudioFile}
-                                onValidateFile={async (file) => {
-                                  setAudioError(null);
-                                  return await validateAudioDuration(file);
-                                }}
-                              />
+                            {/* Responsive Generation Options */}
+                            {selectedReel && selectedCategory === category.name && (
+                              <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-100">
+                                <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Generation Settings</h4>
+                                
+                                <div className="space-y-3 sm:space-y-4">
+                                  <CaptionToggle 
+                                    generateCaption={generateCaption}
+                                    onToggleCaption={handleToggleCaption}
+                                    onOpenCustomDialog={openCustomDialog}
+                                    labelCustom={finalToggleCustom}
+                                    labelCustomSub={finalToggleCustomSub}
+                                    labelAuto={finalToggleAuto}
+                                    labelAutoSub={finalToggleAutoSub}
+                                  />
+
+                                  {!generateCaption && (
+                                    <CustomCaptionDisplay 
+                                      customCaption={customCaption}
+                                      customAuthor={customAuthor}
+                                      activeTab={activeTab}
+                                      includeAuthor={selectedReel?.include_author}
+                                      captionLabel={finalCaptionField}
+                                    />
+                                  )}
+
+                                  {selectedReel?.allow_custom_audio !== false && allowCustomAudioGlobally && (
+                                    <>
+                                      <AudioToggle 
+                                        useCustomAudio={useCustomAudio}
+                                        onToggleAudio={handleToggleAudio}
+                                      />
+
+                                      {useCustomAudio && (
+                                        <AudioUpload 
+                                          customAudioFile={customAudioFile}
+                                          audioError={audioError}
+                                          onFileSelect={setCustomAudioFile}
+                                          onValidateFile={async (file) => {
+                                            setAudioError(null);
+                                            return await validateAudioDuration(file);
+                                          }}
+                                        />
+                                      )}
+                                    </>
+                                  )}
+
+                                  <Button 
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating || audioError !== null}
+                                    className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isGenerating ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                        <span className="truncate">Generating...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles size={16} className="flex-shrink-0" />
+                                        <span className="truncate">Generate {selectedReel?.title}</span>
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
                             )}
-
-                            <Button 
-                              onClick={handleGenerate}
-                              disabled={isGenerating || audioError !== null}
-                              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isGenerating ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                                  <span className="truncate">Generating...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles size={16} className="flex-shrink-0" />
-                                  <span className="truncate">Generate {selectedReel.title}</span>
-                                </>
-                              )}
-                            </Button>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
 
-                  {/* Post Tab Content */}
-                  {activeSubTab[category.name] === 'post' && (
-                    <div className="space-y-6">
-                      <GeneratedReelsSection 
-                        jobs={getJobsForCategory(activeTab)}
-                        refreshingJobs={refreshingJobs}
-                        onRefreshJob={(job) => {
-                          setRefreshingJobs(prev => new Set(prev).add(job.job_id));
-                          checkJobStatus(job);
-                        }}
-                        isPolling={isPolling}
-                        onManualRefresh={refetchJobs}
-                      />
-                      
-                    </div>
-                  )}
+                        {/* Post Tab Content */}
+                        {activeSubTab[category.name] === 'post' && (
+                          <div className="space-y-6">
+                            <GeneratedReelsSection 
+                              jobs={getJobsForCategory(activeTab)}
+                              refreshingJobs={refreshingJobs}
+                              onRefreshJob={(job) => {
+                                setRefreshingJobs(prev => new Set(prev).add(job.job_id));
+                                checkJobStatus(job);
+                              }}
+                              isPolling={isPolling}
+                              onManualRefresh={refetchJobs}
+                            />
+                          </div>
+                        )}
 
-                  {/* History Tab Content */}
-                  {activeSubTab[category.name] === 'history' && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-5 w-5 text-teal-600" />
-                          <h3 className="text-lg font-semibold text-gray-900">Generation History</h3>
-                        </div>
-                        <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium">
-                          {getJobsForCategory(category.name).length}
+                        {/* History Tab Content */}
+                        {activeSubTab[category.name] === 'history' && (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-5 w-5 text-teal-600" />
+                                <h3 className="text-lg font-semibold text-gray-900">Generation History</h3>
+                              </div>
+                              <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium">
+                                {getJobsForCategory(category.name).length}
+                              </div>
+                            </div>
+                            <p className="text-gray-600 text-sm">Track generation progress and view completed reels</p>
+
+                            <HistorySection 
+                              jobs={getJobsForCategory(category.name)}
+                              refreshingJobs={refreshingJobs}
+                              onRefreshJob={checkJobStatus}
+                              onClearHistory={() => clearJobHistory(category.name)}
+                              isClearingHistory={isClearingHistory}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              // Multiple categories: show tabs as before
+              <div>
+                {/* Clean & Elegant Tabs */}
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                  {/* Desktop Tab Navigation */}
+                  <div className="hidden sm:block">
+                    <TabNavigation 
+                      categories={reelCategories}
+                      activeTab={activeTab}
+                      onTabChange={setActiveTab}
+                    />
+                  </div>
+
+                  {reelCategories.map((category) => (
+                    <TabsContent key={category.id} value={category.name} className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200">
+                      {/* Responsive Error/Success Messages */}
+                      {error && <Message type="error" message={error} onClose={() => setError(null)} />}
+                      {success && <Message type="success" message={success} onClose={() => setSuccess(null)} />}
+
+                      {/* Category Overview - Full width on all screens */}
+                      <CategoryOverview title={category.title} description={category.description} />
+
+                      {/* Sub-tabs Navigation */}
+                      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <SubTabNavigation 
+                          activeSubTab={activeSubTab[category.name] || 'generate'}
+                          onSubTabChange={(subTab) => setActiveSubTab(prev => ({ ...prev, [category.name]: subTab }))}
+                        />
+
+                        {/* Sub-tab Content */}
+                        <div className="p-3 sm:p-4 lg:p-6">
+                          {/* Generate Tab Content */}
+                          {activeSubTab[category.name] === 'generate' && (
+                            <div className="p-3 sm:p-4 lg:p-6">
+                              <ReelTypeGrid 
+                                types={category.types}
+                                selectedReel={selectedReel}
+                                selectedCategory={selectedCategory}
+                                categoryName={category.name}
+                                onReelSelect={handleReelSelect}
+                              />
+
+                              {/* Responsive Generation Options */}
+                              {selectedReel && selectedCategory === category.name && (
+                                <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-100">
+                                  <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">Generation Settings</h4>
+                                  
+                                  <div className="space-y-3 sm:space-y-4">
+                                    {/* Caption Toggle Button Group */}
+                                      <CaptionToggle 
+                                        generateCaption={generateCaption}
+                                        onToggleCaption={handleToggleCaption}
+                                        onOpenCustomDialog={openCustomDialog}
+                                        labelCustom={labelCaptionToggleCustom || labelCaptionTitle}
+                                        labelCustomSub={labelCaptionToggleCustomSub || labelCaptionDescription}
+                                        labelAuto={labelCaptionToggleAuto || 'Auto-Generate'}
+                                        labelAutoSub={labelCaptionToggleAutoSub || 'AI creates caption'}
+                                      />
+
+                                    {/* Show current custom caption if set */}
+                                    {!generateCaption && (
+                                      <CustomCaptionDisplay 
+                                        customCaption={customCaption}
+                                        customAuthor={customAuthor}
+                                        activeTab={activeTab}
+                                        includeAuthor={selectedReel?.include_author}
+                                      />
+                                    )}
+
+                                    {/* Audio Options Toggle */}
+                                    {selectedReel?.allow_custom_audio !== false && allowCustomAudioGlobally && (
+                                      <>
+                                        <AudioToggle 
+                                          useCustomAudio={useCustomAudio}
+                                          onToggleAudio={handleToggleAudio}
+                                        />
+
+                                        {/* File Upload Section */}
+                                        {useCustomAudio && (
+                                          <AudioUpload 
+                                            customAudioFile={customAudioFile}
+                                            audioError={audioError}
+                                            onFileSelect={setCustomAudioFile}
+                                            onValidateFile={async (file) => {
+                                              setAudioError(null);
+                                              return await validateAudioDuration(file);
+                                            }}
+                                          />
+                                        )}
+                                      </>
+                                    )}
+
+                                    <Button 
+                                      onClick={handleGenerate}
+                                      disabled={isGenerating || audioError !== null}
+                                      className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isGenerating ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                          <span className="truncate">Generating...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Sparkles size={16} className="flex-shrink-0" />
+                                          <span className="truncate">Generate {selectedReel.title}</span>
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Post Tab Content */}
+                          {activeSubTab[category.name] === 'post' && (
+                            <div className="space-y-6">
+                              <GeneratedReelsSection 
+                                jobs={getJobsForCategory(activeTab)}
+                                refreshingJobs={refreshingJobs}
+                                onRefreshJob={(job) => {
+                                  setRefreshingJobs(prev => new Set(prev).add(job.job_id));
+                                  checkJobStatus(job);
+                                }}
+                                isPolling={isPolling}
+                                onManualRefresh={refetchJobs}
+                              />
+                              
+                            </div>
+                          )}
+
+                          {/* History Tab Content */}
+                          {activeSubTab[category.name] === 'history' && (
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <Clock className="h-5 w-5 text-teal-600" />
+                                  <h3 className="text-lg font-semibold text-gray-900">Generation History</h3>
+                                </div>
+                                <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium">
+                                  {getJobsForCategory(category.name).length}
+                                </div>
+                              </div>
+                              <p className="text-gray-600 text-sm">Track generation progress and view completed reels</p>
+
+                              <HistorySection 
+                                jobs={getJobsForCategory(category.name)}
+                                refreshingJobs={refreshingJobs}
+                                onRefreshJob={checkJobStatus}
+                                onClearHistory={() => clearJobHistory(category.name)}
+                                isClearingHistory={isClearingHistory}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm">Track generation progress and view completed reels</p>
-
-                      <HistorySection 
-                        jobs={getJobsForCategory(category.name)}
-                        refreshingJobs={refreshingJobs}
-                        onRefreshJob={checkJobStatus}
-                        onClearHistory={() => clearJobHistory(category.name)}
-                        isClearingHistory={isClearingHistory}
-                      />
-                    </div>
-                  )}
-                </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-      </div>
+            )}
+          </div>
         )}
 
       {/* Custom Caption Dialog */}
@@ -644,6 +868,11 @@ export default function Dashboard({
         minCaptionLength={selectedReel?.min_caption_length}
         maxCaptionLength={selectedReel?.max_caption_length}
         includeAuthor={selectedReel?.include_author}
+  titleLabel={finalCaptionTitle}
+  descriptionLabel={finalCaptionDescription}
+  captionLabel={finalCaptionField}
+  captionPlaceholder={finalCaptionPlaceholder}
+  saveLabel={`Save ${finalCaptionField}`}
         onSave={() => {
           setCustomCaption(tempCustomCaption);
           setCustomAuthor(tempAuthor);

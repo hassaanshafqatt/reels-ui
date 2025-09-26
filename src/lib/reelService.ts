@@ -28,6 +28,15 @@ export interface ReelType {
   external_url?: string;
   status_url?: string;
   posting_url?: string;
+  // Per-type UI label overrides
+  label_caption_title?: string;
+  label_caption_description?: string;
+  label_caption_field?: string;
+  label_caption_placeholder?: string;
+  label_caption_toggle_auto?: string;
+  label_caption_toggle_auto_sub?: string;
+  label_caption_toggle_custom?: string;
+  label_caption_toggle_custom_sub?: string;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;

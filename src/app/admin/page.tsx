@@ -63,7 +63,34 @@ export default function AdminPanel() {
     is_active: true
   });
 
-  const [typeForm, setTypeForm] = useState({
+  interface TypeForm {
+    category_id: string;
+    name: string;
+    title: string;
+    description: string;
+    icon: string;
+    message: string;
+    caption: string;
+    min_caption_length: number;
+    max_caption_length: number;
+    include_author: boolean;
+    allow_custom_audio: boolean;
+    // Per-type UI label overrides
+    label_caption_title: string;
+    label_caption_description: string;
+    label_caption_field: string;
+    label_caption_placeholder: string;
+    label_caption_toggle_auto: string;
+    label_caption_toggle_auto_sub: string;
+    label_caption_toggle_custom: string;
+    label_caption_toggle_custom_sub: string;
+    external_url: string;
+    status_url: string;
+    posting_url: string;
+    is_active: boolean;
+  }
+
+  const [typeForm, setTypeForm] = useState<TypeForm>({
     category_id: '',
     name: '',
     title: '',
@@ -75,6 +102,15 @@ export default function AdminPanel() {
     max_caption_length: 300,
     include_author: false,
     allow_custom_audio: true,
+    // Per-type UI label overrides
+    label_caption_title: '',
+    label_caption_description: '',
+    label_caption_field: '',
+    label_caption_placeholder: '',
+    label_caption_toggle_auto: '',
+    label_caption_toggle_auto_sub: '',
+    label_caption_toggle_custom: '',
+    label_caption_toggle_custom_sub: '',
     external_url: '',
     status_url: '',
     posting_url: '',
@@ -93,6 +129,14 @@ export default function AdminPanel() {
     max_caption_length: 300,
     include_author: false,
     allow_custom_audio: true,
+    label_caption_title: '',
+    label_caption_description: '',
+    label_caption_field: '',
+    label_caption_placeholder: '',
+    label_caption_toggle_auto: '',
+    label_caption_toggle_auto_sub: '',
+    label_caption_toggle_custom: '',
+    label_caption_toggle_custom_sub: '',
     external_url: '',
     status_url: '',
     posting_url: '',
@@ -250,6 +294,14 @@ export default function AdminPanel() {
         icon: type.icon || '',
         message: type.message || '',
         caption: type.caption || '',
+        label_caption_title: type.label_caption_title || '',
+        label_caption_description: type.label_caption_description || '',
+        label_caption_field: type.label_caption_field || '',
+        label_caption_placeholder: type.label_caption_placeholder || '',
+        label_caption_toggle_auto: type.label_caption_toggle_auto || '',
+        label_caption_toggle_auto_sub: type.label_caption_toggle_auto_sub || '',
+        label_caption_toggle_custom: type.label_caption_toggle_custom || '',
+        label_caption_toggle_custom_sub: type.label_caption_toggle_custom_sub || '',
         min_caption_length: type.min_caption_length || 50,
         max_caption_length: type.max_caption_length || 300,
         include_author: type.include_author || false,
@@ -1054,6 +1106,58 @@ export default function AdminPanel() {
                     Active Reel Type
                   </Label>
                 </div>
+              </div>
+            </div>
+
+            {/* UI Labels - per-type overrides */}
+            <div className="space-y-8 pt-8 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <div className="w-6 h-6 bg-indigo-100 rounded-md flex items-center justify-center">
+                  <Settings className="h-4 w-4 text-indigo-600" />
+                </div>
+                UI Labels (Per-type overrides)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <Label htmlFor="labelCaptionTitle" className="text-sm font-medium text-gray-700 block">Caption Title</Label>
+                  <Input id="labelCaptionTitle" type="text" value={typeForm.label_caption_title} onChange={(e) => setTypeForm({...typeForm, label_caption_title: e.target.value})} placeholder="e.g. Suggested caption" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelCaptionDescription" className="text-sm font-medium text-gray-700 block">Caption Description</Label>
+                  <Input id="labelCaptionDescription" type="text" value={typeForm.label_caption_description} onChange={(e) => setTypeForm({...typeForm, label_caption_description: e.target.value})} placeholder="Short description" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelCaptionField" className="text-sm font-medium text-gray-700 block">Caption Field Label</Label>
+                  <Input id="labelCaptionField" type="text" value={typeForm.label_caption_field} onChange={(e) => setTypeForm({...typeForm, label_caption_field: e.target.value})} placeholder="Caption" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelCaptionPlaceholder" className="text-sm font-medium text-gray-700 block">Caption Placeholder</Label>
+                  <Input id="labelCaptionPlaceholder" type="text" value={typeForm.label_caption_placeholder} onChange={(e) => setTypeForm({...typeForm, label_caption_placeholder: e.target.value})} placeholder="Write a caption..." className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelToggleAuto" className="text-sm font-medium text-gray-700 block">Toggle - Auto label</Label>
+                  <Input id="labelToggleAuto" type="text" value={typeForm.label_caption_toggle_auto} onChange={(e) => setTypeForm({...typeForm, label_caption_toggle_auto: e.target.value})} placeholder="Auto" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelToggleAutoSub" className="text-sm font-medium text-gray-700 block">Toggle - Auto subtext</Label>
+                  <Input id="labelToggleAutoSub" type="text" value={typeForm.label_caption_toggle_auto_sub} onChange={(e) => setTypeForm({...typeForm, label_caption_toggle_auto_sub: e.target.value})} placeholder="AI generated" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelToggleCustom" className="text-sm font-medium text-gray-700 block">Toggle - Custom label</Label>
+                  <Input id="labelToggleCustom" type="text" value={typeForm.label_caption_toggle_custom} onChange={(e) => setTypeForm({...typeForm, label_caption_toggle_custom: e.target.value})} placeholder="Custom" className="h-12 px-4 text-base" />
+                </div>
+
+                <div className="space-y-4">
+                  <Label htmlFor="labelToggleCustomSub" className="text-sm font-medium text-gray-700 block">Toggle - Custom subtext</Label>
+                  <Input id="labelToggleCustomSub" type="text" value={typeForm.label_caption_toggle_custom_sub} onChange={(e) => setTypeForm({...typeForm, label_caption_toggle_custom_sub: e.target.value})} placeholder="Write your own" className="h-12 px-4 text-base" />
+                </div>
+
               </div>
             </div>
           </div>

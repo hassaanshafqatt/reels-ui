@@ -51,6 +51,14 @@ export async function PUT(
       icon, 
       message, 
       caption,
+      label_caption_title,
+      label_caption_description,
+      label_caption_field,
+      label_caption_placeholder,
+      label_caption_toggle_auto,
+      label_caption_toggle_auto_sub,
+      label_caption_toggle_custom,
+      label_caption_toggle_custom_sub,
       min_caption_length,
       max_caption_length,
       include_author,
@@ -73,6 +81,14 @@ export async function PUT(
     if (max_caption_length !== undefined) updates.max_caption_length = max_caption_length;
     if (include_author !== undefined) updates.include_author = include_author;
     if (allow_custom_audio !== undefined) updates.allow_custom_audio = allow_custom_audio;
+  if (label_caption_title !== undefined) updates.label_caption_title = label_caption_title;
+  if (label_caption_description !== undefined) updates.label_caption_description = label_caption_description;
+  if (label_caption_field !== undefined) updates.label_caption_field = label_caption_field;
+  if (label_caption_placeholder !== undefined) updates.label_caption_placeholder = label_caption_placeholder;
+  if (label_caption_toggle_auto !== undefined) updates.label_caption_toggle_auto = label_caption_toggle_auto;
+  if (label_caption_toggle_auto_sub !== undefined) updates.label_caption_toggle_auto_sub = label_caption_toggle_auto_sub;
+  if (label_caption_toggle_custom !== undefined) updates.label_caption_toggle_custom = label_caption_toggle_custom;
+  if (label_caption_toggle_custom_sub !== undefined) updates.label_caption_toggle_custom_sub = label_caption_toggle_custom_sub;
     if (external_url !== undefined) updates.external_url = external_url;
     if (status_url !== undefined) updates.status_url = status_url;
     if (posting_url !== undefined) updates.posting_url = posting_url;
