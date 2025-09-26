@@ -1152,7 +1152,8 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                                 refreshingJobs={refreshingJobs}
                                 onRefreshJob={checkJobStatus}
                                 onClearHistory={() =>
-                                  clearJobHistory(category.name)
+                                  // Always open confirmation dialog before clearing
+                                  openConfirmClear(category.name)
                                 }
                                 isClearingHistory={isClearingHistory}
                               />
@@ -1236,6 +1237,55 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      {/* Confirm Clear History Dialog */}
+      <Dialog
+        open={confirmClearOpen}
+        onOpenChange={(open) => setConfirmClearOpen(open)}
+      >
+        <DialogContent className="p-6">
+          <DialogClose onClose={() => setConfirmClearOpen(false)}>
+            <span className="sr-only">Close</span>
+          </DialogClose>
+          <DialogHeader>
+            <DialogTitle>Clear Generation History</DialogTitle>
+            <DialogDescription>
+              This will permanently delete generation history
+              {clearCategoryCandidate ? ` for ${clearCategoryCandidate}` : ''}.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-4 text-sm text-gray-700">
+            Are you sure you want to clear the selected history? This will
+            remove the records from your account.
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmClearOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmClear}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+              disabled={isClearingHistory}
+            >
+              {isClearingHistory ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                  Clearing...
+                </>
+              ) : (
+                'Clear History'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

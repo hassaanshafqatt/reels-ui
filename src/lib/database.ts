@@ -789,7 +789,7 @@ export const reelTypeOperations = {
       INSERT INTO reel_types (id, category_id, name, title, description, icon, message, caption, min_caption_length, max_caption_length, include_author, allow_custom_audio, external_url,
         label_caption_title, label_caption_description, label_caption_field, label_caption_placeholder, label_caption_toggle_auto, label_caption_toggle_auto_sub, label_caption_toggle_custom, label_caption_toggle_custom_sub,
         status_url, posting_url, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       id,
