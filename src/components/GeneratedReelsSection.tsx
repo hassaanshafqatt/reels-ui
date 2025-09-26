@@ -45,7 +45,7 @@ export default function GeneratedReelsSection({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900">
-              Generated Reels
+              Generated Content
             </CardTitle>
             <CardDescription className="text-sm sm:text-base text-gray-600 mt-1">
               Review and post your generated content immediately
@@ -91,23 +91,13 @@ export default function GeneratedReelsSection({
               <Instagram className="h-8 w-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No reels generated yet
+              No content generated yet
             </h3>
             <p className="text-gray-600 mb-4">
-              Generate your first reel in this category to see it here for
+              Generate your first piece of content in this category to see it here for
               immediate posting
             </p>
-            <Button
-              className="bg-teal-600 hover:bg-teal-700 text-white"
-              onClick={() =>
-                document
-                  .querySelector('[role="tablist"]')
-                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
-              aria-label="Scroll to generation section"
-            >
-              Generate Your First Reel
-            </Button>
+            
           </div>
         ) : (
           <div className="space-y-4">
