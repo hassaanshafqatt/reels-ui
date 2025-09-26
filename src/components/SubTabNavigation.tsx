@@ -18,10 +18,10 @@ export default function SubTabNavigation({
     },
     {
       key: 'post',
-      label: 'Post & Schedule',
+      label: 'Post Content',
       icon: <Instagram className="h-4 w-4" />,
     },
-    { key: 'history', label: 'History', icon: <Clock className="h-4 w-4" /> },
+    { key: 'history', label: 'Generation History', icon: <Clock className="h-4 w-4" /> },
   ];
 
   return (

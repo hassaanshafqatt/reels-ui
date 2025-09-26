@@ -862,7 +862,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                               </div>
                             </div>
                             <p className="text-gray-600 text-sm">
-                              Track generation progress and view completed reels
+                              Track generation progress and view completed jobs
                             </p>
 
                             <HistorySection
