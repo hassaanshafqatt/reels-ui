@@ -119,23 +119,152 @@ export async function GET(request: NextRequest) {
           }
 
           // Try to extract reel link from common response formats
-          if (statusResult.reelUrl) {
-            reelLink = statusResult.reelUrl;
-          } else if (statusResult.videoUrl) {
-            reelLink = statusResult.videoUrl;
-          } else if (statusResult.videoURL) {
-            reelLink = statusResult.videoURL;
-          } else if (statusResult.downloadUrl) {
-            reelLink = statusResult.downloadUrl;
-          } else if (statusResult.url) {
-            reelLink = statusResult.url;
-          } else if (statusResult.link) {
-            reelLink = statusResult.link;
+          // Also support nested shapes like { result: { result_url, caption } }
+          const maybeResult = statusResult.result || statusResult.data || null;
+
+          const extractUrl = (obj: unknown): string | null => {
+            if (!obj || typeof obj !== 'object') return null;
+            const o = obj as Record<string, unknown>;
+
+            const asString = (k: string): string | null => {
+              const v = o[k];
+              return typeof v === 'string' && v.length > 0 ? v : null;
+            };
+
+            return (
+              asString('reelUrl') ||
+              asString('videoUrl') ||
+              asString('videoURL') ||
+              asString('downloadUrl') ||
+              asString('result_url') ||
+              asString('url') ||
+              asString('link') ||
+              null
+            );
+          };
+
+          // top-level
+          reelLink = extractUrl(statusResult) || null;
+          // nested
+          if (!reelLink) {
+            reelLink = extractUrl(maybeResult) || null;
           }
 
-          // Try to extract caption from the response
+          // Try to extract caption from the response (support nested too)
           if (statusResult.caption) {
             caption = statusResult.caption;
+          } else if (
+            maybeResult &&
+            (maybeResult as Record<string, unknown>).caption
+          ) {
+            caption = (maybeResult as Record<string, unknown>)
+              .caption as string;
+          }
+
+          // Normalize various shapes into an array of URLs (best-effort)
+          const parseUrlsCandidate = (candidate: unknown): string[] => {
+            if (!candidate) return [];
+
+            // Already an array of strings
+            if (
+              Array.isArray(candidate) &&
+              candidate.every((v) => typeof v === 'string')
+            ) {
+              return candidate as string[];
+            }
+
+            // If candidate is an object with media/urls/result_url
+            if (typeof candidate === 'object' && candidate !== null) {
+              const obj = candidate as Record<string, unknown>;
+              if (Array.isArray(obj.media)) {
+                return obj.media
+                  .map((m) => {
+                    if (typeof m === 'string') return m;
+                    if (
+                      m &&
+                      typeof (m as Record<string, unknown>).url === 'string'
+                    )
+                      return (m as Record<string, unknown>).url as string;
+                    return null;
+                  })
+                  .filter(Boolean) as string[];
+              }
+              if (
+                Array.isArray(obj.urls) &&
+                obj.urls.every((u) => typeof u === 'string')
+              ) {
+                return obj.urls as string[];
+              }
+              if (typeof obj.result_url === 'string') {
+                return parseUrlsCandidate(obj.result_url);
+              }
+            }
+
+            // If it's a string: try JSON.parse first, then fallback to comma-split (trim brackets)
+            if (typeof candidate === 'string') {
+              const s = candidate.trim();
+              try {
+                const parsed = JSON.parse(s);
+                if (
+                  Array.isArray(parsed) &&
+                  parsed.every((p) => typeof p === 'string')
+                ) {
+                  return parsed as string[];
+                }
+              } catch {
+                // not valid JSON
+              }
+
+              // bracketed but not JSON (e.g. [url1,url2]) or comma-separated
+              let inner = s;
+              if (inner.startsWith('[') && inner.endsWith(']')) {
+                inner = inner.slice(1, -1);
+              }
+              return inner
+                .split(',')
+                .map((u) => u.trim())
+                .filter(Boolean);
+            }
+
+            return [];
+          };
+
+          // Build canonical URL array from nested result or top-level
+          const rawCandidate =
+            maybeResult?.result_url ??
+            maybeResult ??
+            statusResult?.result_url ??
+            statusResult?.result ??
+            statusResult;
+          const urls = parseUrlsCandidate(rawCandidate);
+
+          if (urls.length > 0) {
+            // attach media array to updatedResult for client consumption
+            (updatedResult as Record<string, unknown>).media = urls.map(
+              (u) => ({ url: u })
+            );
+            // prefer first URL as reelLink if not already set
+            if (!reelLink && urls[0]) reelLink = urls[0];
+          }
+
+          // Prepare DB result_url value: JSON stringify when multiple, single string otherwise
+          const dbResultUrl =
+            urls.length > 1 ? JSON.stringify(urls) : urls[0] || null;
+
+          // Development debug: log extracted values to help troubleshooting
+          if (process.env.NODE_ENV !== 'production') {
+            try {
+              console.debug('statusResult extraction', {
+                jobId,
+                newStatus,
+                reelLink,
+                caption,
+                errorMessage,
+                updatedResult: statusResult,
+              });
+            } catch {
+              // ignore logging errors
+            }
           }
 
           // Update the job record with the new status information
@@ -155,7 +284,7 @@ export async function GET(request: NextRequest) {
             const updateResult = jobOperations.updateStatusWithPollTracking(
               jobId,
               newStatus,
-              reelLink || undefined,
+              dbResultUrl || undefined,
               errorMessage || undefined,
               caption || undefined // caption from external response
             );

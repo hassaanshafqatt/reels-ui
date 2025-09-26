@@ -375,7 +375,17 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         if (result.jobId && (result.status || result.result?.status)) {
           const topLevelStatus = result.status; // "Pending"
           const resultStatus = result.result?.status; // "Pending"
-          const videoUrl = result.result?.videoURL;
+          // Prefer nested result fields, falling back to other common locations
+          const videoUrl =
+            result.result?.result_url ||
+            result.result?.videoURL ||
+            result.result?.videoUrl ||
+            result.result?.url ||
+            result.reelLink ||
+            result.videoURL ||
+            result.videoUrl ||
+            undefined;
+
           const caption = result.result?.caption || result.caption; // Extract caption from either location
 
           // Use the most relevant status (prefer result.status if available, otherwise top-level status)
@@ -383,10 +393,11 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
           const jobStatus = rawStatus.toLowerCase(); // Convert "Pending" to "pending"
 
           // Update job status using the job service
+          // Only pass resultUrl when we actually have one to avoid overwriting DB
           await jobService.updateJobStatus(
             result.jobId,
             jobStatus,
-            videoUrl,
+            videoUrl || undefined,
             undefined,
             caption
           );
@@ -412,14 +423,22 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         } else if (result.job_id && result.Status) {
           // Handle alternative format (job_id + Status)
           const jobStatus = result.Status.toLowerCase(); // Convert "Pending" to "pending"
-          const videoUrl = result.videoURL;
-          const caption = result.caption; // Extract caption
+          const videoUrl =
+            result.result?.result_url ||
+            result.result?.videoURL ||
+            result.result?.videoUrl ||
+            result.result?.url ||
+            result.reelLink ||
+            result.videoURL ||
+            result.videoUrl ||
+            undefined;
+          const caption = result.result?.caption || result.caption; // Extract caption
 
-          // Update job status using the job service
+          // Update job status using the job service (only pass resultUrl if present)
           await jobService.updateJobStatus(
             result.job_id,
             jobStatus,
-            videoUrl,
+            videoUrl || undefined,
             undefined,
             caption
           );
@@ -678,7 +697,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
 
   return (
     <div className="w-full min-h-screen flex flex-col">
-  <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-24 sm:pb-8">
+      <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-24 sm:pb-8">
         {/* Loading State */}
         {reelDataLoading && <LoadingState />}
 
@@ -1178,7 +1197,9 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                       >
                         {getIconFromDatabase(category.icon || 'Sparkles')}
                       </div>
-                      <span className="mt-1 leading-none text-[11px] max-w-[68px] truncate">{mobileTitle}</span>
+                      <span className="mt-1 leading-none text-[11px] max-w-[68px] truncate">
+                        {mobileTitle}
+                      </span>
                     </button>
                   );
                 })}

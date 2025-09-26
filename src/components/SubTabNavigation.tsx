@@ -21,7 +21,11 @@ export default function SubTabNavigation({
       label: 'Post Content',
       icon: <Instagram className="h-4 w-4" />,
     },
-    { key: 'history', label: 'Generation History', icon: <Clock className="h-4 w-4" /> },
+    {
+      key: 'history',
+      label: 'Generation History',
+      icon: <Clock className="h-4 w-4" />,
+    },
   ];
 
   return (
@@ -51,7 +55,9 @@ export default function SubTabNavigation({
                   {subTab.icon}
                 </div>
                 <span className="hidden sm:inline">{subTab.label}</span>
-                <span className="sm:hidden text-xs truncate">{subTab.label.split(' ')[0]}</span>
+                <span className="sm:hidden text-xs truncate">
+                  {subTab.label.split(' ')[0]}
+                </span>
               </div>
               {/* Active indicator */}
               <div

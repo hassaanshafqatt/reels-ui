@@ -60,7 +60,9 @@ export default function TabNavigation({
                     >
                       {getIconFromDatabase(category.icon || 'Sparkles')}
                     </div>
-                    <span className="max-w-[84px] truncate text-xs">{mobileTitle}</span>
+                    <span className="max-w-[84px] truncate text-xs">
+                      {mobileTitle}
+                    </span>
                   </div>
                   {/* Active indicator */}
                   {isActive && (

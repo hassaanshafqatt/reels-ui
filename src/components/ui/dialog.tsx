@@ -85,7 +85,9 @@ const DialogContent = ({ children, className = '' }: DialogContentProps) => {
     <div
       role="dialog"
       aria-modal="true"
-      className={`relative bg-white rounded-xl shadow-lg w-full mx-auto max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] overflow-auto ${className}`}
+      // Use overflow-hidden to prevent scroll bars on the main dialog container.
+      // Inner content should handle its own scrolling if required.
+      className={`relative bg-white rounded-xl shadow-lg w-full mx-auto max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] overflow-hidden ${className}`}
     >
       {children}
     </div>

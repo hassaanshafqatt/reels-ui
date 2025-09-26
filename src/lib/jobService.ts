@@ -161,14 +161,41 @@ export const jobService = {
         headers: getAuthHeaders(),
       });
 
-      if (!response.ok) {
+      // If server responds OK, return parsed result (may include shouldStopPolling)
+      if (response.ok) {
+        const result = await response.json();
+        return result;
+      }
+
+      // If job is not found, treat it as a stop condition
+      if (response.status === 404) {
         return { status: 'failed', shouldStopPolling: true };
       }
 
-      const result = await response.json();
-      return result;
+      // Try to parse a JSON body — if the server explicitly included shouldStopPolling, honor it
+      try {
+        const parsed = await response.json();
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          Object.prototype.hasOwnProperty.call(parsed, 'shouldStopPolling')
+        ) {
+          return parsed as {
+            status: string;
+            result_url?: string;
+            shouldStopPolling?: boolean;
+          };
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      // For other non-OK responses without explicit shouldStopPolling, throw so callers can treat
+      // this as a transient error (and avoid stopping polling immediately on a single failure).
+      throw new Error(`Status check failed with HTTP ${response.status}`);
     } catch {
-      return { status: 'failed', shouldStopPolling: true };
+      // Propagate error to caller — do not silently tell the client to stop polling.
+      throw new Error('Network error during status check');
     }
   },
 

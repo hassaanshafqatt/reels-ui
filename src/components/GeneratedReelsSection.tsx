@@ -94,10 +94,9 @@ export default function GeneratedReelsSection({
               No content generated yet
             </h3>
             <p className="text-gray-600 mb-4">
-              Generate your first piece of content in this category to see it here for
-              immediate posting
+              Generate your first piece of content in this category to see it
+              here for immediate posting
             </p>
-            
           </div>
         ) : (
           <div className="space-y-4">
