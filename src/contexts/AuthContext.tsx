@@ -8,6 +8,7 @@ import React, {
   useCallback,
 } from 'react';
 import Cookies from 'js-cookie';
+import { getAuthToken, setAuthToken, removeAuthToken } from '@/lib/clientAuth';
 
 interface User {
   id: string;
@@ -61,7 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize auth state from cookies
   useEffect(() => {
     const initializeAuth = async () => {
-      const savedToken = Cookies.get('auth_token');
+      const savedToken = getAuthToken();
       const savedUser = Cookies.get('user_data');
 
       if (savedToken && savedUser) {
@@ -123,19 +124,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
 
         // Save to cookies (expires in 7 days)
-        Cookies.set('auth_token', data.token, {
-          expires: 7,
-          sameSite: 'lax',
-          path: '/',
-        });
+        setAuthToken(data.token, { expiresDays: 7 });
         Cookies.set('user_data', JSON.stringify(data.user), {
           expires: 7,
           sameSite: 'lax',
           path: '/',
         });
 
-        // Verify the cookie was set
-        const savedToken = Cookies.get('auth_token');
+        // Verify the token was set via shared helper
+        const savedToken = getAuthToken();
         void savedToken;
 
         return { success: true };
@@ -168,11 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(data.user);
 
         // Save to cookies
-        Cookies.set('auth_token', data.token, {
-          expires: 7,
-          sameSite: 'lax',
-          path: '/',
-        });
+        setAuthToken(data.token, { expiresDays: 7 });
         Cookies.set('user_data', JSON.stringify(data.user), {
           expires: 7,
           sameSite: 'lax',
@@ -207,7 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     setUser(null);
     setToken(null);
-    Cookies.remove('auth_token');
+    removeAuthToken();
     Cookies.remove('user_data');
   }, [token]);
 
@@ -227,11 +220,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.ok && data.token) {
         setToken(data.token);
-        Cookies.set('auth_token', data.token, {
-          expires: 7,
-          secure: true,
-          sameSite: 'strict',
-        });
+        setAuthToken(data.token, { expiresDays: 7 });
         return true;
       } else {
         logout();

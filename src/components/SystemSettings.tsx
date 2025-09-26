@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader, AlertCircle, Settings, Type, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAuthHeaders, getAuthToken } from '@/lib/clientAuth';
 
 interface AdminSetting {
   key: string;
@@ -67,10 +68,7 @@ export function SystemSettings() {
       setLoading(true);
 
       const response = await fetch('/api/admin/settings', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -101,10 +99,7 @@ export function SystemSettings() {
 
       const response = await fetch('/api/admin/settings', {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ key, value, description }),
       });
 

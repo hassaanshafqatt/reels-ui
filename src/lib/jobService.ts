@@ -1,5 +1,5 @@
 // Job management utilities for client-side
-import Cookies from 'js-cookie';
+import { getAuthToken, getAuthHeaders } from './clientAuth';
 
 interface StoredJob {
   id: string;
@@ -22,19 +22,7 @@ interface StoredJob {
   updated_at: string;
 }
 
-// Get auth token from cookies
-const getAuthToken = (): string | null => {
-  return Cookies.get('auth_token') || null;
-};
-
-// Create headers with auth token
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
+// Use shared client auth helpers
 
 export const jobService = {
   // Get all jobs for the current user

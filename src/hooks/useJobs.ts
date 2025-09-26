@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { jobService, type StoredJob } from '@/lib/jobService';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAuthHeaders } from '@/lib/clientAuth';
 
 interface UseJobsReturn {
   jobs: StoredJob[];
@@ -19,10 +20,7 @@ const checkGlobalPollingEnabled = async (
     if (!authToken) return true; // Default to enabled if no auth
 
     const response = await fetch('/api/admin/settings', {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import Cookies from 'js-cookie';
+import { getAuthHeaders } from '@/lib/clientAuth';
 import {
   Dialog,
   DialogContent,
@@ -63,9 +63,7 @@ export function UserManagement() {
       setError(null);
 
       const response = await fetch('/api/admin/users', {
-        headers: {
-          Authorization: `Bearer ${Cookies.get('auth_token')}`,
-        },
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -87,10 +85,7 @@ export function UserManagement() {
 
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${Cookies.get('auth_token')}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ is_admin: newAdminStatus }),
       });
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import Cookies from 'js-cookie';
+import { getAuthHeaders } from '@/lib/clientAuth';
 import { Sparkles, Clock } from 'lucide-react';
 import { jobService, type StoredJob } from '@/lib/jobService';
 import { useReelData } from '@/hooks/useReelData';
@@ -126,9 +126,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
     (async () => {
       try {
         const response = await fetch('/api/admin/settings', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token') || Cookies.get('auth_token')}`,
-          },
+          headers: getAuthHeaders(),
         });
         if (response.ok) {
           const data = await response.json();
@@ -391,9 +389,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
       const url = `/api/reels/status?jobId=${encodeURIComponent(job.job_id)}&type=${encodeURIComponent(job.type)}`;
 
       const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token') || Cookies.get('auth_token')}`,
-        },
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -632,14 +628,10 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         const audioFormData = new FormData();
         audioFormData.append('audioFile', customAudioFile);
 
-        // Get auth token from cookies (same method as jobService)
-        const authToken = Cookies.get('auth_token');
-
+        // Get auth headers from shared helper
         const uploadResponse = await fetch('/api/upload/audio', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+          headers: getAuthHeaders(false), // do not force JSON content-type for FormData
           body: audioFormData,
         });
 

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import type { StoredJob } from '@/lib/jobService';
 import { useAuth } from '@/contexts/AuthContext';
-import Cookies from 'js-cookie';
+import { getAuthToken, getAuthHeaders } from '@/lib/clientAuth';
 
 interface JobStatusCardProps {
   job: StoredJob;
@@ -40,18 +40,19 @@ export default function JobStatusCard({
   onRefresh,
 }: JobStatusCardProps) {
   const { token } = useAuth();
-  const [isFullscreen, setIsFullscreen] = useState(false); // kept for legacy variable use in classnames
+  // legacy fullscreen flag kept for className compatibility
+  const [isFullscreen] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [postMessage, setPostMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // ensure isFullscreen local flag is reset when dialog closes/open
   React.useEffect(() => {
-    if (!isDialogOpen) setIsFullscreen(false);
+    // legacy: previously toggled fullscreen state here. No-op after refactor.
   }, [isDialogOpen]);
 
   // Helper: parse result_url into an array of string URLs.
@@ -165,8 +166,8 @@ export default function JobStatusCard({
   const handlePostReel = async () => {
     setIsPosting(true);
     try {
-      // Get token from cookies (same method as auth context)
-      const authToken = token || Cookies.get('auth_token');
+      // Get token from shared helper or context
+      const authToken = token || getAuthToken();
 
       if (!authToken) {
         // Could add a notification system here if needed
@@ -192,10 +193,7 @@ export default function JobStatusCard({
 
       const response = await fetch('/api/reels/post', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           jobId: job.job_id,
           category: job.category,

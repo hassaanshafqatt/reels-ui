@@ -1,5 +1,5 @@
 // Service for managing reel categories and types
-import Cookies from 'js-cookie';
+import { getAuthHeaders } from './clientAuth';
 
 export interface ReelCategory {
   id: string;
@@ -47,11 +47,7 @@ export interface ReelType {
 
 class ReelService {
   private getAuthHeaders() {
-    const token = Cookies.get('auth_token');
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
+    return getAuthHeaders();
   }
 
   // Category operations
