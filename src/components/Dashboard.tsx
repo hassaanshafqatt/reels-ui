@@ -678,7 +678,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
 
   return (
     <div className="w-full min-h-screen flex flex-col">
-      <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-16 sm:pb-8">
+  <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-24 sm:pb-8">
         {/* Loading State */}
         {reelDataLoading && <LoadingState />}
 
@@ -1147,10 +1147,10 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         />
 
         {/* Mobile Bottom Navigation */}
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-          <div className="px-2 py-1">
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 mobile-bottom-nav safe-area-bottom">
+          <div className="px-3 py-2">
             <div className="flex justify-center">
-              <div className="flex space-x-1 bg-gray-50 rounded-full p-1 max-w-full overflow-x-auto scrollbar-hide">
+              <div className="flex space-x-2 bg-gray-50 rounded-full p-1.5 max-w-full overflow-x-auto scrollbar-hide">
                 {reelCategories.map((category) => {
                   const mobileTitle = category.title
                     .replace('Viral Reels', 'Viral')
@@ -1164,7 +1164,8 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                     <button
                       key={category.id}
                       onClick={() => setActiveTab(category.name)}
-                      className={`flex flex-col items-center px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 min-w-[60px] ${
+                      aria-current={isActive ? 'true' : 'false'}
+                      className={`flex flex-col items-center px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 min-w-[64px] touch-target ${
                         isActive
                           ? 'bg-teal-600 text-white'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1177,7 +1178,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                       >
                         {getIconFromDatabase(category.icon || 'Sparkles')}
                       </div>
-                      <span className="mt-1 leading-none">{mobileTitle}</span>
+                      <span className="mt-1 leading-none text-[11px] max-w-[68px] truncate">{mobileTitle}</span>
                     </button>
                   );
                 })}

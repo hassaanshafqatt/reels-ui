@@ -34,7 +34,7 @@ export default function SubTabNavigation({
             <button
               key={subTab.key}
               onClick={() => onSubTabChange(subTab.key)}
-              className={`flex-1 relative px-4 sm:px-6 py-4 text-sm font-medium transition-all duration-300 group ${
+              className={`flex-1 relative px-3 sm:px-5 py-3 sm:py-4 text-sm font-medium transition-all duration-300 group touch-target ${
                 isActive
                   ? 'text-teal-600 bg-teal-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -51,7 +51,7 @@ export default function SubTabNavigation({
                   {subTab.icon}
                 </div>
                 <span className="hidden sm:inline">{subTab.label}</span>
-                <span className="sm:hidden">{subTab.label.split(' ')[0]}</span>
+                <span className="sm:hidden text-xs truncate">{subTab.label.split(' ')[0]}</span>
               </div>
               {/* Active indicator */}
               <div

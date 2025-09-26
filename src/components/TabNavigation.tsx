@@ -33,7 +33,7 @@ export default function TabNavigation({
       <div className="border-b border-gray-200 bg-white rounded-t-xl">
         {/* Mobile: Scrollable container */}
         <div className="sm:hidden overflow-x-auto scrollbar-hide">
-          <nav className="flex px-4 min-w-max">
+          <nav className="flex px-3 min-w-max space-x-2">
             {categories.map((category) => {
               const mobileTitle = category.title
                 .replace('Viral Reels', 'Viral')
@@ -47,7 +47,7 @@ export default function TabNavigation({
                 <button
                   key={category.id}
                   onClick={() => onTabChange(category.name)}
-                  className={`relative py-4 px-4 text-sm font-medium border-b-2 transition-all duration-200 group whitespace-nowrap ${
+                  className={`relative py-3 px-3 text-sm font-medium border-b-2 transition-all duration-200 group whitespace-nowrap touch-target min-w-[64px] truncate ${
                     isActive
                       ? 'text-teal-600 border-teal-600'
                       : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
@@ -60,7 +60,7 @@ export default function TabNavigation({
                     >
                       {getIconFromDatabase(category.icon || 'Sparkles')}
                     </div>
-                    <span>{mobileTitle}</span>
+                    <span className="max-w-[84px] truncate text-xs">{mobileTitle}</span>
                   </div>
                   {/* Active indicator */}
                   {isActive && (
