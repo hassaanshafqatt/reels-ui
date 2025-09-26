@@ -949,101 +949,107 @@ export default function AdminPanel() {
                 : 'Add a new reel category to the system.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-8 py-2">
-            <div className="space-y-4">
-              <Label
-                htmlFor="categoryName"
-                className="text-sm font-medium text-gray-700 block"
-              >
-                Name (ID)
-              </Label>
-              <Input
-                id="categoryName"
-                type="text"
-                value={categoryForm.name}
-                onChange={(e) =>
-                  setCategoryForm({ ...categoryForm, name: e.target.value })
-                }
-                placeholder="unique-category-name"
-                className="h-12 px-4 text-base"
-              />
-            </div>
-            <div className="space-y-4">
-              <Label
-                htmlFor="categoryTitle"
-                className="text-sm font-medium text-gray-700 block"
-              >
-                Display Title
-              </Label>
-              <Input
-                id="categoryTitle"
-                type="text"
-                value={categoryForm.title}
-                onChange={(e) =>
-                  setCategoryForm({ ...categoryForm, title: e.target.value })
-                }
-                placeholder="Category Display Name"
-                className="h-12 px-4 text-base"
-              />
-            </div>
-            <div className="space-y-4">
-              <Label
-                htmlFor="categoryDescription"
-                className="text-sm font-medium text-gray-700 block"
-              >
-                Description
-              </Label>
-              <Textarea
-                id="categoryDescription"
-                value={categoryForm.description}
-                onChange={(e) =>
-                  setCategoryForm({
-                    ...categoryForm,
-                    description: e.target.value,
-                  })
-                }
-                rows={4}
-                placeholder="Category description..."
-                className="resize-none px-4 py-3 text-base min-h-[100px]"
-              />
-            </div>
-            <div className="space-y-4">
-              <Label
-                htmlFor="categoryIcon"
-                className="text-sm font-medium text-gray-700 block"
-              >
-                Icon
-              </Label>
-              <Input
-                id="categoryIcon"
-                type="text"
-                value={categoryForm.icon}
-                onChange={(e) =>
-                  setCategoryForm({ ...categoryForm, icon: e.target.value })
-                }
-                placeholder="icon-name"
-                className="h-12 px-4 text-base"
-              />
-            </div>
-            <div className="flex items-center space-x-4 pt-4">
-              <input
-                type="checkbox"
-                id="categoryActive"
-                checked={categoryForm.is_active}
-                onChange={(e) =>
-                  setCategoryForm({
-                    ...categoryForm,
-                    is_active: e.target.checked,
-                  })
-                }
-                className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 focus:ring-2"
-              />
-              <Label
-                htmlFor="categoryActive"
-                className="text-base font-medium text-gray-700 cursor-pointer"
-              >
-                Active Category
-              </Label>
+          <div className="space-y-6 py-2">
+            <div className="flex flex-col space-y-4">
+              <div>
+                <Label
+                  htmlFor="categoryName"
+                  className="text-sm font-medium text-gray-700 block"
+                >
+                  Name (ID)
+                </Label>
+                <Input
+                  id="categoryName"
+                  type="text"
+                  value={categoryForm.name}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, name: e.target.value })
+                  }
+                  placeholder="unique-category-name"
+                  className="h-12 px-4 text-base mt-2"
+                />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="categoryTitle"
+                  className="text-sm font-medium text-gray-700 block"
+                >
+                  Display Title
+                </Label>
+                <Input
+                  id="categoryTitle"
+                  type="text"
+                  value={categoryForm.title}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, title: e.target.value })
+                  }
+                  placeholder="Category Display Name"
+                  className="h-12 px-4 text-base mt-2"
+                />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="categoryDescription"
+                  className="text-sm font-medium text-gray-700 block"
+                >
+                  Description
+                </Label>
+                <Textarea
+                  id="categoryDescription"
+                  value={categoryForm.description}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={4}
+                  placeholder="Category description..."
+                  className="resize-none px-4 py-3 text-base min-h-[100px] mt-2"
+                />
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="categoryIcon"
+                  className="text-sm font-medium text-gray-700 block"
+                >
+                  Icon
+                </Label>
+                <Input
+                  id="categoryIcon"
+                  type="text"
+                  value={categoryForm.icon}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, icon: e.target.value })
+                  }
+                  placeholder="icon-name"
+                  className="h-12 px-4 text-base mt-2"
+                />
+              </div>
+
+              <div className="flex items-start space-x-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="categoryActive"
+                  checked={categoryForm.is_active}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      is_active: e.target.checked,
+                    })
+                  }
+                  className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 focus:ring-2 mt-1"
+                />
+                <Label
+                  htmlFor="categoryActive"
+                  className="text-base font-medium text-gray-700 cursor-pointer"
+                >
+                  Active Category
+                </Label>
+              </div>
             </div>
           </div>
           <DialogFooter className="flex flex-col-reverse sm:flex-row gap-4 pt-8 border-t border-gray-200 mt-8">
@@ -1083,7 +1089,7 @@ export default function AdminPanel() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
+            <div className="grid grid-cols-1 gap-8 lg:gap-12">
               {/* Basic Information */}
               <div className="space-y-8">
                 <div>
@@ -1093,7 +1099,7 @@ export default function AdminPanel() {
                     </div>
                     Basic Information
                   </h3>
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     <div className="space-y-4">
                       <Label
                         htmlFor="typeCategory"
@@ -1213,7 +1219,7 @@ export default function AdminPanel() {
                     </div>
                     Content & URLs
                   </h3>
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     <div className="space-y-4">
                       <Label
                         htmlFor="typeMessage"
@@ -1252,49 +1258,47 @@ export default function AdminPanel() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <Label
-                          htmlFor="minCaptionLength"
-                          className="text-sm font-medium text-gray-700 block"
-                        >
-                          Min Caption Length
-                        </Label>
-                        <Input
-                          id="minCaptionLength"
-                          type="number"
-                          value={typeForm.min_caption_length}
-                          onChange={(e) =>
-                            setTypeForm({
-                              ...typeForm,
-                              min_caption_length: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          min="0"
-                          className="h-12 px-4 text-base"
-                        />
-                      </div>
-                      <div className="space-y-4">
-                        <Label
-                          htmlFor="maxCaptionLength"
-                          className="text-sm font-medium text-gray-700 block"
-                        >
-                          Max Caption Length
-                        </Label>
-                        <Input
-                          id="maxCaptionLength"
-                          type="number"
-                          value={typeForm.max_caption_length}
-                          onChange={(e) =>
-                            setTypeForm({
-                              ...typeForm,
-                              max_caption_length: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          min="0"
-                          className="h-12 px-4 text-base"
-                        />
-                      </div>
+                    <div className="space-y-4">
+                      <Label
+                        htmlFor="minCaptionLength"
+                        className="text-sm font-medium text-gray-700 block"
+                      >
+                        Min Caption Length
+                      </Label>
+                      <Input
+                        id="minCaptionLength"
+                        type="number"
+                        value={typeForm.min_caption_length}
+                        onChange={(e) =>
+                          setTypeForm({
+                            ...typeForm,
+                            min_caption_length: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        min="0"
+                        className="h-12 px-4 text-base mt-2"
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <Label
+                        htmlFor="maxCaptionLength"
+                        className="text-sm font-medium text-gray-700 block"
+                      >
+                        Max Caption Length
+                      </Label>
+                      <Input
+                        id="maxCaptionLength"
+                        type="number"
+                        value={typeForm.max_caption_length}
+                        onChange={(e) =>
+                          setTypeForm({
+                            ...typeForm,
+                            max_caption_length: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        min="0"
+                        className="h-12 px-4 text-base mt-2"
+                      />
                     </div>
 
                     <div className="space-y-4">
@@ -1375,8 +1379,8 @@ export default function AdminPanel() {
                 </div>
                 Settings
               </h3>
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="includeAuthor"
@@ -1387,7 +1391,7 @@ export default function AdminPanel() {
                         include_author: e.target.checked,
                       })
                     }
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1"
                   />
                   <Label
                     htmlFor="includeAuthor"
@@ -1397,7 +1401,7 @@ export default function AdminPanel() {
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="allowCustomAudio"
@@ -1408,7 +1412,7 @@ export default function AdminPanel() {
                         allow_custom_audio: e.target.checked,
                       })
                     }
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1"
                   />
                   <Label
                     htmlFor="allowCustomAudio"
@@ -1418,7 +1422,7 @@ export default function AdminPanel() {
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-start space-x-3">
                   <input
                     type="checkbox"
                     id="typeActive"
@@ -1426,7 +1430,7 @@ export default function AdminPanel() {
                     onChange={(e) =>
                       setTypeForm({ ...typeForm, is_active: e.target.checked })
                     }
-                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                    className="w-5 h-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1"
                   />
                   <Label
                     htmlFor="typeActive"
@@ -1446,7 +1450,7 @@ export default function AdminPanel() {
                 </div>
                 UI Labels (Per-type overrides)
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex flex-col space-y-4">
                 <div className="space-y-4">
                   <Label
                     htmlFor="labelCaptionTitle"
@@ -1465,7 +1469,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="e.g. Suggested caption"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1487,7 +1491,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Short description"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1509,7 +1513,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Caption"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1531,7 +1535,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Write a caption..."
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1553,7 +1557,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Auto"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1575,7 +1579,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="AI generated"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1597,7 +1601,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Custom"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
 
@@ -1619,7 +1623,7 @@ export default function AdminPanel() {
                       })
                     }
                     placeholder="Write your own"
-                    className="h-12 px-4 text-base"
+                    className="h-12 px-4 text-base mt-2"
                   />
                 </div>
               </div>
