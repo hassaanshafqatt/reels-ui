@@ -1,15 +1,21 @@
-import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Clock,
   RefreshCw,
   Instagram,
   Plus,
   Settings,
-  ExternalLink
-} from "lucide-react";
+  ExternalLink,
+} from 'lucide-react';
 
 export default function PostingScheduleSection() {
   return (
@@ -25,7 +31,10 @@ export default function PostingScheduleSection() {
             </CardDescription>
           </div>
           <div className="hidden sm:flex items-center space-x-2">
-            <Badge variant="outline" className="text-teal-600 border-teal-200 bg-teal-50">
+            <Badge
+              variant="outline"
+              className="text-teal-600 border-teal-200 bg-teal-50"
+            >
               Auto-Post Ready
             </Badge>
           </div>
@@ -44,9 +53,16 @@ export default function PostingScheduleSection() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-sm text-gray-600">
-                <p><strong>Next Post:</strong> Today at 3:00 PM</p>
-                <p><strong>Frequency:</strong> 2 posts per day</p>
-                <p><strong>Status:</strong> <span className="text-green-600 font-medium">Active</span></p>
+                <p>
+                  <strong>Next Post:</strong> Today at 3:00 PM
+                </p>
+                <p>
+                  <strong>Frequency:</strong> 2 posts per day
+                </p>
+                <p>
+                  <strong>Status:</strong>{' '}
+                  <span className="text-green-600 font-medium">Active</span>
+                </p>
               </div>
               <Button variant="outline" size="sm" className="w-full">
                 Edit Schedule
@@ -64,9 +80,15 @@ export default function PostingScheduleSection() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-sm text-gray-600">
-                <p><strong>Queued:</strong> 12 reels ready</p>
-                <p><strong>In Progress:</strong> 3 generating</p>
-                <p><strong>Failed:</strong> 0 posts</p>
+                <p>
+                  <strong>Queued:</strong> 12 reels ready
+                </p>
+                <p>
+                  <strong>In Progress:</strong> 3 generating
+                </p>
+                <p>
+                  <strong>Failed:</strong> 0 posts
+                </p>
               </div>
               <Button variant="outline" size="sm" className="w-full">
                 View Queue
@@ -84,9 +106,16 @@ export default function PostingScheduleSection() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="text-sm text-gray-600">
-                <p><strong>This Week:</strong> 14 posts</p>
-                <p><strong>Avg. Reach:</strong> 25.3K</p>
-                <p><strong>Engagement:</strong> <span className="text-green-600 font-medium">+8.2%</span></p>
+                <p>
+                  <strong>This Week:</strong> 14 posts
+                </p>
+                <p>
+                  <strong>Avg. Reach:</strong> 25.3K
+                </p>
+                <p>
+                  <strong>Engagement:</strong>{' '}
+                  <span className="text-green-600 font-medium">+8.2%</span>
+                </p>
               </div>
               <Button variant="outline" size="sm" className="w-full">
                 View Analytics
@@ -97,7 +126,9 @@ export default function PostingScheduleSection() {
 
         {/* Quick Actions */}
         <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Quick Actions
+          </h3>
           <div className="flex flex-wrap gap-3">
             <Button className="bg-teal-600 hover:bg-teal-700 text-white">
               <Plus className="h-4 w-4 mr-2" />

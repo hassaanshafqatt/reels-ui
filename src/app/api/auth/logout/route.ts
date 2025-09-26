@@ -4,7 +4,7 @@ import { sessionOperations } from '@/lib/database';
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { message: 'Authorization token required' },
@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Logged out successfully',
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

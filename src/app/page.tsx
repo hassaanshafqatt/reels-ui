@@ -1,36 +1,56 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { LogOut, Sparkles, Menu, X } from "lucide-react";
-import Dashboard from "@/components/Dashboard";
-import { LoginPage } from "@/components/LoginPage";
-import { AccountSwitcher, InstagramAccount } from "@/components/AccountSwitcher";
-import { useAuth } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { LogOut, Sparkles, Menu, X } from 'lucide-react';
+import Dashboard from '@/components/Dashboard';
+import { LoginPage } from '@/components/LoginPage';
+import {
+  AccountSwitcher,
+  InstagramAccount,
+} from '@/components/AccountSwitcher';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 const accounts: InstagramAccount[] = [
-  { id: 'main_account', username: '@main_account', followers: '12.5K', isActive: true },
-  { id: 'business_account', username: '@business_account', followers: '8.2K', isActive: false },
-  { id: 'personal_account', username: '@personal_account', followers: '25.1K', isActive: false },
+  {
+    id: 'main_account',
+    username: '@main_account',
+    followers: '12.5K',
+    isActive: true,
+  },
+  {
+    id: 'business_account',
+    username: '@business_account',
+    followers: '8.2K',
+    isActive: false,
+  },
+  {
+    id: 'personal_account',
+    username: '@personal_account',
+    followers: '25.1K',
+    isActive: false,
+  },
 ];
 
 function AppContent() {
   const { logout, user } = useAuth();
   void user;
-  const [selectedAccount, setSelectedAccount] = useState<InstagramAccount>(accounts[0]);
+  const [selectedAccount, setSelectedAccount] = useState<InstagramAccount>(
+    accounts[0]
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Create dynamic accounts array with proper isActive state
-  const dynamicAccounts = accounts.map(account => ({
+  const dynamicAccounts = accounts.map((account) => ({
     ...account,
-    isActive: account.id === selectedAccount.id
+    isActive: account.id === selectedAccount.id,
   }));
 
   const handleReelSelect = (_categoryId: string, _typeId: string) => {
     // Handle reel selection logic here
-    void _categoryId; void _typeId;
+    void _categoryId;
+    void _typeId;
   };
 
   const handleAccountChange = (account: InstagramAccount) => {
@@ -66,14 +86,16 @@ function AppContent() {
                     <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <h1 className="text-lg font-bold text-gray-900">ReelCraft</h1>
+                    <h1 className="text-lg font-bold text-gray-900">
+                      ReelCraft
+                    </h1>
                   </div>
                 </div>
-                
+
                 {/* User Actions */}
                 <div className="flex items-center">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={handleLogout}
                     className="p-2 text-red-600"
@@ -89,15 +111,17 @@ function AppContent() {
           {isSidebarOpen && (
             <div className="fixed inset-0 z-50">
               {/* Backdrop */}
-              <div 
+              <div
                 className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
                 onClick={toggleSidebar}
               ></div>
-              
+
               {/* Sidebar */}
               <div className="fixed left-0 top-0 bottom-0 w-72 max-w-[85vw] bg-white shadow-xl transform transition-transform">
                 <div className="flex items-center justify-between p-3 border-b">
-                  <h2 className="text-lg font-semibold text-gray-900">Account Manager</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Account Manager
+                  </h2>
                   <button
                     onClick={toggleSidebar}
                     className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -107,7 +131,7 @@ function AppContent() {
                 </div>
                 <div className="h-full overflow-y-auto pb-20">
                   <div className="p-3">
-                    <AccountSwitcher 
+                    <AccountSwitcher
                       accounts={dynamicAccounts}
                       onAccountChange={(account) => {
                         handleAccountChange(account);
@@ -124,9 +148,7 @@ function AppContent() {
           {/* Mobile Main Content */}
           <main className="pb-4 w-full overflow-x-hidden mobile-dashboard">
             <div className="w-full">
-              <Dashboard 
-                onReelSelect={handleReelSelect}
-              />
+              <Dashboard onReelSelect={handleReelSelect} />
             </div>
           </main>
         </div>
@@ -134,7 +156,7 @@ function AppContent() {
         {/* Desktop Layout */}
         <div className="hidden lg:flex h-screen">
           {/* Desktop Sidebar */}
-          <AccountSwitcher 
+          <AccountSwitcher
             accounts={dynamicAccounts}
             onAccountChange={handleAccountChange}
             isMobile={false}
@@ -150,7 +172,9 @@ function AppContent() {
                     <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
                       <Sparkles className="h-5 w-5 text-white" />
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900">ReelCraft</h1>
+                    <h1 className="text-xl font-bold text-gray-900">
+                      ReelCraft
+                    </h1>
                   </div>
                 </div>
               </div>
@@ -158,9 +182,7 @@ function AppContent() {
 
             {/* Desktop Main Content */}
             <main className="flex-1 overflow-y-auto">
-              <Dashboard 
-                onReelSelect={handleReelSelect}
-              />
+              <Dashboard onReelSelect={handleReelSelect} />
             </main>
           </div>
         </div>
@@ -172,5 +194,3 @@ function AppContent() {
 export default function Home() {
   return <AppContent />;
 }
-
-

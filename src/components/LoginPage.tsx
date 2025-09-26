@@ -1,12 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "./ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from './ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Eye,
   EyeOff,
@@ -16,8 +22,8 @@ import {
   TrendingUp,
   Users,
   BarChart3,
-  AlertCircle
-} from "lucide-react";
+  AlertCircle,
+} from 'lucide-react';
 
 export const LoginPage = () => {
   const { login, register, isLoading } = useAuth();
@@ -28,7 +34,7 @@ export const LoginPage = () => {
     lastName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -46,58 +52,64 @@ export const LoginPage = () => {
 
   const handleSubmit = async () => {
     setError(null);
-    
+
     // Test with a simple validation error first
     if (!formData.email.trim()) {
-      setError("Email is required");
+      setError('Email is required');
       return;
     }
-    
+
     if (!formData.password.trim()) {
-      setError("Password is required");
+      setError('Password is required');
       return;
     }
 
     try {
       if (isRegistering) {
         if (!formData.firstName.trim() || !formData.lastName.trim()) {
-          setError("Please fill in all fields");
+          setError('Please fill in all fields');
           return;
         }
-        
+
         if (formData.password !== formData.confirmPassword) {
-          setError("Passwords do not match");
+          setError('Passwords do not match');
           return;
         }
 
         const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-        const result = await register(formData.email, formData.password, fullName);
-        
+        const result = await register(
+          formData.email,
+          formData.password,
+          fullName
+        );
+
         if (result.success) {
           // Success - let the ProtectedRoute handle the redirect naturally
           return;
         } else {
           // Redirect to login page with error parameter
-          const errorMessage = result.error || "Registration failed";
+          const errorMessage = result.error || 'Registration failed';
           router.push(`/?error=${encodeURIComponent(errorMessage)}`);
           return;
         }
       } else {
         const result = await login(formData.email, formData.password);
-        
+
         if (result.success) {
           // Success - let the ProtectedRoute handle the redirect naturally
           return;
         } else {
           // Redirect to login page with error parameter
-          const errorMessage = result.error || "Login failed";
+          const errorMessage = result.error || 'Login failed';
           router.push(`/?error=${encodeURIComponent(errorMessage)}`);
           return;
         }
       }
     } catch {
       // Redirect to login page with error parameter
-      router.push(`/?error=${encodeURIComponent("An unexpected error occurred")}`);
+      router.push(
+        `/?error=${encodeURIComponent('An unexpected error occurred')}`
+      );
     }
   };
 
@@ -109,7 +121,9 @@ export const LoginPage = () => {
           <div className="w-10 h-10 xl:w-12 xl:h-12 bg-white rounded-xl flex items-center justify-center">
             <Sparkles className="h-5 w-5 xl:h-6 xl:w-6 text-teal-600" />
           </div>
-          <h1 className="text-xl xl:text-2xl font-bold text-white">ReelCraft</h1>
+          <h1 className="text-xl xl:text-2xl font-bold text-white">
+            ReelCraft
+          </h1>
         </div>
 
         <div className="space-y-6 xl:space-y-8">
@@ -121,30 +135,47 @@ export const LoginPage = () => {
             </h2>
             <p className="text-teal-100 text-base xl:text-lg leading-relaxed">
               Transform your Instagram presence with AI-powered reel generation.
-              Choose from viral templates, customize captions, and watch your engagement soar.
+              Choose from viral templates, customize captions, and watch your
+              engagement soar.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 xl:gap-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 xl:p-6">
               <Zap className="h-6 w-6 xl:h-8 xl:w-8 text-teal-200 mb-2 xl:mb-3" />
-              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">Lightning Fast</h3>
-              <p className="text-teal-100 text-xs xl:text-sm">Generate reels in seconds with our AI engine</p>
+              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">
+                Lightning Fast
+              </h3>
+              <p className="text-teal-100 text-xs xl:text-sm">
+                Generate reels in seconds with our AI engine
+              </p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 xl:p-6">
               <TrendingUp className="h-6 w-6 xl:h-8 xl:w-8 text-teal-200 mb-2 xl:mb-3" />
-              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">Viral Ready</h3>
-              <p className="text-teal-100 text-xs xl:text-sm">Templates designed for maximum engagement</p>
+              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">
+                Viral Ready
+              </h3>
+              <p className="text-teal-100 text-xs xl:text-sm">
+                Templates designed for maximum engagement
+              </p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 xl:p-6">
               <Users className="h-6 w-6 xl:h-8 xl:w-8 text-teal-200 mb-2 xl:mb-3" />
-              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">Multi-Account</h3>
-              <p className="text-teal-100 text-xs xl:text-sm">Manage multiple Instagram accounts</p>
+              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">
+                Multi-Account
+              </h3>
+              <p className="text-teal-100 text-xs xl:text-sm">
+                Manage multiple Instagram accounts
+              </p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 xl:p-6">
               <BarChart3 className="h-6 w-6 xl:h-8 xl:w-8 text-teal-200 mb-2 xl:mb-3" />
-              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">Analytics</h3>
-              <p className="text-teal-100 text-xs xl:text-sm">Track performance and optimize content</p>
+              <h3 className="text-white font-semibold mb-1 xl:mb-2 text-sm xl:text-base">
+                Analytics
+              </h3>
+              <p className="text-teal-100 text-xs xl:text-sm">
+                Track performance and optimize content
+              </p>
             </div>
           </div>
         </div>
@@ -163,16 +194,17 @@ export const LoginPage = () => {
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white border-2 border-teal-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600" />
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">ReelCraft</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                ReelCraft
+              </h1>
             </div>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
               {isRegistering ? 'Create Account' : 'Welcome Back'}
             </h2>
             <p className="text-gray-600 text-sm sm:text-base px-2">
-              {isRegistering 
-                ? 'Sign up to start creating amazing content' 
-                : 'Sign in to your account to continue creating amazing content'
-              }
+              {isRegistering
+                ? 'Sign up to start creating amazing content'
+                : 'Sign in to your account to continue creating amazing content'}
             </p>
           </div>
 
@@ -182,10 +214,9 @@ export const LoginPage = () => {
                 {isRegistering ? 'Create Account' : 'Sign In'}
               </CardTitle>
               <CardDescription className="text-center text-xs sm:text-sm lg:text-base">
-                {isRegistering 
+                {isRegistering
                   ? 'Fill in your details to get started'
-                  : 'Enter your credentials to access your dashboard'
-                }
+                  : 'Enter your credentials to access your dashboard'}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
@@ -193,25 +224,42 @@ export const LoginPage = () => {
                 {isRegistering && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="firstName" className="text-xs sm:text-sm lg:text-base">First Name</Label>
+                      <Label
+                        htmlFor="firstName"
+                        className="text-xs sm:text-sm lg:text-base"
+                      >
+                        First Name
+                      </Label>
                       <Input
                         id="firstName"
                         type="text"
                         placeholder="Enter your first name"
                         value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            firstName: e.target.value,
+                          })
+                        }
                         className="h-9 sm:h-10 lg:h-11 text-sm"
                         required
                       />
                     </div>
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="lastName" className="text-xs sm:text-sm lg:text-base">Last Name</Label>
+                      <Label
+                        htmlFor="lastName"
+                        className="text-xs sm:text-sm lg:text-base"
+                      >
+                        Last Name
+                      </Label>
                       <Input
                         id="lastName"
                         type="text"
                         placeholder="Enter your last name"
                         value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, lastName: e.target.value })
+                        }
                         className="h-9 sm:h-10 lg:h-11 text-sm"
                         required
                       />
@@ -220,27 +268,45 @@ export const LoginPage = () => {
                 )}
 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="email" className="text-xs sm:text-sm lg:text-base">Email</Label>
+                  <Label
+                    htmlFor="email"
+                    className="text-xs sm:text-sm lg:text-base"
+                  >
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="h-9 sm:h-10 lg:h-11 text-sm"
                     required
                   />
                 </div>
 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="password" className="text-xs sm:text-sm lg:text-base">Password</Label>
+                  <Label
+                    htmlFor="password"
+                    className="text-xs sm:text-sm lg:text-base"
+                  >
+                    Password
+                  </Label>
                   <div className="relative">
                     <Input
                       id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder={isRegistering ? "Create a strong password" : "Enter your password"}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={
+                        isRegistering
+                          ? 'Create a strong password'
+                          : 'Enter your password'
+                      }
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
                       className="h-9 sm:h-10 lg:h-11 pr-10 text-sm"
                       required
                     />
@@ -260,13 +326,23 @@ export const LoginPage = () => {
 
                 {isRegistering && (
                   <div className="space-y-1 sm:space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-xs sm:text-sm lg:text-base">Confirm Password</Label>
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-xs sm:text-sm lg:text-base"
+                    >
+                      Confirm Password
+                    </Label>
                     <Input
                       id="confirmPassword"
                       type="password"
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
                       className="h-9 sm:h-10 lg:h-11 text-sm"
                       required
                     />
@@ -276,10 +352,16 @@ export const LoginPage = () => {
                 {!isRegistering && (
                   <div className="flex items-center justify-between">
                     <label className="flex items-center space-x-2 text-xs sm:text-sm">
-                      <input type="checkbox" className="rounded border-gray-300 w-3 h-3 sm:w-4 sm:h-4" />
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 w-3 h-3 sm:w-4 sm:h-4"
+                      />
                       <span className="text-gray-600">Remember me</span>
                     </label>
-                    <a href="#" className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium">
+                    <a
+                      href="#"
+                      className="text-xs sm:text-sm text-teal-600 hover:text-teal-700 font-medium"
+                    >
                       Forgot password?
                     </a>
                   </div>
@@ -301,10 +383,16 @@ export const LoginPage = () => {
                   {isLoading ? (
                     <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent" />
-                      <span>{isRegistering ? 'Creating Account...' : 'Signing In...'}</span>
+                      <span>
+                        {isRegistering
+                          ? 'Creating Account...'
+                          : 'Signing In...'}
+                      </span>
                     </div>
+                  ) : isRegistering ? (
+                    'Create Account'
                   ) : (
-                    isRegistering ? 'Create Account' : 'Sign In'
+                    'Sign In'
                   )}
                 </Button>
               </div>
@@ -316,7 +404,9 @@ export const LoginPage = () => {
                       <div className="w-full border-t border-gray-300" />
                     </div>
                     <div className="relative flex justify-center text-xs sm:text-sm">
-                      <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                      <span className="px-2 bg-white text-gray-500">
+                        Or continue with
+                      </span>
                     </div>
                   </div>
 
@@ -336,8 +426,8 @@ export const LoginPage = () => {
           <p className="text-center text-xs sm:text-sm text-gray-600 px-2">
             {isRegistering ? (
               <>
-                Already have an account?{" "}
-                <button 
+                Already have an account?{' '}
+                <button
                   type="button"
                   onClick={() => setIsRegistering(false)}
                   className="text-teal-600 hover:text-teal-700 font-medium"
@@ -347,8 +437,8 @@ export const LoginPage = () => {
               </>
             ) : (
               <>
-                Don&apos;t have an account?{" "}
-                <button 
+                Don&apos;t have an account?{' '}
+                <button
                   type="button"
                   onClick={() => setIsRegistering(true)}
                   className="text-teal-600 hover:text-teal-700 font-medium"

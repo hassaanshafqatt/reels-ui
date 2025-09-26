@@ -16,7 +16,9 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
 
-export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null> {
+export async function verifyAuth(
+  request?: NextRequest
+): Promise<AuthUser | null> {
   try {
     let token: string | undefined;
 
@@ -41,10 +43,10 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
     }
 
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    
+
     return {
       id: payload.userId as string,
-      email: payload.email as string
+      email: payload.email as string,
     };
   } catch {
     return null;
@@ -54,7 +56,7 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
 export async function createToken(user: AuthUser): Promise<string> {
   const token = await new jose.SignJWT({
     userId: user.id,
-    email: user.email
+    email: user.email,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -64,7 +66,9 @@ export async function createToken(user: AuthUser): Promise<string> {
   return token;
 }
 
-export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUserWithAdmin | null> {
+export async function verifyAuthWithAdmin(
+  request?: NextRequest
+): Promise<AuthUserWithAdmin | null> {
   try {
     const authUser = await verifyAuth(request);
     if (!authUser) {
@@ -80,14 +84,16 @@ export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUs
     return {
       id: authUser.id,
       email: authUser.email,
-      is_admin: user.is_admin
+      is_admin: user.is_admin,
     };
   } catch {
     return null;
   }
 }
 
-export async function requireAdmin(request?: NextRequest): Promise<AuthUserWithAdmin> {
+export async function requireAdmin(
+  request?: NextRequest
+): Promise<AuthUserWithAdmin> {
   const user = await verifyAuthWithAdmin(request);
   if (!user) {
     throw new Error('Authentication required');

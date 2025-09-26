@@ -13,17 +13,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('active') === 'true';
     const categoryId = searchParams.get('category');
-    
+
     let types;
     if (categoryId) {
       types = reelTypeOperations.getByCategory(categoryId, activeOnly);
     } else {
       types = reelTypeOperations.getAll(activeOnly);
     }
-    
+
     return NextResponse.json({ types });
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch reel types' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch reel types' },
+      { status: 500 }
+    );
   }
 }
 
@@ -36,13 +39,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { 
-      category_id, 
-      name, 
-      title, 
-      description, 
-      icon, 
-      message, 
+    const {
+      category_id,
+      name,
+      title,
+      description,
+      icon,
+      message,
       caption,
       label_caption_title,
       label_caption_description,
@@ -55,17 +58,20 @@ export async function POST(request: NextRequest) {
       min_caption_length = 110,
       max_caption_length = 140,
       include_author = true,
-    allow_custom_audio = true,
+      allow_custom_audio = true,
       external_url,
       status_url,
       posting_url,
-      is_active = true 
+      is_active = true,
     } = body;
 
     if (!category_id || !name || !title) {
-      return NextResponse.json({ 
-        error: 'Category ID, name, and title are required' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Category ID, name, and title are required',
+        },
+        { status: 400 }
+      );
     }
 
     const typeId = reelTypeOperations.create({
@@ -91,12 +97,15 @@ export async function POST(request: NextRequest) {
       external_url,
       status_url,
       posting_url,
-      is_active
+      is_active,
     });
 
     const type = reelTypeOperations.getById(typeId);
     return NextResponse.json({ type }, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Failed to create reel type' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create reel type' },
+      { status: 500 }
+    );
   }
 }

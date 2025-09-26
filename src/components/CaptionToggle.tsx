@@ -1,5 +1,5 @@
-import React from "react";
-import { Brain, Palette } from "lucide-react";
+import React from 'react';
+import { Brain, Palette } from 'lucide-react';
 
 interface CaptionToggleProps {
   generateCaption: boolean;
@@ -12,14 +12,14 @@ interface CaptionToggleProps {
   labelCustomSub?: string;
 }
 
-export default function CaptionToggle({ 
-  generateCaption, 
-  onToggleCaption, 
+export default function CaptionToggle({
+  generateCaption,
+  onToggleCaption,
   onOpenCustomDialog,
   labelAuto = 'Auto-Generate',
   labelAutoSub = 'AI creates caption',
   labelCustom = 'Custom Caption',
-  labelCustomSub = 'Write your own'
+  labelCustomSub = 'Write your own',
 }: CaptionToggleProps) {
   return (
     <div className="bg-gray-50 p-1 rounded-xl">
@@ -34,20 +34,28 @@ export default function CaptionToggle({
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              generateCaption ? 'bg-teal-600' : 'bg-gray-400'
-            }`}>
+            <div
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                generateCaption ? 'bg-teal-600' : 'bg-gray-400'
+              }`}
+            >
               <Brain className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className={`font-medium text-xs sm:text-sm ${
-                generateCaption ? 'text-gray-900' : 'text-gray-600'
-              }`}>
+              <div
+                className={`font-medium text-xs sm:text-sm ${
+                  generateCaption ? 'text-gray-900' : 'text-gray-600'
+                }`}
+              >
                 {labelAuto}
               </div>
-              <p className={`text-xs ${
-                generateCaption ? 'text-gray-600' : 'text-gray-500'
-              }`}>{labelAutoSub}</p>
+              <p
+                className={`text-xs ${
+                  generateCaption ? 'text-gray-600' : 'text-gray-500'
+                }`}
+              >
+                {labelAutoSub}
+              </p>
             </div>
           </div>
         </button>
@@ -62,20 +70,28 @@ export default function CaptionToggle({
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              !generateCaption ? 'bg-teal-600' : 'bg-gray-400'
-            }`}>
+            <div
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                !generateCaption ? 'bg-teal-600' : 'bg-gray-400'
+              }`}
+            >
               <Palette className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className={`font-medium text-xs sm:text-sm ${
-                !generateCaption ? 'text-gray-900' : 'text-gray-600'
-              }`}>
+              <div
+                className={`font-medium text-xs sm:text-sm ${
+                  !generateCaption ? 'text-gray-900' : 'text-gray-600'
+                }`}
+              >
                 {labelCustom}
               </div>
-              <p className={`text-xs ${
-                !generateCaption ? 'text-gray-600' : 'text-gray-500'
-              }`}>{labelCustomSub}</p>
+              <p
+                className={`text-xs ${
+                  !generateCaption ? 'text-gray-600' : 'text-gray-500'
+                }`}
+              >
+                {labelCustomSub}
+              </p>
             </div>
           </div>
         </button>

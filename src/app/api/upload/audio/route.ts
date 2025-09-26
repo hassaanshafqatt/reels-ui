@@ -12,7 +12,10 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // File tracking for cleanup (kept for potential background cleanup but currently unused)
-const fileAccessTracker = new Map<string, { lastAccessed: Date; accessCount: number }>();
+const fileAccessTracker = new Map<
+  string,
+  { lastAccessed: Date; accessCount: number }
+>();
 void fileAccessTracker;
 
 // Helper function to calculate file hash
@@ -23,11 +26,19 @@ async function calculateFileHash(buffer: Buffer): Promise<string> {
 }
 
 // Helper function to find existing file by hash
-async function findExistingFileByHash(targetHash: string, uploadsDir: string): Promise<string | null> {
+async function findExistingFileByHash(
+  targetHash: string,
+  uploadsDir: string
+): Promise<string | null> {
   try {
     const files = await readdir(uploadsDir);
     for (const file of files) {
-      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')) {
+      if (
+        file.endsWith('.mp3') ||
+        file.endsWith('.wav') ||
+        file.endsWith('.m4a') ||
+        file.endsWith('.aac')
+      ) {
         const filePath = path.join(uploadsDir, file);
         const fileBuffer = await readFile(filePath);
         const fileHash = await calculateFileHash(fileBuffer);
@@ -51,7 +62,12 @@ async function cleanupOldFiles(uploadsDir: string) {
     let cleanedCount = 0;
 
     for (const file of files) {
-      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')) {
+      if (
+        file.endsWith('.mp3') ||
+        file.endsWith('.wav') ||
+        file.endsWith('.m4a') ||
+        file.endsWith('.aac')
+      ) {
         const filePath = path.join(uploadsDir, file);
         const stats = await stat(filePath);
         const fileAge = now.getTime() - stats.mtime.getTime();
@@ -68,7 +84,6 @@ async function cleanupOldFiles(uploadsDir: string) {
     if (cleanedCount > 0) {
       console.log(`Automatic cleanup completed: ${cleanedCount} files removed`);
     }
-
   } catch {
     console.error('Error during automatic file cleanup:');
   }
@@ -80,7 +95,7 @@ async function verifyToken(token: string) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload;
   } catch {
-     return null;
+    return null;
   }
 }
 
@@ -93,7 +108,7 @@ async function verifyAuth(request: NextRequest) {
 
   const token = authHeader.substring(7);
   const payload = await verifyToken(token);
-  
+
   if (!payload || !payload.userId) {
     return null;
   }
@@ -120,23 +135,39 @@ export async function POST(request: NextRequest) {
     const audioFile = formData.get('audioFile') as File;
 
     if (!audioFile) {
-      return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No audio file provided' },
+        { status: 400 }
+      );
     }
 
     // Validate file type
-    const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 'audio/aac'];
+    const allowedTypes = [
+      'audio/mpeg',
+      'audio/mp3',
+      'audio/wav',
+      'audio/m4a',
+      'audio/aac',
+    ];
     if (!allowedTypes.includes(audioFile.type)) {
-      return NextResponse.json({ 
-        error: 'Invalid file type. Please upload MP3, WAV, M4A, or AAC files.' 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            'Invalid file type. Please upload MP3, WAV, M4A, or AAC files.',
+        },
+        { status: 400 }
+      );
     }
 
     // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (audioFile.size > maxSize) {
-      return NextResponse.json({ 
-        error: `File too large. Maximum size is ${maxSize / (1024 * 1024)}MB.` 
-      }, { status: 413 });
+      return NextResponse.json(
+        {
+          error: `File too large. Maximum size is ${maxSize / (1024 * 1024)}MB.`,
+        },
+        { status: 413 }
+      );
     }
 
     // Create uploads directory if it doesn't exist
@@ -176,7 +207,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate streamable URL using hostname from environment
-    const hostname = process.env.PUBLIC_HOSTNAME || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const hostname =
+      process.env.PUBLIC_HOSTNAME ||
+      process.env.NEXTAUTH_URL ||
+      'http://localhost:3000';
     const streamableUrl = `${hostname}/api/uploads/audio/${uniqueFilename}`;
 
     return NextResponse.json({
@@ -186,10 +220,12 @@ export async function POST(request: NextRequest) {
       size: audioFile.size,
       type: audioFile.type,
       url: streamableUrl,
-      isDuplicate: !!existingFile
+      isDuplicate: !!existingFile,
     });
-
   } catch {
-      return NextResponse.json({ error: 'Failed to upload audio file' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to upload audio file' },
+      { status: 500 }
+    );
   }
 }

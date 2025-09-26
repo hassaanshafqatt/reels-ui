@@ -13,7 +13,9 @@ interface DatabaseConfig {
 // Production database configuration
 const getDatabaseConfig = (): DatabaseConfig => {
   const isProduction = process.env.NODE_ENV === 'production';
-  const dbPath = process.env.DATABASE_URL || path.join(process.cwd(), 'data', 'reelcraft.db');
+  const dbPath =
+    process.env.DATABASE_URL ||
+    path.join(process.cwd(), 'data', 'reelcraft.db');
 
   return {
     path: dbPath,
@@ -32,16 +34,16 @@ const getDatabaseConfig = (): DatabaseConfig => {
     } as Options,
     pragmas: {
       // Performance optimizations
-      'journal_mode': 'WAL', // Write-Ahead Logging for better concurrency
-      'synchronous': 'NORMAL', // Balance between performance and safety
-      'cache_size': -64000, // 64MB cache (negative for KB)
-      'temp_store': 'MEMORY', // Store temp tables in memory
-      'mmap_size': 268435456, // 256MB memory-mapped I/O
-      'foreign_keys': 'ON', // Enable foreign key constraints
-      'busy_timeout': 30000, // 30 second busy timeout
-      'wal_autocheckpoint': 1000, // Checkpoint WAL every 1000 pages
-      'optimize': '0x10002', // Optimize database on open
-    }
+      journal_mode: 'WAL', // Write-Ahead Logging for better concurrency
+      synchronous: 'NORMAL', // Balance between performance and safety
+      cache_size: -64000, // 64MB cache (negative for KB)
+      temp_store: 'MEMORY', // Store temp tables in memory
+      mmap_size: 268435456, // 256MB memory-mapped I/O
+      foreign_keys: 'ON', // Enable foreign key constraints
+      busy_timeout: 30000, // 30 second busy timeout
+      wal_autocheckpoint: 1000, // Checkpoint WAL every 1000 pages
+      optimize: '0x10002', // Optimize database on open
+    },
   };
 };
 
@@ -80,18 +82,19 @@ class DatabaseConnection {
 
       // Initialize database connection
       this.db = new Database(this.config.path, this.config.options);
-      logger.info('Database connection established', { path: this.config.path });
+      logger.info('Database connection established', {
+        path: this.config.path,
+      });
 
       // Apply pragmas for optimization
       this.applyPragmas();
 
       // Set up connection monitoring
       this.setupConnectionMonitoring();
-
     } catch (err: unknown) {
       logger.error('Failed to initialize database connection', {
         error: err instanceof Error ? err.message : 'Unknown error',
-        path: this.config.path
+        path: this.config.path,
       });
       throw err;
     }
@@ -123,13 +126,16 @@ class DatabaseConnection {
           this.db.pragma(`${pragma} = ${sqlValue}`);
           logger.debug(`Applied pragma: ${pragma} = ${sqlValue}`);
         } catch (innerErr) {
-          logger.warn(`Could not apply pragma ${pragma}`, { error: innerErr instanceof Error ? innerErr.message : String(innerErr) });
+          logger.warn(`Could not apply pragma ${pragma}`, {
+            error:
+              innerErr instanceof Error ? innerErr.message : String(innerErr),
+          });
         }
       }
       logger.info('Database pragmas applied successfully');
     } catch (err: unknown) {
       logger.error('Failed to apply database pragmas', {
-        error: err instanceof Error ? err.message : 'Unknown error'
+        error: err instanceof Error ? err.message : 'Unknown error',
       });
     }
   }
@@ -141,27 +147,36 @@ class DatabaseConnection {
     const stats = this.db.prepare('PRAGMA database_list').all();
     logger.info('Database connection monitoring enabled', {
       databases: stats.length,
-      pragmas: this.config.pragmas
+      pragmas: this.config.pragmas,
     });
   }
 
   // Health check method
-  async healthCheck(): Promise<{ healthy: boolean; details?: Record<string, unknown> | string }> {
+  async healthCheck(): Promise<{
+    healthy: boolean;
+    details?: Record<string, unknown> | string;
+  }> {
     try {
       if (!this.db) {
         return { healthy: false, details: 'No database connection' };
       }
 
       // Test basic query
-      const result = this.db.prepare('SELECT 1 as test').get() as { test: number };
+      const result = this.db.prepare('SELECT 1 as test').get() as {
+        test: number;
+      };
 
       if (result.test !== 1) {
         return { healthy: false, details: 'Health check query failed' };
       }
 
       // Get database statistics
-      const pageCount = this.db.prepare('PRAGMA page_count').get() as { page_count: number };
-      const pageSize = this.db.prepare('PRAGMA page_size').get() as { page_size: number };
+      const pageCount = this.db.prepare('PRAGMA page_count').get() as {
+        page_count: number;
+      };
+      const pageSize = this.db.prepare('PRAGMA page_size').get() as {
+        page_size: number;
+      };
       const dbSize = pageCount.page_count * pageSize.page_size;
 
       return {
@@ -196,11 +211,11 @@ class DatabaseConnection {
 
       return backupFile;
     } catch (err: unknown) {
-        logger.error('Failed to create database backup', {
-          error: err instanceof Error ? err.message : 'Unknown error',
-          backupPath: backupFile
-        });
-        throw err;
+      logger.error('Failed to create database backup', {
+        error: err instanceof Error ? err.message : 'Unknown error',
+        backupPath: backupFile,
+      });
+      throw err;
     }
   }
 
@@ -212,7 +227,7 @@ class DatabaseConnection {
         logger.info('Database connection closed');
       } catch (err: unknown) {
         logger.error('Error closing database connection', {
-          error: err instanceof Error ? err.message : 'Unknown error'
+          error: err instanceof Error ? err.message : 'Unknown error',
         });
       } finally {
         this.db = null;
@@ -254,7 +269,10 @@ export function withTransaction<T>(callback: () => T): T {
 }
 
 // Connection health monitoring
-export async function getDatabaseHealth(): Promise<{ healthy: boolean; details?: Record<string, unknown> | string }> {
+export async function getDatabaseHealth(): Promise<{
+  healthy: boolean;
+  details?: Record<string, unknown> | string;
+}> {
   return await dbConnection.healthCheck();
 }
 

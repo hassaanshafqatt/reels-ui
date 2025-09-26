@@ -1,6 +1,12 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import Cookies from 'js-cookie';
 
 interface User {
@@ -18,8 +24,15 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   refreshToken: () => Promise<boolean>;
 }
@@ -56,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData = JSON.parse(savedUser);
           setToken(savedToken);
           setUser(userData);
-          
+
           // Verify token is still valid
           const isValid = await verifyToken(savedToken);
           if (!isValid) {
@@ -66,7 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           logout();
         }
       }
-      
+
       setIsLoading(false);
     };
 
@@ -81,10 +94,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      
+
       return response.ok;
     } catch {
       return false;
@@ -93,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -108,23 +121,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok && data.token && data.user) {
         setToken(data.token);
         setUser(data.user);
-        
+
         // Save to cookies (expires in 7 days)
-        Cookies.set('auth_token', data.token, { 
-          expires: 7, 
+        Cookies.set('auth_token', data.token, {
+          expires: 7,
           sameSite: 'lax',
-          path: '/'
+          path: '/',
         });
-        Cookies.set('user_data', JSON.stringify(data.user), { 
-          expires: 7, 
+        Cookies.set('user_data', JSON.stringify(data.user), {
+          expires: 7,
           sameSite: 'lax',
-          path: '/'
+          path: '/',
         });
-        
+
         // Verify the cookie was set
         const savedToken = Cookies.get('auth_token');
-  void savedToken;
-        
+        void savedToken;
+
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Login failed' };
@@ -138,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -153,19 +166,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.ok && data.token && data.user) {
         setToken(data.token);
         setUser(data.user);
-        
+
         // Save to cookies
-        Cookies.set('auth_token', data.token, { 
-          expires: 7, 
+        Cookies.set('auth_token', data.token, {
+          expires: 7,
           sameSite: 'lax',
-          path: '/'
+          path: '/',
         });
-        Cookies.set('user_data', JSON.stringify(data.user), { 
-          expires: 7, 
+        Cookies.set('user_data', JSON.stringify(data.user), {
+          expires: 7,
           sameSite: 'lax',
-          path: '/'
+          path: '/',
         });
-        
+
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Registration failed' };
@@ -184,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
       } catch {
@@ -206,7 +219,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -214,7 +227,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.ok && data.token) {
         setToken(data.token);
-        Cookies.set('auth_token', data.token, { expires: 7, secure: true, sameSite: 'strict' });
+        Cookies.set('auth_token', data.token, {
+          expires: 7,
+          secure: true,
+          sameSite: 'strict',
+        });
         return true;
       } else {
         logout();
@@ -237,9 +254,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshToken,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

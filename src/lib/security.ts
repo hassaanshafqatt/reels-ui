@@ -10,7 +10,10 @@ const RATE_LIMIT_MAX_REQUESTS = 100; // requests per window
 /**
  * Rate limiting middleware
  */
-export function checkRateLimit(identifier: string): { allowed: boolean; resetTime?: number } {
+export function checkRateLimit(identifier: string): {
+  allowed: boolean;
+  resetTime?: number;
+} {
   const now = Date.now();
   const userLimit = rateLimitStore.get(identifier);
 
@@ -18,7 +21,7 @@ export function checkRateLimit(identifier: string): { allowed: boolean; resetTim
     // First request or window expired
     rateLimitStore.set(identifier, {
       count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
+      resetTime: now + RATE_LIMIT_WINDOW,
     });
     return { allowed: true };
   }
@@ -35,7 +38,10 @@ export function checkRateLimit(identifier: string): { allowed: boolean; resetTim
 /**
  * Enhanced API key verification with additional security checks
  */
-export function verifyApiKey(request: NextRequest): { valid: boolean; error?: string } {
+export function verifyApiKey(request: NextRequest): {
+  valid: boolean;
+  error?: string;
+} {
   const apiKey = request.headers.get('x-api-key');
   const userAgent = request.headers.get('user-agent');
   const origin = request.headers.get('origin');
@@ -72,7 +78,10 @@ export function verifyApiKey(request: NextRequest): { valid: boolean; error?: st
 /**
  * Input validation utilities
  */
-export function validateFileUpload(file: File): { valid: boolean; error?: string } {
+export function validateFileUpload(file: File): {
+  valid: boolean;
+  error?: string;
+} {
   const maxSize = parseInt(process.env.MAX_UPLOAD_SIZE || '10485760'); // 10MB default
 
   if (!file) {
@@ -80,13 +89,19 @@ export function validateFileUpload(file: File): { valid: boolean; error?: string
   }
 
   if (file.size > maxSize) {
-    return { valid: false, error: `File size exceeds maximum allowed size of ${maxSize} bytes` };
+    return {
+      valid: false,
+      error: `File size exceeds maximum allowed size of ${maxSize} bytes`,
+    };
   }
 
   // Check file type
   const allowedTypes = ['audio/mpeg', 'audio/wav', 'audio/m4a', 'audio/aac'];
   if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'Invalid file type. Only audio files are allowed.' };
+    return {
+      valid: false,
+      error: 'Invalid file type. Only audio files are allowed.',
+    };
   }
 
   return { valid: true };
@@ -117,7 +132,11 @@ export async function apiSecurityMiddleware(
     allowedMethods?: string[];
   } = {}
 ): Promise<{ success: boolean; response?: NextResponse; error?: string }> {
-  const { requireApiKey = true, rateLimit = true, allowedMethods = ['GET', 'POST'] } = options;
+  const {
+    requireApiKey = true,
+    rateLimit = true,
+    allowedMethods = ['GET', 'POST'],
+  } = options;
 
   // Check HTTP method
   if (!allowedMethods.includes(request.method)) {
@@ -126,19 +145,22 @@ export async function apiSecurityMiddleware(
       response: NextResponse.json(
         { error: `Method ${request.method} not allowed` },
         { status: 405, headers: getSecurityHeaders() }
-      )
+      ),
     };
   }
 
   // Rate limiting
   if (rateLimit) {
-    const clientIP = request.headers.get('x-forwarded-for') ||
-                    request.headers.get('x-real-ip') ||
-                    'unknown';
+    const clientIP =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
 
     const rateLimitResult = checkRateLimit(clientIP);
     if (!rateLimitResult.allowed) {
-      const resetTime = Math.ceil((rateLimitResult.resetTime! - Date.now()) / 1000);
+      const resetTime = Math.ceil(
+        (rateLimitResult.resetTime! - Date.now()) / 1000
+      );
       return {
         success: false,
         response: NextResponse.json(
@@ -148,10 +170,10 @@ export async function apiSecurityMiddleware(
             headers: {
               ...getSecurityHeaders(),
               'Retry-After': resetTime.toString(),
-              'X-RateLimit-Reset': rateLimitResult.resetTime!.toString()
-            }
+              'X-RateLimit-Reset': rateLimitResult.resetTime!.toString(),
+            },
           }
-        )
+        ),
       };
     }
   }
@@ -165,7 +187,7 @@ export async function apiSecurityMiddleware(
         response: NextResponse.json(
           { error: apiKeyResult.error },
           { status: 401, headers: getSecurityHeaders() }
-        )
+        ),
       };
     }
   }

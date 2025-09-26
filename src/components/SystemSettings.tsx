@@ -22,20 +22,43 @@ export function SystemSettings() {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get global polling setting
-  const pollingEnabled = settings.find(s => s.key === 'global_polling_enabled')?.value === 'true';
-  const defaultMinCaptionLength = parseInt(settings.find(s => s.key === 'default_min_caption_length')?.value || '10');
-  const defaultMaxCaptionLength = parseInt(settings.find(s => s.key === 'default_max_caption_length')?.value || '100');
-  const includeAuthorByDefault = settings.find(s => s.key === 'include_author_by_default')?.value === 'true';
-  const allowCustomAudioGlobally = settings.find(s => s.key === 'allow_custom_audio_globally')?.value === 'true';
+  const pollingEnabled =
+    settings.find((s) => s.key === 'global_polling_enabled')?.value === 'true';
+  const defaultMinCaptionLength = parseInt(
+    settings.find((s) => s.key === 'default_min_caption_length')?.value || '10'
+  );
+  const defaultMaxCaptionLength = parseInt(
+    settings.find((s) => s.key === 'default_max_caption_length')?.value || '100'
+  );
+  const includeAuthorByDefault =
+    settings.find((s) => s.key === 'include_author_by_default')?.value ===
+    'true';
+  const allowCustomAudioGlobally =
+    settings.find((s) => s.key === 'allow_custom_audio_globally')?.value ===
+    'true';
   // UI label settings (provide defaults if missing)
-  const captionTitleLabel = settings.find(s => s.key === 'label_caption_title')?.value || 'Custom Caption';
-  const captionDescriptionLabel = settings.find(s => s.key === 'label_caption_description')?.value || 'Write your own caption for the reel. This will override the AI-generated caption.';
-  const captionFieldLabel = settings.find(s => s.key === 'label_caption_field')?.value || 'Caption';
-  const captionPlaceholderLabel = settings.find(s => s.key === 'label_caption_placeholder')?.value || '';
-  const captionToggleAutoLabel = settings.find(s => s.key === 'label_caption_toggle_auto')?.value || 'Auto-Generate';
-  const captionToggleAutoSub = settings.find(s => s.key === 'label_caption_toggle_auto_sub')?.value || 'AI creates caption';
-  const captionToggleCustomLabel = settings.find(s => s.key === 'label_caption_toggle_custom')?.value || 'Custom Caption';
-  const captionToggleCustomSub = settings.find(s => s.key === 'label_caption_toggle_custom_sub')?.value || 'Write your own';
+  const captionTitleLabel =
+    settings.find((s) => s.key === 'label_caption_title')?.value ||
+    'Custom Caption';
+  const captionDescriptionLabel =
+    settings.find((s) => s.key === 'label_caption_description')?.value ||
+    'Write your own caption for the reel. This will override the AI-generated caption.';
+  const captionFieldLabel =
+    settings.find((s) => s.key === 'label_caption_field')?.value || 'Caption';
+  const captionPlaceholderLabel =
+    settings.find((s) => s.key === 'label_caption_placeholder')?.value || '';
+  const captionToggleAutoLabel =
+    settings.find((s) => s.key === 'label_caption_toggle_auto')?.value ||
+    'Auto-Generate';
+  const captionToggleAutoSub =
+    settings.find((s) => s.key === 'label_caption_toggle_auto_sub')?.value ||
+    'AI creates caption';
+  const captionToggleCustomLabel =
+    settings.find((s) => s.key === 'label_caption_toggle_custom')?.value ||
+    'Custom Caption';
+  const captionToggleCustomSub =
+    settings.find((s) => s.key === 'label_caption_toggle_custom_sub')?.value ||
+    'Write your own';
 
   const fetchSettings = useCallback(async () => {
     if (!token) return;
@@ -45,9 +68,9 @@ export function SystemSettings() {
 
       const response = await fetch('/api/admin/settings', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -64,21 +87,25 @@ export function SystemSettings() {
     }
   }, [token]);
 
-  const updateSetting = async (key: string, value: string, description?: string) => {
+  const updateSetting = async (
+    key: string,
+    value: string,
+    description?: string
+  ) => {
     if (!token) return;
-    
+
     try {
       setSaving(true);
       setError(null);
       setSuccess(null);
-      
+
       const response = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ key, value, description })
+        body: JSON.stringify({ key, value, description }),
       });
 
       if (!response.ok) {
@@ -86,19 +113,20 @@ export function SystemSettings() {
       }
 
       const data = await response.json();
-      
+
       // Update the settings state
-      setSettings(prev => prev.map(setting => 
-        setting.key === key 
-          ? { ...setting, value, updated_at: data.setting.updated_at }
-          : setting
-      ));
-      
+      setSettings((prev) =>
+        prev.map((setting) =>
+          setting.key === key
+            ? { ...setting, value, updated_at: data.setting.updated_at }
+            : setting
+        )
+      );
+
       setSuccess(`Setting updated successfully`);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
-      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update setting');
     } finally {
@@ -108,8 +136,8 @@ export function SystemSettings() {
 
   const handlePollingToggle = (enabled: boolean) => {
     updateSetting(
-      'global_polling_enabled', 
-      enabled.toString(), 
+      'global_polling_enabled',
+      enabled.toString(),
       'Enable or disable global job status polling'
     );
   };
@@ -169,7 +197,9 @@ export function SystemSettings() {
           <div className="p-3 bg-teal-100 rounded-full">
             <Loader className="h-6 w-6 animate-spin text-teal-600" />
           </div>
-          <span className="text-base text-gray-600 font-medium">Loading settings...</span>
+          <span className="text-base text-gray-600 font-medium">
+            Loading settings...
+          </span>
         </div>
       </div>
     );
@@ -209,29 +239,38 @@ export function SystemSettings() {
               <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
                 <Settings className="h-5 w-5 text-white" />
               </div>
-              <Label htmlFor="polling-toggle" className="text-xl font-bold text-gray-900">
+              <Label
+                htmlFor="polling-toggle"
+                className="text-xl font-bold text-gray-900"
+              >
                 Global Job Polling
               </Label>
             </div>
             <p className="text-base text-gray-600 leading-relaxed">
-              Enable or disable automatic polling for job status updates across the entire system. 
-              When disabled, jobs will not be automatically checked for status changes.
+              Enable or disable automatic polling for job status updates across
+              the entire system. When disabled, jobs will not be automatically
+              checked for status changes.
             </p>
             <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-              <span className="font-medium">Status:</span> 
-              <span className={`font-bold ml-1 ${pollingEnabled ? 'text-green-600' : 'text-red-600'}`}>
+              <span className="font-medium">Status:</span>
+              <span
+                className={`font-bold ml-1 ${pollingEnabled ? 'text-green-600' : 'text-red-600'}`}
+              >
                 {pollingEnabled ? '✓ Enabled' : '✗ Disabled'}
               </span>
-              {settings.find(s => s.key === 'global_polling_enabled') && (
+              {settings.find((s) => s.key === 'global_polling_enabled') && (
                 <span className="block mt-1 text-xs">
-                  Last updated: {new Date(
-                    settings.find(s => s.key === 'global_polling_enabled')!.updated_at
+                  Last updated:{' '}
+                  {new Date(
+                    settings.find(
+                      (s) => s.key === 'global_polling_enabled'
+                    )!.updated_at
                   ).toLocaleString()}
                 </span>
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {saving && (
               <div className="flex items-center gap-2 text-teal-600">
@@ -261,22 +300,34 @@ export function SystemSettings() {
             </Label>
           </div>
           <p className="text-base text-gray-600 leading-relaxed">
-            Set the default minimum and maximum length for reel captions in characters. These will be applied to new reel types but can be overridden per reel type.
+            Set the default minimum and maximum length for reel captions in
+            characters. These will be applied to new reel types but can be
+            overridden per reel type.
           </p>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Minimum Caption Length */}
             <div className="space-y-3">
-              <Label htmlFor="min-caption-length" className="text-base font-semibold text-gray-800">
+              <Label
+                htmlFor="min-caption-length"
+                className="text-base font-semibold text-gray-800"
+              >
                 Minimum Length
               </Label>
               <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-                <span className="font-medium">Current minimum:</span> 
-                <span className="font-bold ml-1 text-blue-600">{defaultMinCaptionLength} characters</span>
-                {settings.find(s => s.key === 'default_min_caption_length') && (
+                <span className="font-medium">Current minimum:</span>
+                <span className="font-bold ml-1 text-blue-600">
+                  {defaultMinCaptionLength} characters
+                </span>
+                {settings.find(
+                  (s) => s.key === 'default_min_caption_length'
+                ) && (
                   <span className="block mt-1 text-xs">
-                    Last updated: {new Date(
-                      settings.find(s => s.key === 'default_min_caption_length')!.updated_at
+                    Last updated:{' '}
+                    {new Date(
+                      settings.find(
+                        (s) => s.key === 'default_min_caption_length'
+                      )!.updated_at
                     ).toLocaleString()}
                   </span>
                 )}
@@ -295,16 +346,26 @@ export function SystemSettings() {
 
             {/* Maximum Caption Length */}
             <div className="space-y-3">
-              <Label htmlFor="max-caption-length" className="text-base font-semibold text-gray-800">
+              <Label
+                htmlFor="max-caption-length"
+                className="text-base font-semibold text-gray-800"
+              >
                 Maximum Length
               </Label>
               <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-                <span className="font-medium">Current maximum:</span> 
-                <span className="font-bold ml-1 text-blue-600">{defaultMaxCaptionLength} characters</span>
-                {settings.find(s => s.key === 'default_max_caption_length') && (
+                <span className="font-medium">Current maximum:</span>
+                <span className="font-bold ml-1 text-blue-600">
+                  {defaultMaxCaptionLength} characters
+                </span>
+                {settings.find(
+                  (s) => s.key === 'default_max_caption_length'
+                ) && (
                   <span className="block mt-1 text-xs">
-                    Last updated: {new Date(
-                      settings.find(s => s.key === 'default_max_caption_length')!.updated_at
+                    Last updated:{' '}
+                    {new Date(
+                      settings.find(
+                        (s) => s.key === 'default_max_caption_length'
+                      )!.updated_at
                     ).toLocaleString()}
                   </span>
                 )}
@@ -322,90 +383,154 @@ export function SystemSettings() {
             </div>
           </div>
 
-            {/* Caption Label Customization */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                    <Type className="h-5 w-5 text-white" />
-                  </div>
-                  <Label className="text-xl font-bold text-gray-900">Caption UI Labels</Label>
+          {/* Caption Label Customization */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                  <Type className="h-5 w-5 text-white" />
+                </div>
+                <Label className="text-xl font-bold text-gray-900">
+                  Caption UI Labels
+                </Label>
+              </div>
+
+              <p className="text-base text-gray-600">
+                Customize the UI text for caption-related buttons and fields
+                shown to users during generation.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Dialog Title</Label>
+                  <Input
+                    value={captionTitleLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_title',
+                        e.target.value,
+                        'UI label: Custom caption dialog title'
+                      )
+                    }
+                  />
                 </div>
 
-                <p className="text-base text-gray-600">Customize the UI text for caption-related buttons and fields shown to users during generation.</p>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Dialog Description
+                  </Label>
+                  <Input
+                    value={captionDescriptionLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_description',
+                        e.target.value,
+                        'UI label: Custom caption dialog description'
+                      )
+                    }
+                  />
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Dialog Title</Label>
-                    <Input
-                      value={captionTitleLabel}
-                      onChange={(e) => updateSetting('label_caption_title', e.target.value, 'UI label: Custom caption dialog title')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">Field Label</Label>
+                  <Input
+                    value={captionFieldLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_field',
+                        e.target.value,
+                        'UI label: Caption field label'
+                      )
+                    }
+                  />
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Dialog Description</Label>
-                    <Input
-                      value={captionDescriptionLabel}
-                      onChange={(e) => updateSetting('label_caption_description', e.target.value, 'UI label: Custom caption dialog description')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">Placeholder</Label>
+                  <Input
+                    value={captionPlaceholderLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_placeholder',
+                        e.target.value,
+                        'UI label: Caption field placeholder'
+                      )
+                    }
+                  />
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Field Label</Label>
-                    <Input
-                      value={captionFieldLabel}
-                      onChange={(e) => updateSetting('label_caption_field', e.target.value, 'UI label: Caption field label')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Toggle - Auto Label
+                  </Label>
+                  <Input
+                    value={captionToggleAutoLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_toggle_auto',
+                        e.target.value,
+                        'UI label: Caption toggle auto label'
+                      )
+                    }
+                  />
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Placeholder</Label>
-                    <Input
-                      value={captionPlaceholderLabel}
-                      onChange={(e) => updateSetting('label_caption_placeholder', e.target.value, 'UI label: Caption field placeholder')}
-                    />
-                  </div>
-          
-                  <div>
-                    <Label className="text-sm font-medium">Toggle - Auto Label</Label>
-                    <Input
-                      value={captionToggleAutoLabel}
-                      onChange={(e) => updateSetting('label_caption_toggle_auto', e.target.value, 'UI label: Caption toggle auto label')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Toggle - Auto Subtext
+                  </Label>
+                  <Input
+                    value={captionToggleAutoSub}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_toggle_auto_sub',
+                        e.target.value,
+                        'UI label: Caption toggle auto subtext'
+                      )
+                    }
+                  />
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Toggle - Auto Subtext</Label>
-                    <Input
-                      value={captionToggleAutoSub}
-                      onChange={(e) => updateSetting('label_caption_toggle_auto_sub', e.target.value, 'UI label: Caption toggle auto subtext')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Toggle - Custom Label
+                  </Label>
+                  <Input
+                    value={captionToggleCustomLabel}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_toggle_custom',
+                        e.target.value,
+                        'UI label: Caption toggle custom label'
+                      )
+                    }
+                  />
+                </div>
 
-                  <div>
-                    <Label className="text-sm font-medium">Toggle - Custom Label</Label>
-                    <Input
-                      value={captionToggleCustomLabel}
-                      onChange={(e) => updateSetting('label_caption_toggle_custom', e.target.value, 'UI label: Caption toggle custom label')}
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium">Toggle - Custom Subtext</Label>
-                    <Input
-                      value={captionToggleCustomSub}
-                      onChange={(e) => updateSetting('label_caption_toggle_custom_sub', e.target.value, 'UI label: Caption toggle custom subtext')}
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Toggle - Custom Subtext
+                  </Label>
+                  <Input
+                    value={captionToggleCustomSub}
+                    onChange={(e) =>
+                      updateSetting(
+                        'label_caption_toggle_custom_sub',
+                        e.target.value,
+                        'UI label: Caption toggle custom subtext'
+                      )
+                    }
+                  />
                 </div>
               </div>
             </div>
-          
+          </div>
+
           {defaultMinCaptionLength >= defaultMaxCaptionLength && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-yellow-800 text-sm">
-                ⚠️ Warning: Minimum length should be less than maximum length for proper validation.
+                ⚠️ Warning: Minimum length should be less than maximum length
+                for proper validation.
               </p>
             </div>
           )}
@@ -420,28 +545,38 @@ export function SystemSettings() {
               <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
                 <User className="h-5 w-5 text-white" />
               </div>
-              <Label htmlFor="author-toggle" className="text-xl font-bold text-gray-900">
+              <Label
+                htmlFor="author-toggle"
+                className="text-xl font-bold text-gray-900"
+              >
                 Include Author by Default
               </Label>
             </div>
             <p className="text-base text-gray-600 leading-relaxed">
-              Determine whether author information should be included in reels by default. This setting applies to new reel types but can be customized for each reel type individually.
+              Determine whether author information should be included in reels
+              by default. This setting applies to new reel types but can be
+              customized for each reel type individually.
             </p>
             <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
-              <span className="font-medium">Status:</span> 
-              <span className={`font-bold ml-1 ${includeAuthorByDefault ? 'text-green-600' : 'text-red-600'}`}>
+              <span className="font-medium">Status:</span>
+              <span
+                className={`font-bold ml-1 ${includeAuthorByDefault ? 'text-green-600' : 'text-red-600'}`}
+              >
                 {includeAuthorByDefault ? '✓ Include Author' : '✗ No Author'}
               </span>
-              {settings.find(s => s.key === 'include_author_by_default') && (
+              {settings.find((s) => s.key === 'include_author_by_default') && (
                 <span className="block mt-1 text-xs">
-                  Last updated: {new Date(
-                    settings.find(s => s.key === 'include_author_by_default')!.updated_at
+                  Last updated:{' '}
+                  {new Date(
+                    settings.find(
+                      (s) => s.key === 'include_author_by_default'
+                    )!.updated_at
                   ).toLocaleString()}
                 </span>
               )}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <Switch
               id="author-toggle"
@@ -461,22 +596,34 @@ export function SystemSettings() {
               <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
                 <Settings className="h-5 w-5 text-white" />
               </div>
-              <Label htmlFor="custom-audio-toggle" className="text-xl font-bold text-gray-900">
+              <Label
+                htmlFor="custom-audio-toggle"
+                className="text-xl font-bold text-gray-900"
+              >
                 Allow Custom Audio (Global)
               </Label>
             </div>
             <p className="text-base text-gray-600 leading-relaxed">
-              Enable or disable custom audio uploads across the entire system. When disabled, users cannot select or upload custom audio for any reel type.
+              Enable or disable custom audio uploads across the entire system.
+              When disabled, users cannot select or upload custom audio for any
+              reel type.
             </p>
             <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3">
               <span className="font-medium">Status:</span>
-              <span className={`font-bold ml-1 ${allowCustomAudioGlobally ? 'text-green-600' : 'text-red-600'}`}>
+              <span
+                className={`font-bold ml-1 ${allowCustomAudioGlobally ? 'text-green-600' : 'text-red-600'}`}
+              >
                 {allowCustomAudioGlobally ? '✓ Enabled' : '✗ Disabled'}
               </span>
-              {settings.find(s => s.key === 'allow_custom_audio_globally') && (
+              {settings.find(
+                (s) => s.key === 'allow_custom_audio_globally'
+              ) && (
                 <span className="block mt-1 text-xs">
-                  Last updated: {new Date(
-                    settings.find(s => s.key === 'allow_custom_audio_globally')!.updated_at
+                  Last updated:{' '}
+                  {new Date(
+                    settings.find(
+                      (s) => s.key === 'allow_custom_audio_globally'
+                    )!.updated_at
                   ).toLocaleString()}
                 </span>
               )}
@@ -504,7 +651,9 @@ export function SystemSettings() {
       <div className="border-t border-gradient-to-r from-gray-200 via-gray-100 to-gray-200 pt-8">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">System Information</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              System Information
+            </h3>
             <p className="text-base text-gray-500">
               Settings are automatically saved and take effect immediately
             </p>

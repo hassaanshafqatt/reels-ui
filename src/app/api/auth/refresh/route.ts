@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { message: 'Authorization token required' },
@@ -21,11 +21,11 @@ export async function POST(request: NextRequest) {
     try {
       // Verify the current token
       const { payload } = await jwtVerify(token, JWT_SECRET);
-      
+
       // Create a new token with extended expiration
-      const newToken = await new SignJWT({ 
-        userId: payload.userId, 
-        email: payload.email 
+      const newToken = await new SignJWT({
+        userId: payload.userId,
+        email: payload.email,
       })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

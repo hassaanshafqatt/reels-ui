@@ -9,20 +9,23 @@ export async function GET(request: NextRequest) {
     const type = url.searchParams.get('type');
 
     if (!jobId || !type) {
-      return NextResponse.json({ error: 'jobId and type parameters are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'jobId and type parameters are required' },
+        { status: 400 }
+      );
     }
 
     // Check both memory store and database for the job
     let jobRecord = getJob(jobId);
     let dbJob = null;
-    
+
     if (!jobRecord) {
       // Try to find the job in the database
       dbJob = jobOperations.getByJobId(jobId);
       if (!dbJob) {
         return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
-      
+
       // Convert database job to JobRecord format and store in memory for this request
       jobRecord = {
         jobId: dbJob.job_id,
@@ -32,9 +35,9 @@ export async function GET(request: NextRequest) {
         createdAt: dbJob.created_at,
         updatedAt: dbJob.updated_at,
         result: dbJob.result_url ? { url: dbJob.result_url } : undefined,
-        error: dbJob.error_message || undefined
+        error: dbJob.error_message || undefined,
       };
-      
+
       // Optionally restore to memory store
       setJob(jobId, jobRecord);
     } else {
@@ -54,37 +57,53 @@ export async function GET(request: NextRequest) {
     if (reelTypeData.status_url) {
       try {
         const isExternalUrl = /^https?:\/\//i.test(reelTypeData.status_url);
-        const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || '';
+        const origin =
+          request.headers.get('origin') ||
+          process.env.NEXT_PUBLIC_BASE_URL ||
+          process.env.NEXTAUTH_URL ||
+          '';
         const base = origin || 'http://localhost:3000';
-        const statusUrl = isExternalUrl ? reelTypeData.status_url : `${base}${reelTypeData.status_url}`;
-        
+        const statusUrl = isExternalUrl
+          ? reelTypeData.status_url
+          : `${base}${reelTypeData.status_url}`;
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
-        const statusResponse = await fetch(`${statusUrl}?jobId=${encodeURIComponent(jobId)}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal
-        });
-        
+
+        const statusResponse = await fetch(
+          `${statusUrl}?jobId=${encodeURIComponent(jobId)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
+
         clearTimeout(timeoutId);
 
         if (statusResponse.ok) {
           const statusResult = await statusResponse.json();
-          
+
           // Extract status and other relevant information from the response
           let newStatus = jobRecord.status; // Default to current status
           let reelLink = null;
           let caption = null;
           const updatedResult = statusResult;
           let errorMessage = null;
-          
+
           // Check for errors in the response first
-          if (statusResult.error || statusResult.message?.includes('error') || statusResult.message?.includes('Error')) {
+          if (
+            statusResult.error ||
+            statusResult.message?.includes('error') ||
+            statusResult.message?.includes('Error')
+          ) {
             newStatus = 'failed';
-            errorMessage = statusResult.error || statusResult.message || 'Unknown error from status check';
+            errorMessage =
+              statusResult.error ||
+              statusResult.message ||
+              'Unknown error from status check';
           }
           // Try to extract status from common response formats if no error
           else if (statusResult.status) {
@@ -98,7 +117,7 @@ export async function GET(request: NextRequest) {
           else {
             newStatus = jobRecord.status;
           }
-          
+
           // Try to extract reel link from common response formats
           if (statusResult.reelUrl) {
             reelLink = statusResult.reelUrl;
@@ -113,43 +132,43 @@ export async function GET(request: NextRequest) {
           } else if (statusResult.link) {
             reelLink = statusResult.link;
           }
-          
+
           // Try to extract caption from the response
           if (statusResult.caption) {
             caption = statusResult.caption;
           }
-          
+
           // Update the job record with the new status information
           const updatedJob: JobRecord = {
             ...jobRecord,
             status: newStatus as JobRecord['status'],
             updatedAt: new Date().toISOString(),
             result: updatedResult,
-            error: errorMessage || jobRecord.error
+            error: errorMessage || jobRecord.error,
           };
-          
+
           // Update both memory store and database with poll tracking
           setJob(jobId, updatedJob);
-          
+
           // Update database with new status and poll tracking
           if (dbJob) {
             const updateResult = jobOperations.updateStatusWithPollTracking(
-              jobId, 
-              newStatus, 
-              reelLink || undefined, 
-              errorMessage || undefined, 
+              jobId,
+              newStatus,
+              reelLink || undefined,
+              errorMessage || undefined,
               caption || undefined // caption from external response
             );
-            
+
             // Update the job record with the actual final status from poll tracking
             const finalUpdatedJob: JobRecord = {
               ...updatedJob,
               status: updateResult.status as JobRecord['status'],
               pollCount: updateResult.pollCount,
-              shouldStopPolling: updateResult.shouldStopPolling
+              shouldStopPolling: updateResult.shouldStopPolling,
             };
             setJob(jobId, finalUpdatedJob);
-            
+
             // If we should stop polling, return a special indicator
             if (updateResult.shouldStopPolling) {
               return NextResponse.json({
@@ -163,10 +182,10 @@ export async function GET(request: NextRequest) {
                 error: finalUpdatedJob.error,
                 reelLink: reelLink,
                 shouldStopPolling: true,
-                pollCount: updateResult.pollCount
+                pollCount: updateResult.pollCount,
               });
             }
-            
+
             // Return normal response with poll count
             return NextResponse.json({
               jobId: finalUpdatedJob.jobId,
@@ -178,7 +197,7 @@ export async function GET(request: NextRequest) {
               result: finalUpdatedJob.result,
               error: finalUpdatedJob.error,
               reelLink: reelLink,
-              pollCount: updateResult.pollCount
+              pollCount: updateResult.pollCount,
             });
           } else {
             // No database job, just return the memory record
@@ -191,20 +210,20 @@ export async function GET(request: NextRequest) {
               updatedAt: updatedJob.updatedAt,
               result: updatedJob.result,
               error: updatedJob.error,
-              reelLink: reelLink
+              reelLink: reelLink,
             });
           }
         } else {
           // Even if status URL fails, we should track the polling attempt
           if (dbJob) {
             const updateResult = jobOperations.updateStatusWithPollTracking(
-              jobId, 
+              jobId,
               jobRecord.status, // Keep current status
               undefined, // No new result URL
               `Status check failed: ${statusResponse.status}`, // Error message
               undefined // No caption update
             );
-            
+
             if (updateResult.shouldStopPolling) {
               return NextResponse.json({
                 jobId: jobRecord.jobId,
@@ -216,7 +235,7 @@ export async function GET(request: NextRequest) {
                 result: jobRecord.result,
                 error: jobRecord.error,
                 shouldStopPolling: true,
-                pollCount: updateResult.pollCount
+                pollCount: updateResult.pollCount,
               });
             }
           }
@@ -225,13 +244,13 @@ export async function GET(request: NextRequest) {
         // Track the polling attempt even if there's a network error
         if (dbJob) {
           const updateResult = jobOperations.updateStatusWithPollTracking(
-            jobId, 
+            jobId,
             jobRecord.status, // Keep current status
             undefined, // No new result URL
             `Network error during status check: ${statusError instanceof Error ? statusError.message : String(statusError)}`, // Error message
             undefined // No caption update
           );
-          
+
           if (updateResult.shouldStopPolling) {
             return NextResponse.json({
               jobId: jobRecord.jobId,
@@ -243,7 +262,7 @@ export async function GET(request: NextRequest) {
               result: jobRecord.result,
               error: jobRecord.error,
               shouldStopPolling: true,
-              pollCount: updateResult.pollCount
+              pollCount: updateResult.pollCount,
             });
           }
         }
@@ -252,13 +271,13 @@ export async function GET(request: NextRequest) {
       // No status URL configured, but we should still track polling to avoid infinite polling
       if (dbJob) {
         const updateResult = jobOperations.updateStatusWithPollTracking(
-          jobId, 
+          jobId,
           jobRecord.status, // Keep current status
           undefined, // No result URL
           undefined, // No error message
           undefined // No caption update
         );
-        
+
         if (updateResult.shouldStopPolling) {
           return NextResponse.json({
             jobId: jobRecord.jobId,
@@ -270,7 +289,7 @@ export async function GET(request: NextRequest) {
             result: jobRecord.result,
             error: jobRecord.error,
             shouldStopPolling: true,
-            pollCount: updateResult.pollCount
+            pollCount: updateResult.pollCount,
           });
         }
       }
@@ -285,9 +304,12 @@ export async function GET(request: NextRequest) {
       createdAt: jobRecord.createdAt,
       updatedAt: jobRecord.updatedAt,
       result: jobRecord.result,
-      error: jobRecord.error
+      error: jobRecord.error,
     });
   } catch {
-    return NextResponse.json({ error: 'Failed to check job status' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to check job status' },
+      { status: 500 }
+    );
   }
 }

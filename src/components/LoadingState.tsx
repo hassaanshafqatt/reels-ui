@@ -1,11 +1,13 @@
-import React from "react";
-import { Loader } from "lucide-react";
+import React from 'react';
+import { Loader } from 'lucide-react';
 
 interface LoadingStateProps {
   message?: string;
 }
 
-export default function LoadingState({ message = "Loading reel categories..." }: LoadingStateProps) {
+export default function LoadingState({
+  message = 'Loading reel categories...',
+}: LoadingStateProps) {
   return (
     <div className="flex items-center justify-center py-12">
       <div className="flex items-center space-x-3">

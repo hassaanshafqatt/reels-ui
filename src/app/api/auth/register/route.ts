@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { userOperations, sessionOperations, passwordUtils } from '@/lib/database';
+import {
+  userOperations,
+  sessionOperations,
+  passwordUtils,
+} from '@/lib/database';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
       password_hash: hashedPassword,
       name,
       plan: 'free', // Default plan for new users
-      is_admin: false // Default to non-admin for new users
+      is_admin: false, // Default to non-admin for new users
     });
 
     if (!createResult.success) {
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Get the created user
     const newUser = userOperations.findById(createResult.userId!);
-    
+
     if (!newUser) {
       return NextResponse.json(
         { message: 'Failed to retrieve created user' },
@@ -74,9 +78,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create JWT token
-    const token = await new SignJWT({ 
-      userId: newUser.id, 
-      email: newUser.email 
+    const token = await new SignJWT({
+      userId: newUser.id,
+      email: newUser.email,
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -86,9 +90,13 @@ export async function POST(request: NextRequest) {
     // Store session in database
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-    
-    const sessionResult = sessionOperations.create(newUser.id, token, expiresAt);
-    
+
+    const sessionResult = sessionOperations.create(
+      newUser.id,
+      token,
+      expiresAt
+    );
+
     if (!sessionResult.success) {
       return NextResponse.json(
         { message: 'Failed to create session' },
@@ -96,20 +104,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  // Return user data (without password hash) and token
-  const { password_hash, ...userWithoutPassword } = newUser;
-  // password_hash intentionally omitted from response
-  void password_hash;
+    // Return user data (without password hash) and token
+    const { password_hash, ...userWithoutPassword } = newUser;
+    // password_hash intentionally omitted from response
+    void password_hash;
 
     return NextResponse.json({
       success: true,
       token,
       user: {
         ...userWithoutPassword,
-        createdAt: newUser.created_at
+        createdAt: newUser.created_at,
       },
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

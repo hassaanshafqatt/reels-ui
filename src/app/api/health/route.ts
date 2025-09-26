@@ -46,8 +46,12 @@ export async function GET() {
       cpuUsage: process.cpuUsage().user / 1000000, // Convert to seconds
     };
 
-    const statusCode = healthStatus.status === 'healthy' ? 200 :
-                      healthStatus.status === 'degraded' ? 200 : 503;
+    const statusCode =
+      healthStatus.status === 'healthy'
+        ? 200
+        : healthStatus.status === 'degraded'
+          ? 200
+          : 503;
 
     logger.info('Health check completed', {
       status: healthStatus.status,
@@ -62,9 +66,8 @@ export async function GET() {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'X-Health-Check': healthStatus.status,
         'X-Response-Time': `${responseTime}ms`,
-      }
+      },
     });
-
   } catch {
     logger.error('Health check failed', {
       responseTime: `${Date.now() - startTime}ms`,
@@ -108,7 +111,9 @@ async function performHealthCheck(): Promise<HealthStatus> {
 
     services.database = {
       status: dbHealth.healthy ? 'up' : 'down',
-      message: dbHealth.healthy ? 'Database is healthy' : 'Database is unhealthy',
+      message: dbHealth.healthy
+        ? 'Database is healthy'
+        : 'Database is unhealthy',
       details: dbDetails,
     };
 
@@ -199,9 +204,9 @@ async function checkFilesystemHealth(): Promise<ServiceHealth> {
       };
     }
 
-  // Get disk usage information
-  // stats are not currently used but kept for future diagnostics
-  void fs.statSync(dataDir);
+    // Get disk usage information
+    // stats are not currently used but kept for future diagnostics
+    void fs.statSync(dataDir);
     const diskUsage = await getDiskUsage(dataDir);
 
     return {
@@ -272,7 +277,9 @@ function checkMemoryHealth(): ServiceHealth {
 /**
  * Get disk usage information
  */
-async function getDiskUsage(dirPath: string): Promise<Record<string, string | number> | { error: string }> {
+async function getDiskUsage(
+  dirPath: string
+): Promise<Record<string, string | number> | { error: string }> {
   try {
     // Get directory size (simplified)
     const getDirSize = (dirPath: string): number => {
@@ -351,17 +358,22 @@ node_memory_heap_total_bytes ${process.memoryUsage().heapTotal}
 
 # HELP process_start_time_seconds Start time of the process
 # TYPE process_start_time_seconds gauge
-process_start_time_seconds ${(timestamp - (process.uptime() * 1000)) / 1000}
+process_start_time_seconds ${(timestamp - process.uptime() * 1000) / 1000}
 
 `;
 
   // Database metrics
   try {
     const dbHealth = await getDatabaseHealth();
-    if (dbHealth.healthy && dbHealth.details && typeof dbHealth.details === 'object') {
+    if (
+      dbHealth.healthy &&
+      dbHealth.details &&
+      typeof dbHealth.details === 'object'
+    ) {
       const details = dbHealth.details as Record<string, unknown>;
       const size = typeof details.size === 'number' ? details.size : undefined;
-      const pages = typeof details.pages === 'number' ? details.pages : undefined;
+      const pages =
+        typeof details.pages === 'number' ? details.pages : undefined;
 
       if (typeof size === 'number') {
         metrics += `# HELP database_size_bytes Size of the database file

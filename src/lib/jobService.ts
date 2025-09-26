@@ -7,7 +7,14 @@ interface StoredJob {
   job_id: string;
   category: string;
   type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'approved' | 'posted' | 'rejected';
+  status:
+    | 'pending'
+    | 'processing'
+    | 'completed'
+    | 'failed'
+    | 'approved'
+    | 'posted'
+    | 'rejected';
   result_url?: string;
   caption?: string;
   error_message?: string;
@@ -25,7 +32,7 @@ const getAuthHeaders = () => {
   const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 
@@ -33,9 +40,9 @@ export const jobService = {
   // Get all jobs for the current user
   async getJobs(): Promise<StoredJob[]> {
     try {
-  const token = getAuthToken();
+      const token = getAuthToken();
       void token;
-      
+
       const response = await fetch('/api/jobs', {
         headers: getAuthHeaders(),
       });
@@ -52,7 +59,11 @@ export const jobService = {
   },
 
   // Create a new job
-  async createJob(jobData: { jobId: string; category: string; type: string }): Promise<boolean> {
+  async createJob(jobData: {
+    jobId: string;
+    category: string;
+    type: string;
+  }): Promise<boolean> {
     try {
       const response = await fetch('/api/jobs', {
         method: 'POST',
@@ -71,7 +82,13 @@ export const jobService = {
   },
 
   // Update job status
-  async updateJobStatus(jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string): Promise<boolean> {
+  async updateJobStatus(
+    jobId: string,
+    status: string,
+    resultUrl?: string,
+    errorMessage?: string,
+    caption?: string
+  ): Promise<boolean> {
     try {
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: 'PUT',
@@ -110,7 +127,9 @@ export const jobService = {
   // Clear job history for a specific category
   async clearJobsByCategory(category?: string): Promise<boolean> {
     try {
-      const url = category ? `/api/jobs?category=${encodeURIComponent(category)}` : '/api/jobs';
+      const url = category
+        ? `/api/jobs?category=${encodeURIComponent(category)}`
+        : '/api/jobs';
       const response = await fetch(url, {
         method: 'DELETE',
         headers: getAuthHeaders(),
@@ -127,10 +146,17 @@ export const jobService = {
   },
 
   // Check job status via status API
-  async checkJobStatus(jobId: string, type: string): Promise<{ status: string; result_url?: string; shouldStopPolling?: boolean }> {
+  async checkJobStatus(
+    jobId: string,
+    type: string
+  ): Promise<{
+    status: string;
+    result_url?: string;
+    shouldStopPolling?: boolean;
+  }> {
     try {
       const url = `/api/reels/status?jobId=${encodeURIComponent(jobId)}&type=${encodeURIComponent(type)}`;
-      
+
       const response = await fetch(url, {
         headers: getAuthHeaders(),
       });
@@ -162,7 +188,7 @@ export const jobService = {
       const response = await fetch(`/api/uploads/audio/${filename}`, {
         method: 'DELETE',
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -170,13 +196,13 @@ export const jobService = {
         return false;
       }
 
-  // response body not needed here
-  void token;
-  return true;
+      // response body not needed here
+      void token;
+      return true;
     } catch {
       return false;
     }
-  }
+  },
 };
 
 export type { StoredJob };

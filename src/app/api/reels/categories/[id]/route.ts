@@ -19,14 +19,20 @@ export async function GET(
 
     const { id } = await params;
     const category = reelCategoryOperations.getById(id);
-    
+
     if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ category });
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch category' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch category' },
+      { status: 500 }
+    );
   }
 }
 
@@ -53,15 +59,21 @@ export async function PUT(
     if (is_active !== undefined) updates.is_active = is_active;
 
     const success = reelCategoryOperations.update(id, updates);
-    
+
     if (!success) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
     }
 
     const category = reelCategoryOperations.getById(id);
     return NextResponse.json({ category });
   } catch {
-    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update category' },
+      { status: 500 }
+    );
   }
 }
 
@@ -78,13 +90,19 @@ export async function DELETE(
 
     const { id } = await params;
     const success = reelCategoryOperations.delete(id);
-    
+
     if (!success) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ message: 'Category deleted successfully' });
   } catch {
-    return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete category' },
+      { status: 500 }
+    );
   }
 }

@@ -1,5 +1,5 @@
-import React from "react";
-import { Music, Upload } from "lucide-react";
+import React from 'react';
+import { Music, Upload } from 'lucide-react';
 
 interface AudioToggleProps {
   useCustomAudio: boolean;
@@ -7,7 +7,11 @@ interface AudioToggleProps {
   disabled?: boolean;
 }
 
-export default function AudioToggle({ useCustomAudio, onToggleAudio, disabled = false }: AudioToggleProps) {
+export default function AudioToggle({
+  useCustomAudio,
+  onToggleAudio,
+  disabled = false,
+}: AudioToggleProps) {
   return (
     <div className="bg-gray-50 p-1 rounded-xl">
       <div className="grid grid-cols-2 gap-1">
@@ -22,20 +26,28 @@ export default function AudioToggle({ useCustomAudio, onToggleAudio, disabled = 
           disabled={disabled}
         >
           <div className="flex items-center space-x-3">
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              !useCustomAudio ? 'bg-teal-600' : 'bg-gray-400'
-            }`}>
+            <div
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                !useCustomAudio ? 'bg-teal-600' : 'bg-gray-400'
+              }`}
+            >
               <Music className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className={`font-medium text-xs sm:text-sm ${
-                !useCustomAudio ? 'text-gray-900' : 'text-gray-600'
-              }`}>
+              <div
+                className={`font-medium text-xs sm:text-sm ${
+                  !useCustomAudio ? 'text-gray-900' : 'text-gray-600'
+                }`}
+              >
                 Auto Audio
               </div>
-              <p className={`text-xs ${
-                !useCustomAudio ? 'text-gray-600' : 'text-gray-500'
-              }`}>AI selects music</p>
+              <p
+                className={`text-xs ${
+                  !useCustomAudio ? 'text-gray-600' : 'text-gray-500'
+                }`}
+              >
+                AI selects music
+              </p>
             </div>
           </div>
         </button>
@@ -51,20 +63,28 @@ export default function AudioToggle({ useCustomAudio, onToggleAudio, disabled = 
           disabled={disabled}
         >
           <div className="flex items-center space-x-3">
-            <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              useCustomAudio ? 'bg-teal-600' : 'bg-gray-400'
-            }`}>
+            <div
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                useCustomAudio ? 'bg-teal-600' : 'bg-gray-400'
+              }`}
+            >
               <Upload className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className={`font-medium text-xs sm:text-sm ${
-                useCustomAudio ? 'text-gray-900' : 'text-gray-600'
-              }`}>
+              <div
+                className={`font-medium text-xs sm:text-sm ${
+                  useCustomAudio ? 'text-gray-900' : 'text-gray-600'
+                }`}
+              >
                 Custom Audio
               </div>
-              <p className={`text-xs ${
-                useCustomAudio ? 'text-gray-600' : 'text-gray-500'
-              }`}>Upload your own</p>
+              <p
+                className={`text-xs ${
+                  useCustomAudio ? 'text-gray-600' : 'text-gray-500'
+                }`}
+              >
+                Upload your own
+              </p>
             </div>
           </div>
         </button>

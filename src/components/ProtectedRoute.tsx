@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { ReactNode } from 'react';
@@ -17,7 +17,10 @@ const LoadingScreen = () => (
   </div>
 );
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallback }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  fallback,
+}) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {

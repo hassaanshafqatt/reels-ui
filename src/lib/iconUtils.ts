@@ -18,7 +18,7 @@ import {
   Settings,
   Users,
   Sparkles,
-  Headphones
+  Headphones,
 } from 'lucide-react';
 
 /**
@@ -27,29 +27,35 @@ import {
  * @param className - CSS classes to apply to the icon (default: "h-4 w-4")
  * @returns React component for the icon
  */
-export const getIconFromDatabase = (iconName: string, className: string = "h-4 w-4"): React.ReactElement => {
-  const iconComponents: Record<string, React.ComponentType<{className?: string}>> = {
-    'Zap': Zap,
-    'Dumbbell': Dumbbell,
-    'BookOpen': BookOpen,
-    'Sword': Sword,
-    'Music': Music,
-    'Brain': Brain,
-    'Palette': Palette,
-    'Shield': Shield,
-    'Crown': Crown,
-    'HandHeart': HandHeart,
-    'Heart': Heart,
-    'Lightbulb': Lightbulb,
-    'PaintBucket': PaintBucket,
-    'Utensils': Utensils,
-    'PawPrint': PawPrint,
-    'Settings': Settings,
-    'Users': Users,
-    'Sparkles': Sparkles,
-    'Headphones': Headphones
+export const getIconFromDatabase = (
+  iconName: string,
+  className: string = 'h-4 w-4'
+): React.ReactElement => {
+  const iconComponents: Record<
+    string,
+    React.ComponentType<{ className?: string }>
+  > = {
+    Zap: Zap,
+    Dumbbell: Dumbbell,
+    BookOpen: BookOpen,
+    Sword: Sword,
+    Music: Music,
+    Brain: Brain,
+    Palette: Palette,
+    Shield: Shield,
+    Crown: Crown,
+    HandHeart: HandHeart,
+    Heart: Heart,
+    Lightbulb: Lightbulb,
+    PaintBucket: PaintBucket,
+    Utensils: Utensils,
+    PawPrint: PawPrint,
+    Settings: Settings,
+    Users: Users,
+    Sparkles: Sparkles,
+    Headphones: Headphones,
   };
-  
+
   const IconComponent = iconComponents[iconName] || Sparkles;
   return React.createElement(IconComponent, { className });
 };
@@ -61,7 +67,7 @@ export const getIconFromDatabase = (iconName: string, className: string = "h-4 w
 export const getAvailableIconNames = (): string[] => {
   return [
     'Zap',
-    'Dumbbell', 
+    'Dumbbell',
     'BookOpen',
     'Sword',
     'Music',
@@ -78,6 +84,6 @@ export const getAvailableIconNames = (): string[] => {
     'Settings',
     'Users',
     'Sparkles',
-    'Headphones'
+    'Headphones',
   ];
 };

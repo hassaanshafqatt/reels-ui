@@ -1,14 +1,14 @@
-import React from "react";
-import { AlertCircle } from "lucide-react";
+import React from 'react';
+import { AlertCircle } from 'lucide-react';
 
 interface ErrorStateProps {
   title?: string;
   message: string;
 }
 
-export default function ErrorState({ 
-  title = "Failed to load reel data", 
-  message 
+export default function ErrorState({
+  title = 'Failed to load reel data',
+  message,
 }: ErrorStateProps) {
   return (
     <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">

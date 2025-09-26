@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const securityResult = await apiSecurityMiddleware(request, {
       requireApiKey: true,
       rateLimit: true,
-      allowedMethods: ['GET']
+      allowedMethods: ['GET'],
     });
 
     if (!securityResult.success) {
@@ -20,18 +20,25 @@ export async function GET(request: NextRequest) {
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'audio');
 
     if (!existsSync(uploadsDir)) {
-      return NextResponse.json({
-        totalFiles: 0,
-        totalSize: 0,
-        files: [],
-        oldestFile: null,
-        newestFile: null
-      }, { headers: getSecurityHeaders() });
+      return NextResponse.json(
+        {
+          totalFiles: 0,
+          totalSize: 0,
+          files: [],
+          oldestFile: null,
+          newestFile: null,
+        },
+        { headers: getSecurityHeaders() }
+      );
     }
 
     const files = await readdir(uploadsDir);
-    const audioFiles = files.filter(file =>
-      file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')
+    const audioFiles = files.filter(
+      (file) =>
+        file.endsWith('.mp3') ||
+        file.endsWith('.wav') ||
+        file.endsWith('.m4a') ||
+        file.endsWith('.aac')
     );
 
     let totalSize = 0;
@@ -50,7 +57,7 @@ export async function GET(request: NextRequest) {
         size: stats.size,
         created: stats.birthtime,
         modified: stats.mtime,
-        age: Date.now() - stats.mtime.getTime()
+        age: Date.now() - stats.mtime.getTime(),
       };
 
       fileStats.push(fileInfo);
@@ -64,16 +71,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      totalFiles: audioFiles.length,
-      totalSize,
-      totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
-      files: fileStats,
-      oldestFile,
-      newestFile,
-      cleanupThreshold: '24 hours'
-    }, { headers: getSecurityHeaders() });
-
+    return NextResponse.json(
+      {
+        totalFiles: audioFiles.length,
+        totalSize,
+        totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+        files: fileStats,
+        oldestFile,
+        newestFile,
+        cleanupThreshold: '24 hours',
+      },
+      { headers: getSecurityHeaders() }
+    );
   } catch (err) {
     console.error('Stats API error:', err);
     return NextResponse.json(
