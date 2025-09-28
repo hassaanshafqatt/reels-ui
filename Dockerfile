@@ -65,7 +65,6 @@ ENV HOSTNAME="0.0.0.0"
 RUN apt-get update && \
   apt-get install -y --no-install-recommends sqlite3 libsqlite3-0 && \
   rm -rf /var/lib/apt/lists/*
-
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
