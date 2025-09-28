@@ -9,8 +9,27 @@ export async function GET(request: NextRequest) {
     const type = url.searchParams.get('type');
 
     if (!jobId || !type) {
+      // Log incoming request details to help debug missing params
+      try {
+        console.debug('Missing params in /api/reels/status request', {
+          url: request.url,
+          searchParams: Array.from(url.searchParams.entries()),
+          headers: {
+            host: request.headers.get('host'),
+            origin: request.headers.get('origin'),
+            referer: request.headers.get('referer'),
+          },
+        });
+      } catch {
+        // ignore logging errors
+      }
+
+      const missing: string[] = [];
+      if (!jobId) missing.push('jobId');
+      if (!type) missing.push('type');
+
       return NextResponse.json(
-        { error: 'jobId and type parameters are required' },
+        { error: 'Missing required query parameters', missing },
         { status: 400 }
       );
     }
@@ -43,8 +62,6 @@ export async function GET(request: NextRequest) {
     } else {
       // Job is in memory, but we still need the database record for poll tracking
       dbJob = jobOperations.getByJobId(jobId);
-      if (!dbJob) {
-      }
     }
 
     // Get the reel config for this type from database

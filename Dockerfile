@@ -59,7 +59,9 @@ ENV PORT=4761
 ENV HOSTNAME="0.0.0.0"
 ENV PUBLIC_HOSTNAME=https://reels.arachnix.io
 ENV API_KEY=123456
-
+ENV INSTAGRAM_CLIENT_ID=797415069305797
+ENV INSTAGRAM_CLIENT_SECRET=1d5a7f31dd9d56c868d53fdddd5c2c4e
+ENV INSTAGRAM_REDIRECT_URI=https://99c08b8c15df.ngrok-free.app/api/auth/instagram/callback
 # Install sqlite3 runtime for production
 RUN apt-get update && \
   apt-get install -y --no-install-recommends sqlite3 libsqlite3-0 && \

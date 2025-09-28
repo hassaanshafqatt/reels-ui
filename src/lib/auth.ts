@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
-import { userOperations } from './database';
+import { userOperations, sessionOperations } from './database';
 
 export interface AuthUser {
   id: string;
@@ -39,6 +39,27 @@ export async function verifyAuth(
     }
 
     if (!token) {
+      // No access token present — try HttpOnly refresh token session as a fallback
+      try {
+        const refreshToken = request
+          ? // when request is provided, read from its cookies
+            request.cookies.get('refresh_token')?.value
+          : // server-side cookies()
+            (await cookies()).get('refresh_token')?.value;
+
+        if (refreshToken) {
+          const session = sessionOperations.findByToken(refreshToken as string);
+          if (session && session.user_id) {
+            return {
+              id: String(session.user_id),
+              email: String(session.email),
+            };
+          }
+        }
+      } catch {
+        // ignore and fallthrough to return null
+      }
+
       return null;
     }
 

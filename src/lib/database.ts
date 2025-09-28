@@ -37,6 +37,20 @@ export interface User {
   updated_at: string;
 }
 
+export interface SocialAccount {
+  id: string;
+  user_id: string;
+  platform: 'instagram' | 'youtube' | 'tiktok';
+  account_id: string;
+  username: string;
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: string;
+  profile_image?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface Job {
   id: string;
   user_id: string;
@@ -262,6 +276,28 @@ const createAdminSettingsTable = () => {
   }
 };
 
+// Create social accounts table
+const createSocialAccountsTable = () => {
+  const stmt = db.prepare(`
+    CREATE TABLE IF NOT EXISTS social_accounts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      platform TEXT NOT NULL CHECK (platform IN ('instagram', 'youtube', 'tiktok')),
+      account_id TEXT NOT NULL,
+      username TEXT NOT NULL,
+      profile_image TEXT,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT,
+      expires_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      UNIQUE(user_id, platform, account_id)
+    )
+  `);
+  stmt.run();
+};
+
 // Initialize tables
 createUsersTable();
 createSessionsTable();
@@ -269,6 +305,26 @@ createJobsTable();
 createReelCategoriesTable();
 createReelTypesTable();
 createAdminSettingsTable();
+createSocialAccountsTable();
+
+// Migration: add profile_image column if it doesn't exist
+export const migrateAddProfileImageToSocialAccounts = () => {
+  try {
+    const info = db.prepare('PRAGMA table_info(social_accounts)').all() as {
+      name: string;
+    }[];
+    const has = info.some((c) => c.name === 'profile_image');
+    if (!has) {
+      db.prepare(
+        'ALTER TABLE social_accounts ADD COLUMN profile_image TEXT'
+      ).run();
+    }
+  } catch {
+    // ignore
+  }
+};
+
+migrateAddProfileImageToSocialAccounts();
 
 // User operations
 export const userOperations = {
@@ -961,6 +1017,93 @@ export const adminSettingsOperations = {
   delete: (key: string) => {
     const stmt = db.prepare('DELETE FROM admin_settings WHERE key = ?');
     return stmt.run(key).changes > 0;
+  },
+};
+
+export const socialAccountOperations = {
+  // Create a new social account
+  create: (
+    accountData: Omit<SocialAccount, 'id' | 'created_at' | 'updated_at'>
+  ) => {
+    const id = crypto.randomUUID();
+    const stmt = db.prepare(`
+      INSERT INTO social_accounts (id, user_id, platform, account_id, username, profile_image, access_token, refresh_token, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    try {
+      stmt.run(
+        id,
+        accountData.user_id,
+        accountData.platform,
+        accountData.account_id,
+        accountData.username,
+        accountData.profile_image || null,
+        accountData.access_token,
+        accountData.refresh_token || null,
+        accountData.expires_at || null
+      );
+      return { success: true, accountId: id };
+    } catch {
+      return { success: false, error: 'Failed to create social account' };
+    }
+  },
+
+  // Find accounts by user ID
+  findByUserId: (userId: string): SocialAccount[] => {
+    const stmt = db.prepare(
+      'SELECT * FROM social_accounts WHERE user_id = ? ORDER BY created_at DESC'
+    );
+    return stmt.all(userId) as SocialAccount[];
+  },
+
+  // Find account by ID
+  findById: (id: string): SocialAccount | null => {
+    const stmt = db.prepare('SELECT * FROM social_accounts WHERE id = ?');
+    return stmt.get(id) as SocialAccount | null;
+  },
+
+  // Find account by platform and account ID
+  findByPlatformAndAccountId: (
+    userId: string,
+    platform: string,
+    accountId: string
+  ): SocialAccount | null => {
+    const stmt = db.prepare(
+      'SELECT * FROM social_accounts WHERE user_id = ? AND platform = ? AND account_id = ?'
+    );
+    return stmt.get(userId, platform, accountId) as SocialAccount | null;
+  },
+
+  // Update access token
+  updateTokens: (
+    id: string,
+    accessToken: string,
+    refreshToken?: string,
+    expiresAt?: string,
+    profileImage?: string
+  ) => {
+    const stmt = db.prepare(`
+      UPDATE social_accounts 
+      SET access_token = ?, refresh_token = ?, expires_at = ?, profile_image = ?, updated_at = ?
+      WHERE id = ?
+    `);
+    return (
+      stmt.run(
+        accessToken,
+        refreshToken || null,
+        expiresAt || null,
+        profileImage || null,
+        new Date().toISOString(),
+        id
+      ).changes > 0
+    );
+  },
+
+  // Delete account
+  delete: (id: string) => {
+    const stmt = db.prepare('DELETE FROM social_accounts WHERE id = ?');
+    return stmt.run(id).changes > 0;
   },
 };
 

@@ -7,6 +7,8 @@ import Dashboard from '@/components/Dashboard';
 import { LoginPage } from '@/components/LoginPage';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AccountSwitcher } from '@/components/AccountSwitcher';
+import ConnectNotification from '@/components/ConnectNotification';
 
 function AppContent() {
   const { logout } = useAuth();
@@ -25,6 +27,7 @@ function AppContent() {
 
   return (
     <ProtectedRoute fallback={<LoginPage />}>
+      <ConnectNotification />
       <div className="min-h-screen bg-gray-50">
         {/* Mobile Layout */}
         <div className="lg:hidden mobile-container">
@@ -87,10 +90,8 @@ function AppContent() {
                     <X className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
-                <div className="h-full overflow-y-auto p-4">
-                  <p className="text-sm text-gray-600">
-                    No accounts configured.
-                  </p>
+                <div className="h-full overflow-y-auto">
+                  <AccountSwitcher isMobile={true} />
                 </div>
               </div>
             </div>
@@ -106,6 +107,9 @@ function AppContent() {
 
         {/* Desktop Layout */}
         <div className="hidden lg:flex h-screen">
+          {/* AccountSwitcher Sidebar */}
+          <AccountSwitcher />
+
           {/* Desktop Main Content */}
           <div className="flex-1 flex flex-col min-w-0">
             {/* Desktop Header */}

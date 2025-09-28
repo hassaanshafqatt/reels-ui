@@ -7,7 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { setAccessToken, getAccessToken } from '@/lib/clientAuth';
+import { setAccessToken } from '@/lib/clientAuth';
 
 interface User {
   id: string;
@@ -102,24 +102,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
     // logout is stable via useCallback and we intentionally run initialization once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const verifyToken = async (token: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
+  // verifyToken removed (not used) to avoid unused variable lint
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -199,7 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     setAccessToken(null);
-  }, [token]);
+  }, []);
 
   const refreshToken = async (): Promise<boolean> => {
     try {

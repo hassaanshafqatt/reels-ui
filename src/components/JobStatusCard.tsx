@@ -41,12 +41,12 @@ export default function JobStatusCard({
 }: JobStatusCardProps) {
   const { token } = useAuth();
   // legacy fullscreen flag kept for className compatibility
-  const [isFullscreen] = useState(false);
+  const [_isFullscreen] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [postMessage, setPostMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPlaying] = useState(false);
+  const [_isPlaying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 

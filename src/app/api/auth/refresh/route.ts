@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify, SignJWT } from 'jose';
+import { SignJWT } from 'jose';
 import { sessionOperations } from '@/lib/database';
 
 const JWT_SECRET = new TextEncoder().encode(

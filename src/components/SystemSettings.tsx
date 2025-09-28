@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader, AlertCircle, Settings, Type, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getAuthHeaders, getAuthToken } from '@/lib/clientAuth';
+import { getAuthHeaders } from '@/lib/clientAuth';
 
 interface AdminSetting {
   key: string;
