@@ -73,6 +73,71 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // If TikTok, try to fetch follower_count and avatar using the stored access token
+        if (account.platform === 'tiktok' && account.access_token) {
+          try {
+            const url = `https://open.tiktokapis.com/v2/user/info/?fields=follower_count,avatar_url,display_name,username,open_id,union_id`;
+            const resp = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${account.access_token}`,
+                Accept: 'application/json',
+              },
+            });
+            if (resp.ok) {
+              const parsed = await resp.json();
+              const d =
+                parsed &&
+                typeof parsed === 'object' &&
+                'data' in (parsed as Record<string, unknown>)
+                  ? (parsed as Record<string, unknown>).data
+                  : parsed;
+
+              let followersRaw: number | undefined = undefined;
+              let avatarUrl: string | undefined = undefined;
+
+              if (d && typeof d === 'object') {
+                const dd = d as Record<string, unknown>;
+                // tiktok may nest user object
+                const userObj =
+                  'user' in dd && dd.user && typeof dd.user === 'object'
+                    ? (dd.user as Record<string, unknown>)
+                    : dd;
+                const f =
+                  userObj['follower_count'] ?? userObj['followers_count'];
+                if (typeof f === 'number') followersRaw = f;
+                else if (typeof f === 'string') {
+                  const n = Number(f);
+                  if (!Number.isNaN(n)) followersRaw = n;
+                }
+
+                if (userObj['avatar_url']) {
+                  avatarUrl = String(userObj['avatar_url']);
+                }
+                // also try top-level avatar_url
+                if (!avatarUrl && dd['avatar_url'])
+                  avatarUrl = String(dd['avatar_url']);
+              }
+
+              if (
+                !Number.isNaN(Number(followersRaw)) &&
+                followersRaw !== undefined
+              ) {
+                platformData.followers = formatFollowers(followersRaw);
+              }
+
+              if (!account.profile_image && avatarUrl) {
+                account.profile_image = avatarUrl;
+              }
+            }
+          } catch (err) {
+            console.debug(
+              'Failed to fetch TikTok followers/profile for account',
+              account.account_id,
+              err
+            );
+          }
+        }
+
         return {
           id: account.id,
           platform: account.platform,

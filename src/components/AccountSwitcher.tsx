@@ -47,6 +47,15 @@ interface AccountSwitcherProps {
   isMobile?: boolean;
 }
 
+const PLATFORM_META: Record<
+  SocialAccount['platform'],
+  { label: string; color: string }
+> = {
+  instagram: { label: 'IG', color: 'from-pink-500 to-purple-600' },
+  youtube: { label: 'YT', color: 'bg-red-600' },
+  tiktok: { label: 'TT', color: 'bg-black' },
+};
+
 // defaultAccounts removed — accounts are fetched from server for authenticated users
 
 export function AccountSwitcher({
@@ -138,6 +147,12 @@ export function AccountSwitcher({
     if (platform === 'instagram') {
       // Redirect to Instagram OAuth
       window.location.href = '/api/auth/instagram/initiate';
+    } else if (platform === 'tiktok') {
+      // Redirect to TikTok OAuth
+      window.location.href = '/api/auth/tiktok/initiate';
+    } else if (platform === 'youtube') {
+      // Redirect to YouTube OAuth
+      window.location.href = '/api/auth/youtube/initiate';
     } else {
       // For now, just show a message for other platforms
       alert(`${platform} integration coming soon!`);
@@ -176,15 +191,22 @@ export function AccountSwitcher({
                       alt={activeAccount.username}
                       className="w-full h-full object-cover"
                     />
-                  ) : (
+                  ) : activeAccount.platform === 'instagram' ? (
                     <Instagram className="h-5 w-5 text-white" />
+                  ) : activeAccount.platform === 'youtube' ? (
+                    <Youtube className="h-5 w-5 text-white" />
+                  ) : (
+                    <Music className="h-5 w-5 text-white" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 text-sm truncate">
                     {activeAccount.username}
                   </p>
-                  <div className="flex items-center space-x-1">
+                  <p className="text-xs text-gray-500 truncate">
+                    {activeAccount.platformData.name}
+                  </p>
+                  <div className="flex items-center space-x-1 mt-1">
                     <TrendingUp className="h-3 w-3 text-teal-500" />
                     <p className="text-xs text-gray-600 truncate">
                       {activeAccount.platformData.followers} followers
@@ -239,8 +261,12 @@ export function AccountSwitcher({
                         alt={account.username}
                         className="w-full h-full object-cover"
                       />
-                    ) : (
+                    ) : account.platform === 'instagram' ? (
                       <Instagram className="h-5 w-5 text-white" />
+                    ) : account.platform === 'youtube' ? (
+                      <Youtube className="h-5 w-5 text-white" />
+                    ) : (
+                      <Music className="h-5 w-5 text-white" />
                     )}
                   </div>
                   <div className="text-left min-w-0 flex-1">
@@ -248,6 +274,9 @@ export function AccountSwitcher({
                       {account.username}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
+                      {account.platformData.name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate mt-1">
                       {account.platformData.followers} followers
                     </p>
                   </div>
@@ -375,8 +404,12 @@ export function AccountSwitcher({
                       alt={accountToDisconnect.username}
                       className="w-full h-full object-cover"
                     />
-                  ) : (
+                  ) : accountToDisconnect?.platform === 'instagram' ? (
                     <Instagram className="h-5 w-5 text-gray-400" />
+                  ) : accountToDisconnect?.platform === 'youtube' ? (
+                    <Youtube className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Music className="h-5 w-5 text-gray-400" />
                   )}
                 </div>
                 <div className="flex-1">
@@ -523,8 +556,16 @@ export function AccountSwitcher({
                     alt={activeAccount.username}
                     className="w-full h-full object-cover"
                   />
-                ) : (
+                ) : activeAccount?.platform === 'instagram' ? (
                   <Instagram
+                    className={`${isCollapsed ? 'h-4 w-4' : 'h-5 w-5'} text-white flex-shrink-0`}
+                  />
+                ) : activeAccount?.platform === 'youtube' ? (
+                  <Youtube
+                    className={`${isCollapsed ? 'h-4 w-4' : 'h-5 w-5'} text-white flex-shrink-0`}
+                  />
+                ) : (
+                  <Music
                     className={`${isCollapsed ? 'h-4 w-4' : 'h-5 w-5'} text-white flex-shrink-0`}
                   />
                 )}
@@ -536,7 +577,10 @@ export function AccountSwitcher({
                       ? activeAccount.username
                       : 'No account selected'}
                   </p>
-                  <div className="flex items-center space-x-1">
+                  <p className="text-xs text-gray-500 truncate">
+                    {activeAccount ? activeAccount.platformData.name : ''}
+                  </p>
+                  <div className="flex items-center space-x-1 mt-1">
                     <TrendingUp className="h-3 w-3 text-teal-500 flex-shrink-0" />
                     <p className="text-xs text-gray-600 truncate">
                       {activeAccount
@@ -575,8 +619,12 @@ export function AccountSwitcher({
                           alt={account.username}
                           className="w-full h-full object-cover"
                         />
-                      ) : (
+                      ) : account.platform === 'instagram' ? (
                         <Instagram className="h-4 w-4 text-white flex-shrink-0" />
+                      ) : account.platform === 'youtube' ? (
+                        <Youtube className="h-4 w-4 text-white flex-shrink-0" />
+                      ) : (
+                        <Music className="h-4 w-4 text-white flex-shrink-0" />
                       )}
                     </div>
                     <div className="text-left min-w-0 flex-1">
@@ -584,6 +632,9 @@ export function AccountSwitcher({
                         {account.username}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
+                        {account.platformData.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate mt-1">
                         {account.platformData.followers} followers
                       </p>
                     </div>
@@ -762,8 +813,12 @@ export function AccountSwitcher({
                     alt={accountToDisconnect.username}
                     className="w-full h-full object-cover"
                   />
-                ) : (
+                ) : accountToDisconnect?.platform === 'instagram' ? (
                   <Instagram className="h-5 w-5 text-gray-400" />
+                ) : accountToDisconnect?.platform === 'youtube' ? (
+                  <Youtube className="h-5 w-5 text-gray-400" />
+                ) : (
+                  <Music className="h-5 w-5 text-gray-400" />
                 )}
               </div>
               <div className="flex-1">
