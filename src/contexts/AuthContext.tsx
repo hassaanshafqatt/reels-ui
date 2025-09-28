@@ -7,8 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import Cookies from 'js-cookie';
-import { getAuthToken, setAuthToken, removeAuthToken } from '@/lib/clientAuth';
+import { setAccessToken, getAccessToken } from '@/lib/clientAuth';
 
 interface User {
   id: string;
@@ -62,23 +61,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize auth state from cookies
   useEffect(() => {
     const initializeAuth = async () => {
-      const savedToken = getAuthToken();
-      const savedUser = Cookies.get('user_data');
+      // Try to refresh access token via HttpOnly refresh cookie
+      try {
+        const refreshResp = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'same-origin',
+        });
 
-      if (savedToken && savedUser) {
-        try {
-          const userData = JSON.parse(savedUser);
-          setToken(savedToken);
-          setUser(userData);
+        if (refreshResp.ok) {
+          const data = await refreshResp.json();
+          if (data && data.token) {
+            setToken(data.token);
+            setAccessToken(data.token);
 
-          // Verify token is still valid
-          const isValid = await verifyToken(savedToken);
-          if (!isValid) {
-            logout();
+            // Get user info
+            try {
+              const verifyResp = await fetch('/api/auth/verify', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${data.token}`,
+                },
+              });
+              if (verifyResp.ok) {
+                const verifyData = await verifyResp.json();
+                if (verifyData.user) setUser(verifyData.user);
+              }
+            } catch {
+              // ignore
+            }
           }
-        } catch {
-          logout();
         }
+      } catch {
+        // ignore
       }
 
       setIsLoading(false);
@@ -111,6 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -120,20 +137,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.token && data.user) {
+        // Server sets HttpOnly refresh cookie; client stores access token in memory
         setToken(data.token);
+        setAccessToken(data.token);
         setUser(data.user);
-
-        // Save to cookies (expires in 7 days)
-        setAuthToken(data.token, { expiresDays: 7 });
-        Cookies.set('user_data', JSON.stringify(data.user), {
-          expires: 7,
-          sameSite: 'lax',
-          path: '/',
-        });
-
-        // Verify the token was set via shared helper
-        const savedToken = getAuthToken();
-        void savedToken;
 
         return { success: true };
       } else {
@@ -152,6 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -161,16 +169,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (response.ok && data.token && data.user) {
+        // Server sets refresh cookie; client keeps access token in memory
         setToken(data.token);
+        setAccessToken(data.token);
         setUser(data.user);
-
-        // Save to cookies
-        setAuthToken(data.token, { expiresDays: 7 });
-        Cookies.set('user_data', JSON.stringify(data.user), {
-          expires: 7,
-          sameSite: 'lax',
-          path: '/',
-        });
 
         return { success: true };
       } else {
@@ -184,48 +186,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = useCallback(async () => {
-    // Call logout API to invalidate session in database
-    if (token) {
-      try {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      } catch {
-        // Continue with local logout even if API fails
-      }
+    // Call logout API to clear refresh cookie and server session
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+    } catch {
+      // ignore
     }
 
     setUser(null);
     setToken(null);
-    removeAuthToken();
-    Cookies.remove('user_data');
+    setAccessToken(null);
   }, [token]);
 
   const refreshToken = async (): Promise<boolean> => {
-    if (!token) return false;
-
     try {
       const response = await fetch('/api/auth/refresh', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'same-origin',
       });
-
       const data = await response.json();
-
       if (response.ok && data.token) {
         setToken(data.token);
-        setAuthToken(data.token, { expiresDays: 7 });
+        setAccessToken(data.token);
         return true;
-      } else {
-        logout();
-        return false;
       }
+      logout();
+      return false;
     } catch {
       logout();
       return false;

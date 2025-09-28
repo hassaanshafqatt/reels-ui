@@ -34,8 +34,8 @@ export async function PUT(
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },

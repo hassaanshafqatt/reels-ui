@@ -46,21 +46,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create JWT token
-    const token = await new SignJWT({
+    // Create short-lived access token (15m)
+    const accessToken = await new SignJWT({
       userId: user.id,
       email: user.email,
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('7d')
+      .setExpirationTime('15m')
       .sign(JWT_SECRET);
 
-    // Store session in database
+    // Create refresh token (random UUID) and store as session (7 days)
+    const refreshToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-    const sessionResult = sessionOperations.create(user.id, token, expiresAt);
+    const sessionResult = sessionOperations.create(
+      user.id,
+      refreshToken,
+      expiresAt
+    );
 
     if (!sessionResult.success) {
       return NextResponse.json(
@@ -69,19 +74,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return user data (without password hash) and token
+    // Set HttpOnly refresh cookie
+    const cookieValue = `refresh_token=${refreshToken}; Path=/; Max-Age=${7 * 24 * 60 * 60}; HttpOnly; SameSite=Lax; Secure`;
+
+    // Return user data (without password hash) and access token; server sets refresh cookie
     const { password_hash, ...userWithoutPassword } = user;
-    // password_hash intentionally omitted from response
     void password_hash;
 
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        ...userWithoutPassword,
-        createdAt: user.created_at,
+    return NextResponse.json(
+      {
+        success: true,
+        token: accessToken,
+        user: {
+          ...userWithoutPassword,
+          createdAt: user.created_at,
+        },
       },
-    });
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': cookieValue,
+        },
+      }
+    );
   } catch {
     // Generic failure
     return NextResponse.json(

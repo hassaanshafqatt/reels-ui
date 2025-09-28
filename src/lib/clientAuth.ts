@@ -2,11 +2,17 @@ import Cookies from 'js-cookie';
 
 export const TOKEN_COOKIE = 'auth_token';
 
+// In-memory access token for the client (not persisted)
+let accessToken: string | null = null;
+
 /**
  * Get the client auth token. Primary source: cookie (js-cookie).
  * Fallback: localStorage 'token' for legacy support (only in browser).
  */
 export function getAuthToken(): string | null {
+  // Prefer in-memory access token set by AuthContext
+  if (accessToken) return accessToken;
+
   try {
     const cookieToken = Cookies.get(TOKEN_COOKIE);
     if (cookieToken) return cookieToken;
@@ -18,6 +24,7 @@ export function getAuthToken(): string | null {
   } catch {
     // ignore read errors
   }
+
   return null;
 }
 
@@ -73,6 +80,18 @@ const clientAuth = {
   getAuthHeaders,
   setAuthToken,
   removeAuthToken,
+  setAccessToken: (t: string | null) => {
+    accessToken = t;
+  },
+  getAccessToken: () => accessToken,
 };
 
 export default clientAuth;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function getAccessToken() {
+  return accessToken;
+}

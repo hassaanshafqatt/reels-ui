@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
       const { payload } = await jwtVerify(token, JWT_SECRET);
       void payload;
 
-      // Check if session exists in database and is valid
-      const session = sessionOperations.findByToken(token);
+      // Check if the user has an active session
+      const session = sessionOperations.findByUserId(payload.userId as string);
 
       if (!session) {
         return NextResponse.json(

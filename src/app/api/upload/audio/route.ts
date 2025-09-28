@@ -113,8 +113,8 @@ async function verifyAuth(request: NextRequest) {
     return null;
   }
 
-  // Verify session exists
-  const session = sessionOperations.findByToken(token);
+  // Verify session exists for this user
+  const session = sessionOperations.findByUserId(payload.userId as string);
   if (!session) {
     return null;
   }

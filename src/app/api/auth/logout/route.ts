@@ -3,27 +3,25 @@ import { sessionOperations } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Read refresh token from cookie (if present) and delete session
+    const cookieHeader = request.headers.get('cookie') || '';
+    const match = cookieHeader.match(/(^|;)\s*refresh_token=([^;]+)/);
+    const refreshToken = match ? match[2] : null;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { message: 'Authorization token required' },
-        { status: 401 }
-      );
+    if (refreshToken) {
+      sessionOperations.delete(refreshToken);
     }
 
-    const token = authHeader.substring(7);
-
-    // Delete the session from database
-    sessionOperations.delete(token);
-
-    // Clean up any expired sessions while we're at it
     sessionOperations.cleanExpired();
 
-    return NextResponse.json({
-      success: true,
-      message: 'Logged out successfully',
-    });
+    // Clear refresh cookie
+    const clearCookie =
+      'refresh_token=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure';
+
+    return NextResponse.json(
+      { success: true, message: 'Logged out successfully' },
+      { headers: { 'Set-Cookie': clearCookie } }
+    );
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

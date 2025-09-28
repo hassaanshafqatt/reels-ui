@@ -392,6 +392,19 @@ export const sessionOperations = {
     return stmt.get(token) as Record<string, unknown> | undefined;
   },
 
+  // Find session by user id (any active session)
+  findByUserId: (userId: string) => {
+    const stmt = db.prepare(`
+      SELECT s.*, u.id as user_id, u.email, u.name, u.plan, u.avatar, u.created_at as user_created_at
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.user_id = ? AND s.expires_at > datetime('now')
+      ORDER BY s.expires_at DESC
+      LIMIT 1
+    `);
+    return stmt.get(userId) as Record<string, unknown> | undefined;
+  },
+
   // Delete session
   delete: (token: string) => {
     const stmt = db.prepare('DELETE FROM sessions WHERE token = ?');
