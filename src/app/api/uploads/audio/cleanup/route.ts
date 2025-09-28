@@ -20,7 +20,10 @@ export async function POST(request: NextRequest) {
     // Verify API key for cleanup operations
     const isValidApiKey = await verifyApiKey(request);
     if (!isValidApiKey) {
-      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or missing API key' },
+        { status: 401 }
+      );
     }
 
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'audio');
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'No uploads directory found',
-        cleanedFiles: []
+        cleanedFiles: [],
       });
     }
 
@@ -39,7 +42,12 @@ export async function POST(request: NextRequest) {
     const cleanedFiles: string[] = [];
 
     for (const file of files) {
-      if (file.endsWith('.mp3') || file.endsWith('.wav') || file.endsWith('.m4a') || file.endsWith('.aac')) {
+      if (
+        file.endsWith('.mp3') ||
+        file.endsWith('.wav') ||
+        file.endsWith('.m4a') ||
+        file.endsWith('.aac')
+      ) {
         const filePath = path.join(uploadsDir, file);
         const stats = await stat(filePath);
         const fileAge = now.getTime() - stats.mtime.getTime();
@@ -55,10 +63,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Cleaned up ${cleanedFiles.length} files`,
-      cleanedFiles
+      cleanedFiles,
     });
-
   } catch {
-    return NextResponse.json({ error: 'Failed to cleanup files' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to cleanup files' },
+      { status: 500 }
+    );
   }
 }

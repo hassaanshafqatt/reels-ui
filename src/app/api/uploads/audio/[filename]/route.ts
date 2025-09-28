@@ -4,7 +4,14 @@ import { existsSync } from 'fs';
 import path from 'path';
 
 // File tracking for cleanup
-const fileAccessTracker = new Map<string, { lastAccessed: Date; accessCount: number; scheduledDeletion?: NodeJS.Timeout }>();
+const fileAccessTracker = new Map<
+  string,
+  {
+    lastAccessed: Date;
+    accessCount: number;
+    scheduledDeletion?: NodeJS.Timeout;
+  }
+>();
 
 // Helper function to verify API key for external services only
 async function verifyApiKey(request: NextRequest) {
@@ -27,21 +34,24 @@ function scheduleFileDeletion(filename: string, filePath: string) {
   }
 
   // Schedule deletion after 1 hour
-  const deletionTimer = setTimeout(async () => {
-    try {
-      if (existsSync(filePath)) {
-        await unlink(filePath);
+  const deletionTimer = setTimeout(
+    async () => {
+      try {
+        if (existsSync(filePath)) {
+          await unlink(filePath);
+        }
+        fileAccessTracker.delete(filename);
+      } catch {
+        // Failed to delete file - ignore in background
       }
-      fileAccessTracker.delete(filename);
-    } catch {
-      // Failed to delete file - ignore in background
-    }
-  }, 60 * 60 * 1000); // 1 hour
+    },
+    60 * 60 * 1000
+  ); // 1 hour
 
   fileAccessTracker.set(filename, {
     lastAccessed: new Date(),
     accessCount: (existingTracker?.accessCount || 0) + 1,
-    scheduledDeletion: deletionTimer
+    scheduledDeletion: deletionTimer,
   });
 }
 
@@ -54,11 +64,18 @@ export async function GET(
     const { filename } = await params;
 
     if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Filename is required' },
+        { status: 400 }
+      );
     }
 
     // Validate filename to prevent directory traversal attacks
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    if (
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
       return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
     }
 
@@ -105,12 +122,15 @@ export async function GET(
         'Content-Length': fileBuffer.length.toString(),
         'Cache-Control': 'public, max-age=3600', // Cache for 1 hour (reduced for cleanup)
         'Accept-Ranges': 'bytes',
-        'X-File-Access-Count': fileAccessTracker.get(filename)?.accessCount?.toString() || '1',
+        'X-File-Access-Count':
+          fileAccessTracker.get(filename)?.accessCount?.toString() || '1',
       },
     });
-
   } catch {
-    return NextResponse.json({ error: 'Failed to serve audio file' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to serve audio file' },
+      { status: 500 }
+    );
   }
 }
 
@@ -123,17 +143,27 @@ export async function DELETE(
     // Verify API key for external services
     const isValidApiKey = await verifyApiKey(request);
     if (!isValidApiKey) {
-      return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or missing API key' },
+        { status: 401 }
+      );
     }
 
     const { filename } = await params;
 
     if (!filename) {
-      return NextResponse.json({ error: 'Filename is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Filename is required' },
+        { status: 400 }
+      );
     }
 
     // Validate filename to prevent directory traversal attacks
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    if (
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
       return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
     }
 
@@ -152,10 +182,12 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       message: 'Audio file deleted successfully',
-      filename: filename
+      filename: filename,
     });
-
   } catch {
-    return NextResponse.json({ error: 'Failed to delete audio file' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete audio file' },
+      { status: 500 }
+    );
   }
 }

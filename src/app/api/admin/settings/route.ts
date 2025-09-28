@@ -12,16 +12,18 @@ export async function GET(request: NextRequest) {
 
     // For now, any authenticated user can view settings
     // In a real app, you'd check for admin role here
-    
+
     const settings = adminSettingsOperations.getAll();
-    
+
     return NextResponse.json({
       success: true,
-      settings
+      settings,
     });
-
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch admin settings' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch admin settings' },
+      { status: 500 }
+    );
   }
 }
 
@@ -46,8 +48,12 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const success = adminSettingsOperations.set(key, value.toString(), description);
-    
+    const success = adminSettingsOperations.set(
+      key,
+      value.toString(),
+      description
+    );
+
     if (!success) {
       return NextResponse.json(
         { error: 'Failed to update setting' },
@@ -59,10 +65,12 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      setting: updatedSetting
+      setting: updatedSetting,
     });
-
   } catch {
-    return NextResponse.json({ error: 'Failed to update admin setting' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update admin setting' },
+      { status: 500 }
+    );
   }
 }

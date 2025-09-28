@@ -7,6 +7,7 @@
 ### Technology Stack
 
 #### Frontend
+
 - **Framework**: Next.js 14+ with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -15,6 +16,7 @@
 - **Forms**: React Hook Form with validation
 
 #### Backend
+
 - **Runtime**: Node.js
 - **API**: Next.js API Routes
 - **Database**: SQLite with better-sqlite3
@@ -23,12 +25,14 @@
 - **Job Processing**: Background processing with timers
 
 #### Infrastructure
+
 - **Containerization**: Docker & Docker Compose
 - **Reverse Proxy**: Nginx (optional)
 - **Process Management**: PM2 (optional)
 - **Version Control**: Git
 
 #### External Services
+
 - **Video Generation**: External API services
 - **File Upload**: Multer for multipart handling
 - **Audio Processing**: FFmpeg (if needed)
@@ -77,6 +81,7 @@ reels-ui/
 ### Core Tables
 
 #### users
+
 ```sql
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
@@ -92,6 +97,7 @@ CREATE TABLE users (
 ```
 
 #### reel_categories
+
 ```sql
 CREATE TABLE reel_categories (
   id TEXT PRIMARY KEY,
@@ -105,6 +111,7 @@ CREATE TABLE reel_categories (
 ```
 
 #### reel_types
+
 ```sql
 CREATE TABLE reel_types (
   id TEXT PRIMARY KEY,
@@ -125,6 +132,7 @@ CREATE TABLE reel_types (
 ```
 
 #### jobs
+
 ```sql
 CREATE TABLE jobs (
   id TEXT PRIMARY KEY,
@@ -147,6 +155,7 @@ CREATE TABLE jobs (
 ```
 
 #### file_uploads
+
 ```sql
 CREATE TABLE file_uploads (
   id TEXT PRIMARY KEY,
@@ -164,6 +173,7 @@ CREATE TABLE file_uploads (
 ```
 
 ### Indexes
+
 ```sql
 CREATE INDEX idx_jobs_user_id ON jobs(user_id);
 CREATE INDEX idx_jobs_status ON jobs(status);
@@ -179,9 +189,11 @@ CREATE INDEX idx_file_uploads_user_id ON file_uploads(user_id);
 ### Authentication Endpoints
 
 #### POST /api/auth/login
+
 **Authenticate user and return JWT token**
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -190,6 +202,7 @@ CREATE INDEX idx_file_uploads_user_id ON file_uploads(user_id);
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -204,9 +217,11 @@ CREATE INDEX idx_file_uploads_user_id ON file_uploads(user_id);
 ```
 
 #### POST /api/auth/register
+
 **Create new user account**
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -216,6 +231,7 @@ CREATE INDEX idx_file_uploads_user_id ON file_uploads(user_id);
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -229,14 +245,17 @@ CREATE INDEX idx_file_uploads_user_id ON file_uploads(user_id);
 ```
 
 #### POST /api/auth/verify
+
 **Verify JWT token validity**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "valid": true,
@@ -250,14 +269,17 @@ Authorization: Bearer <token>
 ```
 
 #### POST /api/auth/logout
+
 **Invalidate user session**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -268,17 +290,21 @@ Authorization: Bearer <token>
 ### Content Management Endpoints
 
 #### GET /api/reels/categories
+
 **Get available reel categories**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `active=true` - Filter active categories only
 
 **Response:**
+
 ```json
 {
   "categories": [
@@ -295,18 +321,22 @@ Authorization: Bearer <token>
 ```
 
 #### GET /api/reels/types
+
 **Get reel types for a category**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `category=<category_id>` - Required: Category ID
 - `active=true` - Filter active types only
 
 **Response:**
+
 ```json
 {
   "types": [
@@ -329,14 +359,17 @@ Authorization: Bearer <token>
 ```
 
 #### POST /api/reels/[type]
+
 **Generate a new reel**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "generateCaption": true,
@@ -348,6 +381,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "jobId": "job_123456",
@@ -359,20 +393,24 @@ Authorization: Bearer <token>
 ### Job Management Endpoints
 
 #### GET /api/jobs
+
 **Get user's job history**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `status=<status>` - Filter by status
 - `category=<category>` - Filter by category
 - `limit=20` - Limit results
 - `offset=0` - Pagination offset
 
 **Response:**
+
 ```json
 {
   "jobs": [
@@ -393,18 +431,22 @@ Authorization: Bearer <token>
 ```
 
 #### GET /api/reels/status
+
 **Check job generation status**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `jobId=<job_id>` - Required: Job ID
 - `type=<reel_type>` - Required: Reel type
 
 **Response:**
+
 ```json
 {
   "status": "completed",
@@ -417,17 +459,21 @@ Authorization: Bearer <token>
 ```
 
 #### DELETE /api/jobs
+
 **Clear job history**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `category=<category>` - Optional: Clear specific category only
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -439,18 +485,22 @@ Authorization: Bearer <token>
 ### File Upload Endpoints
 
 #### POST /api/upload/audio
+
 **Upload audio file**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
 
 **Form Data:**
+
 - `audio` - Audio file (MP3 format, max 10MB)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -465,9 +515,11 @@ Content-Type: multipart/form-data
 ```
 
 #### GET /api/uploads/audio/[filename]
+
 **Serve audio file**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
@@ -477,14 +529,17 @@ Authorization: Bearer <token>
 ### Admin Endpoints
 
 #### GET /api/admin/users
+
 **Get all users (Admin only)**
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Response:**
+
 ```json
 {
   "users": [
@@ -502,14 +557,17 @@ Authorization: Bearer <admin_token>
 ```
 
 #### POST /api/admin/categories
+
 **Create new category (Admin only)**
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "new-category",
@@ -520,6 +578,7 @@ Authorization: Bearer <admin_token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -533,14 +592,17 @@ Authorization: Bearer <admin_token>
 ```
 
 #### GET /api/uploads/audio/stats
+
 **Get file storage statistics**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "totalFiles": 25,
@@ -552,14 +614,17 @@ Authorization: Bearer <token>
 ```
 
 #### POST /api/uploads/audio/cleanup
+
 **Clean up old audio files**
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "olderThanDays": 7,
@@ -568,6 +633,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -584,6 +650,7 @@ Authorization: Bearer <token>
 ### JWT Implementation
 
 **Token Structure:**
+
 ```javascript
 {
   "userId": "user123",
@@ -595,6 +662,7 @@ Authorization: Bearer <token>
 ```
 
 **Token Configuration:**
+
 - **Algorithm**: HS256
 - **Expiration**: 24 hours
 - **Secret**: Environment variable `JWT_SECRET`
@@ -603,11 +671,13 @@ Authorization: Bearer <token>
 ### Password Security
 
 **Hashing:**
+
 - **Algorithm**: bcrypt
 - **Rounds**: 12
 - **Salt**: Auto-generated per password
 
 **Validation:**
+
 - Minimum 8 characters
 - At least one uppercase letter
 - At least one lowercase letter
@@ -616,6 +686,7 @@ Authorization: Bearer <token>
 ### Session Management
 
 **Cookie Settings:**
+
 ```javascript
 {
   name: 'auth-token',
@@ -634,11 +705,12 @@ Authorization: Bearer <token>
 ### Upload Configuration
 
 **Multer Settings:**
+
 ```javascript
 const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB
-    files: 1
+    files: 1,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'audio/mpeg') {
@@ -652,14 +724,15 @@ const upload = multer({
     filename: (req, file, cb) => {
       const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.mp3`;
       cb(null, uniqueName);
-    }
-  })
+    },
+  }),
 });
 ```
 
 ### File Deduplication
 
 **SHA-256 Hashing:**
+
 ```javascript
 const crypto = require('crypto');
 
@@ -670,6 +743,7 @@ function calculateFileHash(filePath) {
 ```
 
 **Duplicate Detection:**
+
 ```javascript
 async function findExistingFileByHash(hash) {
   return db.prepare('SELECT * FROM file_uploads WHERE hash = ?').get(hash);
@@ -679,17 +753,20 @@ async function findExistingFileByHash(hash) {
 ### Automatic Cleanup
 
 **Access Tracking:**
+
 ```javascript
 // Track file access
 app.get('/api/uploads/audio/:filename', (req, res) => {
   const { filename } = req.params;
 
   // Update access time and count
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE file_uploads
     SET last_accessed = CURRENT_TIMESTAMP, access_count = access_count + 1
     WHERE filename = ?
-  `).run(filename);
+  `
+  ).run(filename);
 
   // Schedule deletion after 1 hour
   scheduleFileDeletion(filename, 60 * 60 * 1000); // 1 hour
@@ -697,6 +774,7 @@ app.get('/api/uploads/audio/:filename', (req, res) => {
 ```
 
 **Cleanup Process:**
+
 ```javascript
 function scheduleFileDeletion(filename, delay) {
   setTimeout(async () => {
@@ -767,7 +845,7 @@ services:
   reels-ui:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./data:/app/data
       - reels_uploads:/app/public/uploads
@@ -869,10 +947,18 @@ db.exec(schema);
 
 // Seed initial data
 const seedData = require('./seed-data.json');
-const insertCategory = db.prepare('INSERT INTO reel_categories (id, name, title, description, icon) VALUES (?, ?, ?, ?, ?)');
+const insertCategory = db.prepare(
+  'INSERT INTO reel_categories (id, name, title, description, icon) VALUES (?, ?, ?, ?, ?)'
+);
 
-seedData.categories.forEach(category => {
-  insertCategory.run(category.id, category.name, category.title, category.description, category.icon);
+seedData.categories.forEach((category) => {
+  insertCategory.run(
+    category.id,
+    category.name,
+    category.title,
+    category.description,
+    category.icon
+  );
 });
 
 console.log('Database initialized successfully');
@@ -885,6 +971,7 @@ console.log('Database initialized successfully');
 ### API Error Responses
 
 **Standard Error Format:**
+
 ```json
 {
   "error": {
@@ -899,6 +986,7 @@ console.log('Database initialized successfully');
 ```
 
 **Common Error Codes:**
+
 - `VALIDATION_ERROR` - Input validation failed
 - `AUTHENTICATION_ERROR` - Invalid or missing credentials
 - `AUTHORIZATION_ERROR` - Insufficient permissions
@@ -919,8 +1007,8 @@ export default function errorHandler(err, req, res, next) {
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Invalid input data',
-        details: err.errors
-      }
+        details: err.errors,
+      },
     });
   }
 
@@ -929,8 +1017,8 @@ export default function errorHandler(err, req, res, next) {
     return res.status(401).json({
       error: {
         code: 'AUTHENTICATION_ERROR',
-        message: 'Invalid token'
-      }
+        message: 'Invalid token',
+      },
     });
   }
 
@@ -938,8 +1026,8 @@ export default function errorHandler(err, req, res, next) {
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',
-      message: 'Internal server error'
-    }
+      message: 'Internal server error',
+    },
   });
 }
 ```
@@ -951,6 +1039,7 @@ export default function errorHandler(err, req, res, next) {
 ### Database Optimization
 
 **Connection Pooling:**
+
 ```javascript
 // lib/database.js
 const Database = require('better-sqlite3');
@@ -959,7 +1048,7 @@ class DatabaseConnection {
   constructor() {
     this.db = new Database('./data/reelcraft.db', {
       verbose: console.log,
-      fileMustExist: false
+      fileMustExist: false,
     });
 
     // Enable WAL mode for better concurrency
@@ -971,20 +1060,23 @@ class DatabaseConnection {
 
   // Prepared statements for better performance
   getUserById = this.db.prepare('SELECT * FROM users WHERE id = ?');
-  getJobsByUser = this.db.prepare('SELECT * FROM jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?');
+  getJobsByUser = this.db.prepare(
+    'SELECT * FROM jobs WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+  );
 }
 ```
 
 ### Caching Strategy
 
 **API Response Caching:**
+
 ```javascript
 // lib/cache.js
 const NodeCache = require('node-cache');
 
 const cache = new NodeCache({
   stdTTL: 300, // 5 minutes
-  checkperiod: 60 // Check for expired keys every 60 seconds
+  checkperiod: 60, // Check for expired keys every 60 seconds
 });
 
 function getCachedData(key, fetchFunction) {
@@ -993,7 +1085,7 @@ function getCachedData(key, fetchFunction) {
     return Promise.resolve(cached);
   }
 
-  return fetchFunction().then(data => {
+  return fetchFunction().then((data) => {
     cache.set(key, data);
     return data;
   });
@@ -1005,17 +1097,18 @@ module.exports = { cache, getCachedData };
 ### File Serving Optimization
 
 **Static File Compression:**
+
 ```javascript
 // next.config.js
 module.exports = {
   compress: true,
   images: {
-    formats: ['image/webp', 'image/avif']
+    formats: ['image/webp', 'image/avif'],
   },
   experimental: {
-    optimizeCss: true
-  }
-}
+    optimizeCss: true,
+  },
+};
 ```
 
 ---
@@ -1025,27 +1118,28 @@ module.exports = {
 ### Input Validation
 
 **Request Validation:**
+
 ```javascript
 // lib/validation.js
 const Joi = require('joi');
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(8).required()
+  password: Joi.string().min(8).required(),
 });
 
 const reelGenerationSchema = Joi.object({
   generateCaption: Joi.boolean(),
   customCaption: Joi.string().max(500).when('generateCaption', {
     is: false,
-    then: Joi.required()
+    then: Joi.required(),
   }),
   customAuthor: Joi.string().max(100),
   useCustomAudio: Joi.boolean(),
   customAudioUrl: Joi.string().uri().when('useCustomAudio', {
     is: true,
-    then: Joi.required()
-  })
+    then: Joi.required(),
+  }),
 });
 
 function validateRequest(schema, data) {
@@ -1060,6 +1154,7 @@ function validateRequest(schema, data) {
 ### Rate Limiting
 
 **API Rate Limiting:**
+
 ```javascript
 // middleware/rate-limit.js
 const rateLimit = require('express-rate-limit');
@@ -1092,26 +1187,29 @@ const authLimiter = rateLimit({
 ### Security Headers
 
 **Helmet Configuration:**
+
 ```javascript
 // middleware/security.js
 const helmet = require('helmet');
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.external-service.com"]
-    }
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://api.external-service.com'],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+  })
+);
 ```
 
 ---
@@ -1121,6 +1219,7 @@ app.use(helmet({
 ### Application Logging
 
 **Winston Logger Configuration:**
+
 ```javascript
 // lib/logger.js
 const winston = require('winston');
@@ -1135,14 +1234,16 @@ const logger = winston.createLogger({
   defaultMeta: { service: 'reels-ui' },
   transports: [
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
-  ]
+    new winston.transports.File({ filename: 'logs/combined.log' }),
+  ],
 });
 
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple()
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.simple(),
+    })
+  );
 }
 
 module.exports = logger;
@@ -1151,6 +1252,7 @@ module.exports = logger;
 ### Error Tracking
 
 **Global Error Handler:**
+
 ```javascript
 // lib/error-tracking.js
 const logger = require('./logger');
@@ -1168,15 +1270,19 @@ process.on('unhandledRejection', (reason, promise) => {
 ### Performance Monitoring
 
 **Response Time Middleware:**
+
 ```javascript
 // middleware/response-time.js
 const responseTime = require('response-time');
 
-app.use(responseTime((req, res, time) => {
-  if (time > 1000) { // Log slow requests
-    logger.warn(`Slow request: ${req.method} ${req.url} took ${time}ms`);
-  }
-}));
+app.use(
+  responseTime((req, res, time) => {
+    if (time > 1000) {
+      // Log slow requests
+      logger.warn(`Slow request: ${req.method} ${req.url} took ${time}ms`);
+    }
+  })
+);
 ```
 
 ---
@@ -1186,6 +1292,7 @@ app.use(responseTime((req, res, time) => {
 ### Unit Tests
 
 **Component Testing:**
+
 ```javascript
 // __tests__/components/LoginForm.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -1203,17 +1310,17 @@ describe('LoginForm', () => {
     render(<LoginForm onLogin={mockLogin} />);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: 'test@example.com' }
+      target: { value: 'test@example.com' },
     });
     fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: 'password123' }
+      target: { value: 'password123' },
     });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
     });
   });
@@ -1223,6 +1330,7 @@ describe('LoginForm', () => {
 ### API Testing
 
 **Endpoint Testing:**
+
 ```javascript
 // __tests__/api/auth.test.js
 const { createMocks } = require('node-mocks-http');
@@ -1234,8 +1342,8 @@ describe('/api/auth/login', () => {
       method: 'POST',
       body: {
         email: 'test@example.com',
-        password: 'password123'
-      }
+        password: 'password123',
+      },
     });
 
     await handler(req, res);
@@ -1251,8 +1359,8 @@ describe('/api/auth/login', () => {
       method: 'POST',
       body: {
         email: 'invalid@example.com',
-        password: 'wrongpassword'
-      }
+        password: 'wrongpassword',
+      },
     });
 
     await handler(req, res);
@@ -1265,6 +1373,7 @@ describe('/api/auth/login', () => {
 ### Integration Tests
 
 **Database Integration:**
+
 ```javascript
 // __tests__/integration/database.test.js
 const Database = require('better-sqlite3');
@@ -1284,9 +1393,16 @@ describe('Database Integration', () => {
   });
 
   it('creates user successfully', () => {
-    const createUser = db.prepare('INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)');
+    const createUser = db.prepare(
+      'INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)'
+    );
 
-    const result = createUser.run('user1', 'test@example.com', 'hashedpassword', 'Test User');
+    const result = createUser.run(
+      'user1',
+      'test@example.com',
+      'hashedpassword',
+      'Test User'
+    );
 
     expect(result.changes).toBe(1);
 
@@ -1301,6 +1417,7 @@ describe('Database Integration', () => {
 ## Deployment Checklist
 
 ### Pre-deployment
+
 - [ ] Environment variables configured
 - [ ] Database schema created and seeded
 - [ ] SSL certificates obtained (for production)
@@ -1309,27 +1426,33 @@ describe('Database Integration', () => {
 - [ ] Monitoring tools configured
 
 ### Deployment Steps
+
 1. **Build Application:**
+
    ```bash
    npm run build
    ```
 
 2. **Run Tests:**
+
    ```bash
    npm test
    ```
 
 3. **Create Docker Image:**
+
    ```bash
    docker build -t reels-ui:latest .
    ```
 
 4. **Deploy to Server:**
+
    ```bash
    docker-compose up -d
    ```
 
 5. **Run Database Migrations:**
+
    ```bash
    docker-compose exec reels-ui npm run db:migrate
    ```
@@ -1341,6 +1464,7 @@ describe('Database Integration', () => {
    - Test file uploads
 
 ### Post-deployment
+
 - [ ] SSL certificate renewal configured
 - [ ] Backup strategy implemented
 - [ ] Monitoring alerts set up
@@ -1354,32 +1478,40 @@ describe('Database Integration', () => {
 ### Common Issues
 
 #### Database Connection Issues
+
 **Symptoms:** Application fails to start, database errors in logs
 **Solutions:**
+
 1. Check database file permissions
 2. Verify database path in environment variables
 3. Ensure SQLite is installed
 4. Check database file integrity
 
 #### File Upload Failures
+
 **Symptoms:** Upload requests fail, file not saved
 **Solutions:**
+
 1. Check upload directory permissions
 2. Verify file size limits
 3. Check available disk space
 4. Validate file type restrictions
 
 #### Authentication Problems
+
 **Symptoms:** Login fails, invalid token errors
 **Solutions:**
+
 1. Verify JWT secret consistency
 2. Check token expiration settings
 3. Validate password hashing
 4. Check database user records
 
 #### Performance Issues
+
 **Symptoms:** Slow response times, high memory usage
 **Solutions:**
+
 1. Enable database query logging
 2. Check for memory leaks
 3. Optimize database queries
@@ -1409,12 +1541,14 @@ ls -la public/uploads/audio/
 ## Contributing Guidelines
 
 ### Code Style
+
 - Use TypeScript for all new code
 - Follow ESLint configuration
 - Use Prettier for code formatting
 - Write descriptive commit messages
 
 ### Pull Request Process
+
 1. Fork the repository
 2. Create a feature branch
 3. Make changes with tests
@@ -1423,6 +1557,7 @@ ls -la public/uploads/audio/
 6. Submit pull request
 
 ### Commit Message Format
+
 ```
 type(scope): description
 
@@ -1432,6 +1567,7 @@ type(scope): description
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -1451,10 +1587,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For technical support or questions:
+
 - **Issues**: [GitHub Issues](https://github.com/yourusername/reels-ui/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/reels-ui/discussions)
 - **Email**: technical-support@example.com
 
 ---
 
-*This technical documentation is maintained alongside the codebase. Please update it when making significant changes to the system architecture or APIs.*
+_This technical documentation is maintained alongside the codebase. Please update it when making significant changes to the system architecture or APIs._

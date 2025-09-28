@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jobOperations, sessionOperations, reelTypeOperations } from '@/lib/database';
+import {
+  jobOperations,
+  sessionOperations,
+  reelTypeOperations,
+} from '@/lib/database';
 import { jwtVerify } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -26,15 +30,18 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
-    
+
     if (!payload || !payload.userId) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
-      return NextResponse.json({ message: 'Session not found' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 401 }
+      );
     }
 
     const { jobId, category, type, videoUrl, caption } = await request.json();
@@ -81,62 +88,67 @@ export async function POST(request: NextRequest) {
       reelConfig: {
         title: reelType.title,
         description: reelType.description,
-        message: reelType.message
-      }
+        message: reelType.message,
+      },
     };
 
     // Check if we have a specific external posting URL (not self-referential)
-    if (reelType.posting_url && 
-        reelType.posting_url !== '/api/reels/post' && 
-        !reelType.posting_url.startsWith('/api/reels/post')) {
-      
+    if (
+      reelType.posting_url &&
+      reelType.posting_url !== '/api/reels/post' &&
+      !reelType.posting_url.startsWith('/api/reels/post')
+    ) {
       try {
-        
         // Make the actual request to the external posting service
         const postingResponse = await fetch(reelType.posting_url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Pass through the auth token
+            Authorization: `Bearer ${token}`, // Pass through the auth token
           },
-          body: JSON.stringify(postingPayload)
+          body: JSON.stringify(postingPayload),
         });
 
         if (!postingResponse.ok) {
           const errorText = await postingResponse.text();
-          
+
           // Update job status to failed with error message
           jobOperations.updateStatus(
-            jobId, 
-            'failed', 
-            videoUrl, 
+            jobId,
+            'failed',
+            videoUrl,
             `External posting failed: ${postingResponse.status} ${postingResponse.statusText}`,
             caption
           );
-          
+
           return NextResponse.json(
-            { 
+            {
               message: 'Failed to post to external service',
-              error: `${postingResponse.status}: ${errorText}` 
+              error: `${postingResponse.status}: ${errorText}`,
             },
             { status: 500 }
           );
         }
 
         const postingResult = await postingResponse.json();
-        
+
         // Update job status to 'posted' on success
-        jobOperations.updateStatus(jobId, 'posted', videoUrl, undefined, caption);
-        
+        jobOperations.updateStatus(
+          jobId,
+          'posted',
+          videoUrl,
+          undefined,
+          caption
+        );
+
         return NextResponse.json({
           success: true,
           message: 'Reel posted successfully via external service',
           jobId,
           status: 'posted',
           postedAt: new Date().toISOString(),
-          externalResult: postingResult
+          externalResult: postingResult,
         });
-
       } catch {
         // Update job status to failed (network error)
         jobOperations.updateStatus(
@@ -150,23 +162,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             message: 'Failed to connect to external posting service',
-            error: 'Unknown error'
+            error: 'Unknown error',
           },
           { status: 500 }
         );
       }
     } else {
       // No external posting URL configured, handle posting internally
-      
+
       // Simulate internal posting logic
       // You can add specific logic here for different reel types
-      
+
       // Simulate some processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Update job status to 'posted'
       jobOperations.updateStatus(jobId, 'posted', videoUrl, undefined, caption);
-      
+
       return NextResponse.json({
         success: true,
         message: 'Reel posted successfully (internal processing)',
@@ -174,13 +186,15 @@ export async function POST(request: NextRequest) {
         status: 'posted',
         postedAt: new Date().toISOString(),
         processingType: 'internal',
-        reelType: reelType.title
+        reelType: reelType.title,
       });
     }
-
   } catch (err) {
     return NextResponse.json(
-      { message: 'Internal server error', details: err instanceof Error ? err.message : undefined },
+      {
+        message: 'Internal server error',
+        details: err instanceof Error ? err.message : undefined,
+      },
       { status: 500 }
     );
   }

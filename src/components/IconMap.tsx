@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Dumbbell,
   Sword,
@@ -13,8 +13,8 @@ import {
   Utensils,
   PawPrint,
   Music,
-  Palette
-} from "lucide-react";
+  Palette,
+} from 'lucide-react';
 
 // Icon mapping for database icon names
 export const iconMap: Record<string, React.ReactNode> = {
@@ -31,7 +31,7 @@ export const iconMap: Record<string, React.ReactNode> = {
   Utensils: <Utensils className="h-4 w-4" />,
   PawPrint: <PawPrint className="h-4 w-4" />,
   Music: <Music className="h-4 w-4" />,
-  Palette: <Palette className="h-4 w-4" />
+  Palette: <Palette className="h-4 w-4" />,
 };
 
 export default iconMap;

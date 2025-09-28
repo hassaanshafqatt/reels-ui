@@ -5,7 +5,7 @@ export enum LogLevel {
   ERROR = 'error',
   WARN = 'warn',
   INFO = 'info',
-  DEBUG = 'debug'
+  DEBUG = 'debug',
 }
 
 // Logger interface
@@ -44,13 +44,22 @@ export class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels = [LogLevel.ERROR, LogLevel.WARN, LogLevel.INFO, LogLevel.DEBUG];
+    const levels = [
+      LogLevel.ERROR,
+      LogLevel.WARN,
+      LogLevel.INFO,
+      LogLevel.DEBUG,
+    ];
     const currentIndex = levels.indexOf(this.logLevel);
     const messageIndex = levels.indexOf(level);
     return messageIndex <= currentIndex;
   }
 
-  private formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): LogEntry {
+  private formatMessage(
+    level: LogLevel,
+    message: string,
+    context?: Record<string, unknown>
+  ): LogEntry {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -122,14 +131,18 @@ export type APIHandler = (
 ) => Promise<Response | NextResponse | void> | Response | NextResponse | void;
 
 export function withLogging(handler: APIHandler) {
-  return async (request: NextRequest, context?: Record<string, unknown>): Promise<Response | NextResponse> => {
+  return async (
+    request: NextRequest,
+    context?: Record<string, unknown>
+  ): Promise<Response | NextResponse> => {
     const requestId = crypto.randomUUID();
     logger.setRequestId(requestId);
 
     const startTime = Date.now();
-    const clientIP = request.headers.get('x-forwarded-for') ||
-                    request.headers.get('x-real-ip') ||
-                    'unknown';
+    const clientIP =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     logger.info(`Request started: ${request.method} ${request.url}`, {
@@ -144,14 +157,18 @@ export function withLogging(handler: APIHandler) {
       const duration = Date.now() - startTime;
 
       // response might be undefined/void for handlers that write directly; handle safely
-      const status = (response as Response | NextResponse | undefined)?.status ?? 200;
+      const status =
+        (response as Response | NextResponse | undefined)?.status ?? 200;
 
       logger.info(`Request completed: ${request.method} ${request.url}`, {
         status,
         duration: `${duration}ms`,
       });
 
-      return (response as Response | NextResponse) ?? NextResponse.json({}, { status });
+      return (
+        (response as Response | NextResponse) ??
+        NextResponse.json({}, { status })
+      );
     } catch (err) {
       const duration = Date.now() - startTime;
       const error = err as unknown;
@@ -176,7 +193,10 @@ export function withLogging(handler: APIHandler) {
  * Error boundary for API routes
  */
 export function withErrorHandler(handler: APIHandler) {
-  return async (request: NextRequest, context?: Record<string, unknown>): Promise<Response | NextResponse> => {
+  return async (
+    request: NextRequest,
+    context?: Record<string, unknown>
+  ): Promise<Response | NextResponse> => {
     try {
       return (await handler(request, context)) as Response | NextResponse;
     } catch (err) {
@@ -200,7 +220,9 @@ export function withErrorHandler(handler: APIHandler) {
  * Database error handler
  */
 export function handleDatabaseError(error: unknown, operation: string): never {
-  const err = error as { message?: string; code?: string; errno?: number } | undefined;
+  const err = error as
+    | { message?: string; code?: string; errno?: number }
+    | undefined;
 
   logger.error(`Database error during ${operation}`, {
     error: err?.message ?? String(error),
@@ -214,7 +236,10 @@ export function handleDatabaseError(error: unknown, operation: string): never {
 /**
  * Validation error handler
  */
-export function handleValidationError(errors: unknown[], context: string): { error: string; details: unknown[] } {
+export function handleValidationError(
+  errors: unknown[],
+  context: string
+): { error: string; details: unknown[] } {
   logger.warn(`Validation errors in ${context}`, { errors });
 
   return {

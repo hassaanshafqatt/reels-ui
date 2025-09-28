@@ -12,11 +12,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get('active') === 'true';
-    
+
     const categories = reelCategoryOperations.getAll(activeOnly);
     return NextResponse.json({ categories });
   } catch {
-    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch categories' },
+      { status: 500 }
+    );
   }
 }
 
@@ -32,7 +35,10 @@ export async function POST(request: NextRequest) {
     const { name, title, description, icon, is_active = true } = body;
 
     if (!name || !title) {
-      return NextResponse.json({ error: 'Name and title are required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Name and title are required' },
+        { status: 400 }
+      );
     }
 
     const categoryId = reelCategoryOperations.create({
@@ -40,12 +46,15 @@ export async function POST(request: NextRequest) {
       title,
       description,
       icon,
-      is_active
+      is_active,
     });
 
     const category = reelCategoryOperations.getById(categoryId);
     return NextResponse.json({ category }, { status: 201 });
   } catch {
-    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create category' },
+      { status: 500 }
+    );
   }
 }

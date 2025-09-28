@@ -26,24 +26,26 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
-    
+
     if (!payload || !payload.userId) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
-      return NextResponse.json({ message: 'Session not found' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 401 }
+      );
     }
 
     const jobs = jobOperations.getByUserId(payload.userId as string);
-    
+
     return NextResponse.json({
       success: true,
-      jobs
+      jobs,
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
@@ -62,15 +64,18 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
-    
+
     if (!payload || !payload.userId) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
-      return NextResponse.json({ message: 'Session not found' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 401 }
+      );
     }
 
     const { jobId, category, type } = await request.json();
@@ -82,17 +87,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const id = jobOperations.create(payload.userId as string, { jobId, category, type });
-    
+    const id = jobOperations.create(payload.userId as string, {
+      jobId,
+      category,
+      type,
+    });
+
     // Clean old jobs for this user
     jobOperations.cleanOldJobs(payload.userId as string);
 
     return NextResponse.json({
       success: true,
       id,
-      message: 'Job created successfully'
+      message: 'Job created successfully',
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
@@ -111,15 +119,18 @@ export async function DELETE(request: NextRequest) {
 
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
-    
+
     if (!payload || !payload.userId) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
-      return NextResponse.json({ message: 'Session not found' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 401 }
+      );
     }
 
     // Get category from query parameters
@@ -127,11 +138,14 @@ export async function DELETE(request: NextRequest) {
     const category = searchParams.get('category');
 
     // Clear jobs for this user (all or by category)
-    const deletedCount = category 
-      ? jobOperations.clearByCategoryAndUserId(category, payload.userId as string)
+    const deletedCount = category
+      ? jobOperations.clearByCategoryAndUserId(
+          category,
+          payload.userId as string
+        )
       : jobOperations.clearAllByUserId(payload.userId as string);
 
-    const message = category 
+    const message = category
       ? `Job history cleared successfully for category: ${category}`
       : 'All job history cleared successfully';
 
@@ -139,9 +153,8 @@ export async function DELETE(request: NextRequest) {
       success: true,
       deletedCount,
       message,
-      category: category || null
+      category: category || null,
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

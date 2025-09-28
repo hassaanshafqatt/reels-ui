@@ -1,7 +1,7 @@
-import React from "react";
-import { Zap } from "lucide-react";
-import { iconMap } from "@/components/IconMap";
-import { type ReelType as DatabaseReelType } from "@/lib/reelService";
+import React from 'react';
+import { Zap } from 'lucide-react';
+import { iconMap } from '@/components/IconMap';
+import { type ReelType as DatabaseReelType } from '@/lib/reelService';
 
 interface ReelTypeGridProps {
   types: DatabaseReelType[];
@@ -11,12 +11,12 @@ interface ReelTypeGridProps {
   onReelSelect: (categoryId: string, typeId: string) => void;
 }
 
-export default function ReelTypeGrid({ 
-  types, 
-  selectedReel, 
-  selectedCategory, 
-  categoryName, 
-  onReelSelect 
+export default function ReelTypeGrid({
+  types,
+  selectedReel,
+  selectedCategory,
+  categoryName,
+  onReelSelect,
 }: ReelTypeGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -31,16 +31,23 @@ export default function ReelTypeGrid({
           onClick={() => onReelSelect(categoryName, type.name)}
         >
           <div className="flex items-center space-x-3">
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              selectedReel?.id === type.id && selectedCategory === categoryName
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-600'
-            }`}>
+            <div
+              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                selectedReel?.id === type.id &&
+                selectedCategory === categoryName
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+            >
               {iconMap[type.icon || ''] || <Zap className="h-4 w-4" />}
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">{type.title}</h4>
-              <p className="text-gray-500 text-xs sm:text-sm capitalize">{categoryName}</p>
+              <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                {type.title}
+              </h4>
+              <p className="text-gray-500 text-xs sm:text-sm capitalize">
+                {categoryName}
+              </p>
             </div>
           </div>
         </div>

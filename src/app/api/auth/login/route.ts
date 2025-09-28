@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
-import { userOperations, sessionOperations, passwordUtils } from '@/lib/database';
+import {
+  userOperations,
+  sessionOperations,
+  passwordUtils,
+} from '@/lib/database';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
@@ -9,7 +13,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
-    
+
     // Validate input
     if (!email || !password) {
       return NextResponse.json(
@@ -20,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // Find user in database
     const user = userOperations.findByEmail(email);
-    
+
     if (!user) {
       return NextResponse.json(
         { message: 'Invalid email or password' },
@@ -29,9 +33,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    
-    const isValidPassword = await passwordUtils.verify(password, user.password_hash);
-    
+
+    const isValidPassword = await passwordUtils.verify(
+      password,
+      user.password_hash
+    );
+
     if (!isValidPassword) {
       return NextResponse.json(
         { message: 'Invalid email or password' },
@@ -39,22 +46,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create JWT token
-    const token = await new SignJWT({ 
-      userId: user.id, 
-      email: user.email 
+    // Create short-lived access token (15m)
+    const accessToken = await new SignJWT({
+      userId: user.id,
+      email: user.email,
     })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('7d')
+      .setExpirationTime('15m')
       .sign(JWT_SECRET);
 
-    // Store session in database
+    // Create refresh token (random UUID) and store as session (7 days)
+    const refreshToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
-    
-    const sessionResult = sessionOperations.create(user.id, token, expiresAt);
-    
+
+    const sessionResult = sessionOperations.create(
+      user.id,
+      refreshToken,
+      expiresAt
+    );
+
     if (!sessionResult.success) {
       return NextResponse.json(
         { message: 'Failed to create session' },
@@ -62,20 +74,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return user data (without password hash) and token
-      const { password_hash, ...userWithoutPassword } = user;
-      // password_hash intentionally omitted from response
-      void password_hash;
+    // Set HttpOnly refresh cookie
+    const cookieValue = `refresh_token=${refreshToken}; Path=/; Max-Age=${7 * 24 * 60 * 60}; HttpOnly; SameSite=Lax; Secure`;
 
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        ...userWithoutPassword,
-        createdAt: user.created_at
+    // Return user data (without password hash) and access token; server sets refresh cookie
+    const { password_hash, ...userWithoutPassword } = user;
+    void password_hash;
+
+    return NextResponse.json(
+      {
+        success: true,
+        token: accessToken,
+        user: {
+          ...userWithoutPassword,
+          createdAt: user.created_at,
+        },
       },
-    });
-
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': cookieValue,
+        },
+      }
+    );
   } catch {
     // Generic failure
     return NextResponse.json(

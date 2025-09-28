@@ -11,6 +11,7 @@
 ## ✨ Features
 
 ### 🚀 **Core Features**
+
 - **Automated Reel Generation**: AI-powered video content creation
 - **Multiple Content Categories**: Motivation, Wisdom, Anime, ASMR, and more
 - **Custom Audio Support**: Upload and use your own MP3 background music
@@ -20,12 +21,14 @@
 - **Auto Cleanup**: Intelligent file management with access-based cleanup
 
 ### 🎯 **Content Categories**
+
 - 🔥 **Motivational Content**: Gym motivation, success stories, life lessons
 - 🧠 **Wisdom & Proverbs**: Ancient wisdom, philosophical quotes
 - 🎨 **Anime Style**: Character quotes, anime facts, art tutorials
 - 🎵 **ASMR Content**: Cooking sounds, nature audio, crafting videos
 
 ### 🔧 **Technical Features**
+
 - **Modern Tech Stack**: Next.js 14, TypeScript, Tailwind CSS
 - **Secure Authentication**: JWT-based user management
 - **File Upload System**: MP3 support with automatic cleanup
@@ -49,6 +52,7 @@
 Get ReelCraft up and running in minutes!
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 - Git
@@ -80,22 +84,26 @@ Visit [http://localhost:3000](http://localhost:3000) to see your app!
 ### Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/hassaanshafqatt/reels-ui.git
    cd reels-ui
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Configuration**
+
    ```bash
    cp .env.example .env.local
    ```
 
    Edit `.env.local` with your configuration:
+
    ```env
    # Database
    DATABASE_PATH=./data/reelcraft.db
@@ -114,6 +122,7 @@ Visit [http://localhost:3000](http://localhost:3000) to see your app!
    ```
 
 4. **Database Setup**
+
    ```bash
    npm run db:init
    ```
@@ -168,12 +177,12 @@ const response = await fetch('/api/reels/gym-motivation', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_JWT_TOKEN'
+    Authorization: 'Bearer YOUR_JWT_TOKEN',
   },
   body: JSON.stringify({
     generateCaption: true,
-    customAuthor: 'Your Name'
-  })
+    customAuthor: 'Your Name',
+  }),
 });
 
 const result = await response.json();
@@ -189,9 +198,9 @@ formData.append('audio', audioFile);
 const response = await fetch('/api/upload/audio', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer YOUR_JWT_TOKEN'
+    Authorization: 'Bearer YOUR_JWT_TOKEN',
   },
-  body: formData
+  body: formData,
 });
 
 const result = await response.json();
@@ -201,28 +210,33 @@ console.log('Audio URL:', result.file.url);
 ## 📚 API Documentation
 
 ### Authentication Endpoints
+
 - `POST /api/auth/login` - User login
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/verify` - Token verification
 - `POST /api/auth/logout` - User logout
 
 ### Content Management
+
 - `GET /api/reels/categories` - Get available categories
 - `GET /api/reels/types` - Get reel types for a category
 - `POST /api/reels/[type]` - Generate a new reel
 - `GET /api/reels/status` - Check generation status
 
 ### Job Management
+
 - `GET /api/jobs` - Get user's job history
 - `DELETE /api/jobs` - Clear job history
 
 ### File Management
+
 - `POST /api/upload/audio` - Upload audio file
 - `GET /api/uploads/audio/[filename]` - Serve audio file
 - `GET /api/uploads/audio/stats` - Get storage statistics
 - `POST /api/uploads/audio/cleanup` - Clean up old files
 
 ### Admin Endpoints
+
 - `GET /api/admin/users` - User management
 - `POST /api/admin/categories` - Create categories
 - `POST /api/admin/types` - Create reel types
@@ -233,19 +247,20 @@ console.log('Audio URL:', result.file.url);
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `DATABASE_PATH` | SQLite database file path | `./data/reelcraft.db` | Yes |
-| `JWT_SECRET` | JWT signing secret | - | Yes |
-| `JWT_EXPIRES_IN` | JWT expiration time | `24h` | No |
-| `MAX_FILE_SIZE` | Maximum upload file size (bytes) | `10485760` | No |
-| `UPLOAD_DIR` | Audio upload directory | `./public/uploads/audio` | No |
-| `NODE_ENV` | Environment mode | `development` | No |
-| `PORT` | Server port | `3000` | No |
+| Variable         | Description                      | Default                  | Required |
+| ---------------- | -------------------------------- | ------------------------ | -------- |
+| `DATABASE_PATH`  | SQLite database file path        | `./data/reelcraft.db`    | Yes      |
+| `JWT_SECRET`     | JWT signing secret               | -                        | Yes      |
+| `JWT_EXPIRES_IN` | JWT expiration time              | `24h`                    | No       |
+| `MAX_FILE_SIZE`  | Maximum upload file size (bytes) | `10485760`               | No       |
+| `UPLOAD_DIR`     | Audio upload directory           | `./public/uploads/audio` | No       |
+| `NODE_ENV`       | Environment mode                 | `development`            | No       |
+| `PORT`           | Server port                      | `3000`                   | No       |
 
 ### Database Configuration
 
 The application uses SQLite with the following optimizations:
+
 - WAL mode for better concurrency
 - Prepared statements for performance
 - Automatic cleanup of old files
@@ -263,7 +278,7 @@ services:
   reels-ui:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./data:/app/data
       - reels_uploads:/app/public/uploads
@@ -290,6 +305,7 @@ Required GitHub secrets for publishing/deploying (add under repository Settings 
 - `SSH_HOST` and `SSH_USER` — (optional) remote host and username for SSH deploy.
 
 Customize `docker-deploy.yml` if you prefer Docker Hub or another registry; replace the login step and `IMAGE_NAME` accordingly.
+
 ```
 
 ### Production Checklist
@@ -304,27 +320,29 @@ Customize `docker-deploy.yml` if you prefer Docker Hub or another registry; repl
 ## 🏗️ Project Structure
 
 ```
+
 reels-ui/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/               # API Routes
-│   │   │   ├── auth/          # Authentication
-│   │   │   ├── jobs/          # Job management
-│   │   │   ├── reels/         # Content generation
-│   │   │   └── upload/        # File uploads
-│   │   ├── admin/             # Admin dashboard
-│   │   └── [user pages]       # User-facing pages
-│   ├── components/            # Reusable React components
-│   ├── contexts/              # React Context providers
-│   ├── hooks/                 # Custom React hooks
-│   └── lib/                   # Utility functions
-├── public/                    # Static assets
-├── data/                      # SQLite database
-├── uploads/                   # User-uploaded files
-├── docker-compose.yml         # Docker orchestration
-├── Dockerfile                 # Container definition
-└── package.json               # Dependencies
-```
+│ ├── app/ # Next.js App Router
+│ │ ├── api/ # API Routes
+│ │ │ ├── auth/ # Authentication
+│ │ │ ├── jobs/ # Job management
+│ │ │ ├── reels/ # Content generation
+│ │ │ └── upload/ # File uploads
+│ │ ├── admin/ # Admin dashboard
+│ │ └── [user pages] # User-facing pages
+│ ├── components/ # Reusable React components
+│ ├── contexts/ # React Context providers
+│ ├── hooks/ # Custom React hooks
+│ └── lib/ # Utility functions
+├── public/ # Static assets
+├── data/ # SQLite database
+├── uploads/ # User-uploaded files
+├── docker-compose.yml # Docker orchestration
+├── Dockerfile # Container definition
+└── package.json # Dependencies
+
+````
 
 ## 🧪 Testing
 
@@ -340,7 +358,7 @@ npm run test:coverage
 
 # Run linting
 npm run lint
-```
+````
 
 ## 🤝 Contributing
 
@@ -403,6 +421,7 @@ We welcome contributions! Please follow these steps:
 ### Common Issues
 
 **Database Connection Issues**
+
 ```bash
 # Check database file
 ls -la data/reelcraft.db
@@ -412,6 +431,7 @@ chmod 644 data/reelcraft.db
 ```
 
 **File Upload Problems**
+
 ```bash
 # Check upload directory
 ls -la public/uploads/audio/
@@ -421,6 +441,7 @@ chmod 755 public/uploads/audio/
 ```
 
 **Authentication Issues**
+
 ```bash
 # Check JWT secret
 echo $JWT_SECRET

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { jobService, type StoredJob } from '@/lib/jobService';
 import { useAuth } from '@/contexts/AuthContext';
+import { getAuthHeaders } from '@/lib/clientAuth';
 
 interface UseJobsReturn {
   jobs: StoredJob[];
@@ -12,15 +13,14 @@ interface UseJobsReturn {
 }
 
 // Function to check if global polling is enabled
-const checkGlobalPollingEnabled = async (authToken: string | null): Promise<boolean> => {
+const checkGlobalPollingEnabled = async (
+  authToken: string | null
+): Promise<boolean> => {
   try {
     if (!authToken) return true; // Default to enabled if no auth
 
     const response = await fetch('/api/admin/settings', {
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -28,9 +28,11 @@ const checkGlobalPollingEnabled = async (authToken: string | null): Promise<bool
     }
 
     const data = await response.json();
-    const pollingSetting = data.settings?.find((s: { key: string; value: string }) => s.key === 'global_polling_enabled');
+    const pollingSetting = data.settings?.find(
+      (s: { key: string; value: string }) => s.key === 'global_polling_enabled'
+    );
     return pollingSetting ? pollingSetting.value === 'true' : true;
-    } catch {
+  } catch {
     return true; // Default to enabled on error
   }
 };
@@ -57,17 +59,21 @@ export function useJobs(): UseJobsReturn {
       checkPollingEnabled();
     }
   }, [user, token]);
-  
+
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchTimeRef = useRef<Date>(new Date());
   const stoppedPollingJobsRef = useRef<Set<string>>(new Set());
   const fetchJobsRef = useRef<(() => Promise<void>) | null>(null);
+  const isFetchingRef = useRef<boolean>(false);
 
   // Function to fetch fresh jobs from the database
   const fetchJobs = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     if (!user || authLoading) {
       setJobs([]);
       setLoading(false);
+      isFetchingRef.current = false;
       return;
     }
 
@@ -76,34 +82,38 @@ export function useJobs(): UseJobsReturn {
       setJobs(freshJobs);
       setError(null);
       lastFetchTimeRef.current = new Date();
-      
+
       // Auto-check status for incomplete jobs during polling
-      const incompleteJobs = freshJobs.filter(job => 
-        !['completed', 'posted', 'rejected'].includes(job.status) && 
-        !stoppedPollingJobsRef.current.has(job.job_id)
+      const incompleteJobs = freshJobs.filter(
+        (job) =>
+          !['completed', 'posted', 'rejected'].includes(job.status) &&
+          !stoppedPollingJobsRef.current.has(job.job_id)
       );
-      
+
       if (incompleteJobs.length > 0) {
-        
         // Create promises for all status checks
-        const statusCheckPromises = incompleteJobs.map((job, index) => 
-          new Promise<void>((resolve) => {
-            setTimeout(async () => {
-              try {
-                const result = await jobService.checkJobStatus(job.job_id, job.type);
-                
-                // Check if we should stop polling this job
-                if (result?.shouldStopPolling) {
-                  stoppedPollingJobsRef.current.add(job.job_id);
+        const statusCheckPromises = incompleteJobs.map(
+          (job, index) =>
+            new Promise<void>((resolve) => {
+              setTimeout(async () => {
+                try {
+                  const result = await jobService.checkJobStatus(
+                    job.job_id,
+                    job.type
+                  );
+
+                  // Check if we should stop polling this job
+                  if (result?.shouldStopPolling) {
+                    stoppedPollingJobsRef.current.add(job.job_id);
+                  }
+                } catch {
+                  // Status check failed
                 }
-              } catch {
-                // Status check failed
-              }
-              resolve();
-            }, 100 * index); // Stagger requests slightly
-          })
+                resolve();
+              }, 100 * index); // Stagger requests slightly
+            })
         );
-        
+
         // Wait for all status checks to complete, then refresh jobs
         Promise.all(statusCheckPromises).then(async () => {
           try {
@@ -115,10 +125,15 @@ export function useJobs(): UseJobsReturn {
         });
       }
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to fetch jobs');
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : 'Failed to fetch jobs'
+      );
       setJobs([]);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [user, authLoading]); // Depend on user and authLoading state
 
@@ -135,15 +150,16 @@ export function useJobs(): UseJobsReturn {
         setGlobalPollingEnabled(enabled);
       }
     };
-    
+
     checkPollingStatus();
   }, [token]);
 
   // Check if there are jobs that need polling
   const hasIncompleteJobs = useCallback(() => {
-    return jobs.some(job => 
-      !['completed', 'posted', 'rejected'].includes(job.status) && 
-      !stoppedPollingJobsRef.current.has(job.job_id)
+    return jobs.some(
+      (job) =>
+        !['completed', 'posted', 'rejected'].includes(job.status) &&
+        !stoppedPollingJobsRef.current.has(job.job_id)
     );
   }, [jobs]);
 
@@ -156,19 +172,19 @@ export function useJobs(): UseJobsReturn {
     if (pollingIntervalRef.current) {
       return;
     }
-    
+
     if (!hasIncompleteJobs()) {
       return;
     }
-    
+
     setIsPolling(true);
-    
-    // Poll every 5 minutes (300 seconds) - use ref to avoid stale closures
+
+    // Poll every 3 minutes (180000 ms) - use ref to avoid stale closures
     pollingIntervalRef.current = setInterval(() => {
       if (fetchJobsRef.current) {
         fetchJobsRef.current();
       }
-    }, 300000);
+    }, 180000);
   }, [hasIncompleteJobs, globalPollingEnabled]);
 
   // Stop polling
@@ -198,7 +214,13 @@ export function useJobs(): UseJobsReturn {
       }
     };
     // hasIncompleteJobs, startPolling and stopPolling are stable via useCallback
-  }, [jobs, globalPollingEnabled, hasIncompleteJobs, startPolling, stopPolling]);
+  }, [
+    jobs,
+    globalPollingEnabled,
+    hasIncompleteJobs,
+    startPolling,
+    stopPolling,
+  ]);
 
   // Initial load and when auth state changes
   useEffect(() => {
@@ -211,6 +233,6 @@ export function useJobs(): UseJobsReturn {
     error,
     refetch: fetchJobs,
     isPolling,
-    globalPollingEnabled
+    globalPollingEnabled,
   };
 }

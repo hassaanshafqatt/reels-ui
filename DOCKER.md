@@ -81,11 +81,13 @@ If you encounter build issues with `better-sqlite3`:
 ### Container Not Starting
 
 Check the logs:
+
 ```bash
 docker logs reels-ui-container
 ```
 
 Common issues:
+
 - Port 4761 already in use
 - Insufficient permissions for data directory
 - Missing environment variables

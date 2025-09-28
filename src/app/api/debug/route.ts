@@ -9,9 +9,12 @@ export async function GET() {
     return NextResponse.json({
       message: 'Debug endpoint',
       timestamp: new Date().toISOString(),
-      note: 'Check the main route console logs for job storage information'
+      note: 'Check the main route console logs for job storage information',
     });
   } catch {
-    return NextResponse.json({ error: 'Debug endpoint failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Debug endpoint failed' },
+      { status: 500 }
+    );
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import * as jose from 'jose';
 import { cookies } from 'next/headers';
-import { userOperations } from './database';
+import { userOperations, sessionOperations } from './database';
 
 export interface AuthUser {
   id: string;
@@ -16,7 +16,9 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
 
-export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null> {
+export async function verifyAuth(
+  request?: NextRequest
+): Promise<AuthUser | null> {
   try {
     let token: string | undefined;
 
@@ -37,14 +39,35 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
     }
 
     if (!token) {
+      // No access token present — try HttpOnly refresh token session as a fallback
+      try {
+        const refreshToken = request
+          ? // when request is provided, read from its cookies
+            request.cookies.get('refresh_token')?.value
+          : // server-side cookies()
+            (await cookies()).get('refresh_token')?.value;
+
+        if (refreshToken) {
+          const session = sessionOperations.findByToken(refreshToken as string);
+          if (session && session.user_id) {
+            return {
+              id: String(session.user_id),
+              email: String(session.email),
+            };
+          }
+        }
+      } catch {
+        // ignore and fallthrough to return null
+      }
+
       return null;
     }
 
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    
+
     return {
       id: payload.userId as string,
-      email: payload.email as string
+      email: payload.email as string,
     };
   } catch {
     return null;
@@ -54,7 +77,7 @@ export async function verifyAuth(request?: NextRequest): Promise<AuthUser | null
 export async function createToken(user: AuthUser): Promise<string> {
   const token = await new jose.SignJWT({
     userId: user.id,
-    email: user.email
+    email: user.email,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -64,7 +87,9 @@ export async function createToken(user: AuthUser): Promise<string> {
   return token;
 }
 
-export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUserWithAdmin | null> {
+export async function verifyAuthWithAdmin(
+  request?: NextRequest
+): Promise<AuthUserWithAdmin | null> {
   try {
     const authUser = await verifyAuth(request);
     if (!authUser) {
@@ -80,14 +105,16 @@ export async function verifyAuthWithAdmin(request?: NextRequest): Promise<AuthUs
     return {
       id: authUser.id,
       email: authUser.email,
-      is_admin: user.is_admin
+      is_admin: user.is_admin,
     };
   } catch {
     return null;
   }
 }
 
-export async function requireAdmin(request?: NextRequest): Promise<AuthUserWithAdmin> {
+export async function requireAdmin(
+  request?: NextRequest
+): Promise<AuthUserWithAdmin> {
   const user = await verifyAuthWithAdmin(request);
   if (!user) {
     throw new Error('Authentication required');

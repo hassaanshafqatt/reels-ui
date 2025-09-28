@@ -10,12 +10,20 @@ services:
       - reels_data:/app/data
       # Mount uploads directory for persistent file storage
       - reels_uploads:/app/public/uploads
+      # If you prefer docker-init.sh to source the env file directly, you can
+      # mount a local env file as /app/.env (read-only). Example (uncomment to use):
+      # - ./prod.env:/app/.env:ro
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+    # Provide runtime environment variables from a file. Create a `prod.env`
+    # next to this compose file (do NOT commit it). docker-compose will load
+    # the variables and inject them into the container's environment at runtime.
+    env_file:
+      - ./.env
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4761/api/debug"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4761/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

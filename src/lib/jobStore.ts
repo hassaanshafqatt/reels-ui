@@ -18,7 +18,9 @@ declare global {
 }
 
 // Create or get the existing job store
-export const jobStore = globalThis.sharedJobStore || (globalThis.sharedJobStore = new Map<string, JobRecord>());
+export const jobStore =
+  globalThis.sharedJobStore ||
+  (globalThis.sharedJobStore = new Map<string, JobRecord>());
 
 // Helper functions
 export const getJob = (jobId: string): JobRecord | undefined => {
@@ -38,17 +40,21 @@ export const getJobStoreSize = (): number => {
 };
 
 // Update job status and result
-export const updateJobStatus = (jobId: string, status: JobRecord['status'], result?: Record<string, unknown>): boolean => {
+export const updateJobStatus = (
+  jobId: string,
+  status: JobRecord['status'],
+  result?: Record<string, unknown>
+): boolean => {
   const job = jobStore.get(jobId);
   if (!job) return false;
-  
+
   const updatedJob: JobRecord = {
     ...job,
     status,
     updatedAt: new Date().toISOString(),
-    result: result || job.result
+    result: result || job.result,
   };
-  
+
   jobStore.set(jobId, updatedJob);
   return true;
 };

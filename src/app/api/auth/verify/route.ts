@@ -9,7 +9,7 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { message: 'Authorization token required' },
@@ -20,23 +20,27 @@ export async function POST(request: NextRequest) {
     const token = authHeader.substring(7);
 
     try {
-  // Verify the JWT token
-  const { payload } = await jwtVerify(token, JWT_SECRET);
-  void payload;
-      
-      // Check if session exists in database and is valid
-      const session = sessionOperations.findByToken(token);
-      
+      // Verify the JWT token
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      void payload;
+
+      // Check if the user has an active session
+      const session = sessionOperations.findByUserId(payload.userId as string);
+
       if (!session) {
         return NextResponse.json(
-          { success: false, valid: false, message: 'Session not found or expired' },
+          {
+            success: false,
+            valid: false,
+            message: 'Session not found or expired',
+          },
           { status: 401 }
         );
       }
 
       // Get fresh user data
       const user = userOperations.findById(session.user_id as string);
-      
+
       if (!user) {
         return NextResponse.json(
           { success: false, valid: false, message: 'User not found' },
@@ -44,17 +48,17 @@ export async function POST(request: NextRequest) {
         );
       }
 
-  // Remove password hash from user data
-  const { password_hash, ...userWithoutPassword } = user;
-  // password_hash intentionally omitted
-  void password_hash;
-      
+      // Remove password hash from user data
+      const { password_hash, ...userWithoutPassword } = user;
+      // password_hash intentionally omitted
+      void password_hash;
+
       return NextResponse.json({
         success: true,
         valid: true,
         user: {
           ...userWithoutPassword,
-          createdAt: user.created_at
+          createdAt: user.created_at,
         },
       });
     } catch {
@@ -63,7 +67,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

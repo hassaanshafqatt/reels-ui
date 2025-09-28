@@ -8,21 +8,29 @@ import { logger, withErrorHandler, withLogging } from '@/lib/logger';
 import { verifyAuth } from '@/lib/auth';
 import { validateFileUpload, getSecurityHeaders } from '@/lib/security';
 
-
 // File tracking for cleanup and security monitoring
-const fileAccessTracker = new Map<string, {
-  lastAccessed: Date;
-  accessCount: number;
-  uploadedBy: string;
-  uploadTime: Date;
-  fileHash: string;
-  fileSize: number;
-}>();
+const fileAccessTracker = new Map<
+  string,
+  {
+    lastAccessed: Date;
+    accessCount: number;
+    uploadedBy: string;
+    uploadTime: Date;
+    fileHash: string;
+    fileSize: number;
+  }
+>();
 
 // Security configuration
 const SECURITY_CONFIG = {
   maxFileSize: parseInt(process.env.MAX_UPLOAD_SIZE || '10485760'), // 10MB default
-  allowedTypes: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a', 'audio/aac'],
+  allowedTypes: [
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/wav',
+    'audio/m4a',
+    'audio/aac',
+  ],
   allowedExtensions: ['.mp3', '.wav', '.m4a', '.aac'],
   maxFilesPerUser: 50, // Maximum files per user per hour
   suspiciousPatterns: [
@@ -43,7 +51,10 @@ const uploadRateLimit = new Map<string, { count: number; resetTime: number }>();
 /**
  * Enhanced file validation with security checks
  */
-async function validateAndSanitizeFile(file: File, userId: string): Promise<{
+async function validateAndSanitizeFile(
+  file: File,
+  userId: string
+): Promise<{
   valid: boolean;
   error?: string;
   sanitizedName?: string;
@@ -128,7 +139,7 @@ async function analyzeFileSecurity(buffer: Buffer): Promise<number> {
   }
 
   // Calculate final security score (0 = safe, 1 = suspicious)
-  return Math.min(1, (entropy * 0.4) + patternScore);
+  return Math.min(1, entropy * 0.4 + patternScore);
 }
 
 /**
@@ -206,7 +217,10 @@ async function calculateFileHash(buffer: Buffer): Promise<string> {
 }
 
 // Helper function to find existing file by hash
-async function findExistingFileByHash(targetHash: string, uploadsDir: string): Promise<string | null> {
+async function findExistingFileByHash(
+  targetHash: string,
+  uploadsDir: string
+): Promise<string | null> {
   try {
     const files = await readdir(uploadsDir);
     for (const file of files) {
@@ -225,7 +239,9 @@ async function findExistingFileByHash(targetHash: string, uploadsDir: string): P
       }
     }
   } catch (err: unknown) {
-    logger.warn('Error checking for duplicate files', { error: err instanceof Error ? err.message : String(err) });
+    logger.warn('Error checking for duplicate files', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return null;
 }
@@ -261,9 +277,10 @@ async function cleanupOldFiles(uploadsDir: string) {
     if (cleanedCount > 0) {
       logger.info(`Automatic cleanup completed: ${cleanedCount} files removed`);
     }
-
   } catch (err: unknown) {
-    logger.error('Error during automatic file cleanup:', { error: err instanceof Error ? err.message : String(err) });
+    logger.error('Error during automatic file cleanup:', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 
@@ -332,7 +349,10 @@ async function handleSecureUpload(request: NextRequest) {
     const hashData = await calculateFileHashWithMetadata(buffer);
 
     // Check if file with same content already exists
-    const existingFile = await findExistingFileByHash(hashData.hash, uploadsDir);
+    const existingFile = await findExistingFileByHash(
+      hashData.hash,
+      uploadsDir
+    );
 
     let uniqueFilename: string;
     let filePath: string;
@@ -351,7 +371,9 @@ async function handleSecureUpload(request: NextRequest) {
       });
     } else {
       // Create new file
-      const fileExtension = path.extname(validation.sanitizedName || audioFile.name);
+      const fileExtension = path.extname(
+        validation.sanitizedName || audioFile.name
+      );
       uniqueFilename = `${randomUUID()}${fileExtension}`;
       filePath = path.join(uploadsDir, uniqueFilename);
 
@@ -380,25 +402,32 @@ async function handleSecureUpload(request: NextRequest) {
 
     // Run cleanup in background (don't await to avoid blocking response)
     cleanupOldFiles(uploadsDir).catch((err) => {
-      logger.error('Background cleanup failed', { error: err instanceof Error ? err.message : String(err) });
+      logger.error('Background cleanup failed', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     });
 
     // Generate secure streamable URL
-    const hostname = process.env.PUBLIC_HOSTNAME || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const hostname =
+      process.env.PUBLIC_HOSTNAME ||
+      process.env.NEXTAUTH_URL ||
+      'http://localhost:3000';
     const streamableUrl = `${hostname}/api/uploads/audio/${uniqueFilename}`;
 
-    return NextResponse.json({
-      success: true,
-      filename: uniqueFilename,
-      originalName: validation.sanitizedName || audioFile.name,
-      size: hashData.size,
-      type: audioFile.type,
-      url: streamableUrl,
-      isDuplicate,
-      securityScore: validation.securityScore,
-      uploadedAt: new Date().toISOString(),
-    }, { headers: getSecurityHeaders() });
-
+    return NextResponse.json(
+      {
+        success: true,
+        filename: uniqueFilename,
+        originalName: validation.sanitizedName || audioFile.name,
+        size: hashData.size,
+        type: audioFile.type,
+        url: streamableUrl,
+        isDuplicate,
+        securityScore: validation.securityScore,
+        uploadedAt: new Date().toISOString(),
+      },
+      { headers: getSecurityHeaders() }
+    );
   } catch (err) {
     logger.error('File upload failed', {
       error: err instanceof Error ? err.message : 'Unknown error',

@@ -27,6 +27,18 @@ chmod -R 755 /app/data
 chmod -R 755 /app/public/uploads
 chmod -R 755 /app/logs
 
+# If a runtime env file was provided at /app/.env, source it so the container
+# process picks up secrets and configuration passed at runtime. We intentionally
+# do not bake secrets into the image; supply them via `--env-file` or your
+# orchestrator (Kubernetes secrets, Docker Swarm secrets, etc.).
+if [ -f /app/.env ]; then
+    log "Sourcing runtime env file /app/.env"
+    # shellcheck disable=SC1090
+    . /app/.env
+else
+    log "No /app/.env file found. Make sure to provide runtime environment variables via --env-file or your orchestrator."
+fi
+
 # Check if database file exists, if not, create it with proper permissions
 if [ ! -f /app/data/reelcraft.db ]; then
     log "Creating database file..."

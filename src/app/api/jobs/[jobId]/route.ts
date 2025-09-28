@@ -29,15 +29,18 @@ export async function PUT(
 
     const token = authHeader.substring(7);
     const payload = await verifyToken(token);
-    
+
     if (!payload || !payload.userId) {
       return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify session exists
-    const session = sessionOperations.findByToken(token);
+    // Verify session exists for this user
+    const session = sessionOperations.findByUserId(payload.userId as string);
     if (!session) {
-      return NextResponse.json({ message: 'Session not found' }, { status: 401 });
+      return NextResponse.json(
+        { message: 'Session not found' },
+        { status: 401 }
+      );
     }
 
     const { status, resultUrl, errorMessage, caption } = await request.json();
@@ -60,9 +63,8 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: 'Job updated successfully'
+      message: 'Job updated successfully',
     });
-
   } catch {
     return NextResponse.json(
       { message: 'Internal server error' },

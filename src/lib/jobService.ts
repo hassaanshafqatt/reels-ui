@@ -1,5 +1,5 @@
 // Job management utilities for client-side
-import Cookies from 'js-cookie';
+import { getAuthToken, getAuthHeaders } from './clientAuth';
 
 interface StoredJob {
   id: string;
@@ -7,7 +7,14 @@ interface StoredJob {
   job_id: string;
   category: string;
   type: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'approved' | 'posted' | 'rejected';
+  status:
+    | 'pending'
+    | 'processing'
+    | 'completed'
+    | 'failed'
+    | 'approved'
+    | 'posted'
+    | 'rejected';
   result_url?: string;
   caption?: string;
   error_message?: string;
@@ -15,27 +22,15 @@ interface StoredJob {
   updated_at: string;
 }
 
-// Get auth token from cookies
-const getAuthToken = (): string | null => {
-  return Cookies.get('auth_token') || null;
-};
-
-// Create headers with auth token
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
+// Use shared client auth helpers
 
 export const jobService = {
   // Get all jobs for the current user
   async getJobs(): Promise<StoredJob[]> {
     try {
-  const token = getAuthToken();
+      const token = getAuthToken();
       void token;
-      
+
       const response = await fetch('/api/jobs', {
         headers: getAuthHeaders(),
       });
@@ -52,7 +47,11 @@ export const jobService = {
   },
 
   // Create a new job
-  async createJob(jobData: { jobId: string; category: string; type: string }): Promise<boolean> {
+  async createJob(jobData: {
+    jobId: string;
+    category: string;
+    type: string;
+  }): Promise<boolean> {
     try {
       const response = await fetch('/api/jobs', {
         method: 'POST',
@@ -71,7 +70,13 @@ export const jobService = {
   },
 
   // Update job status
-  async updateJobStatus(jobId: string, status: string, resultUrl?: string, errorMessage?: string, caption?: string): Promise<boolean> {
+  async updateJobStatus(
+    jobId: string,
+    status: string,
+    resultUrl?: string,
+    errorMessage?: string,
+    caption?: string
+  ): Promise<boolean> {
     try {
       const response = await fetch(`/api/jobs/${jobId}`, {
         method: 'PUT',
@@ -110,7 +115,9 @@ export const jobService = {
   // Clear job history for a specific category
   async clearJobsByCategory(category?: string): Promise<boolean> {
     try {
-      const url = category ? `/api/jobs?category=${encodeURIComponent(category)}` : '/api/jobs';
+      const url = category
+        ? `/api/jobs?category=${encodeURIComponent(category)}`
+        : '/api/jobs';
       const response = await fetch(url, {
         method: 'DELETE',
         headers: getAuthHeaders(),
@@ -127,22 +134,56 @@ export const jobService = {
   },
 
   // Check job status via status API
-  async checkJobStatus(jobId: string, type: string): Promise<{ status: string; result_url?: string; shouldStopPolling?: boolean }> {
+  async checkJobStatus(
+    jobId: string,
+    type: string
+  ): Promise<{
+    status: string;
+    result_url?: string;
+    shouldStopPolling?: boolean;
+  }> {
     try {
       const url = `/api/reels/status?jobId=${encodeURIComponent(jobId)}&type=${encodeURIComponent(type)}`;
-      
+
       const response = await fetch(url, {
         headers: getAuthHeaders(),
       });
 
-      if (!response.ok) {
+      // If server responds OK, return parsed result (may include shouldStopPolling)
+      if (response.ok) {
+        const result = await response.json();
+        return result;
+      }
+
+      // If job is not found, treat it as a stop condition
+      if (response.status === 404) {
         return { status: 'failed', shouldStopPolling: true };
       }
 
-      const result = await response.json();
-      return result;
+      // Try to parse a JSON body — if the server explicitly included shouldStopPolling, honor it
+      try {
+        const parsed = await response.json();
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          Object.prototype.hasOwnProperty.call(parsed, 'shouldStopPolling')
+        ) {
+          return parsed as {
+            status: string;
+            result_url?: string;
+            shouldStopPolling?: boolean;
+          };
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      // For other non-OK responses without explicit shouldStopPolling, throw so callers can treat
+      // this as a transient error (and avoid stopping polling immediately on a single failure).
+      throw new Error(`Status check failed with HTTP ${response.status}`);
     } catch {
-      return { status: 'failed', shouldStopPolling: true };
+      // Propagate error to caller — do not silently tell the client to stop polling.
+      throw new Error('Network error during status check');
     }
   },
 
@@ -162,7 +203,7 @@ export const jobService = {
       const response = await fetch(`/api/uploads/audio/${filename}`, {
         method: 'DELETE',
         headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -170,13 +211,13 @@ export const jobService = {
         return false;
       }
 
-  // response body not needed here
-  void token;
-  return true;
+      // response body not needed here
+      void token;
+      return true;
     } catch {
       return false;
     }
-  }
+  },
 };
 
 export type { StoredJob };
