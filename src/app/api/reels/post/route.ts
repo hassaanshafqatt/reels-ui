@@ -3,8 +3,10 @@ import {
   jobOperations,
   sessionOperations,
   reelTypeOperations,
+  socialAccountOperations,
 } from '@/lib/database';
 import { jwtVerify } from 'jose';
+import { verifyAuth } from '@/lib/auth';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
@@ -23,20 +25,24 @@ async function verifyToken(token: string) {
 // POST - Post a reel to social media platform
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify authentication using shared helper. This supports Authorization
+    // header tokens and HttpOnly refresh cookie fallback.
+    const authUser = await verifyAuth(request);
+    if (!authUser) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const userId = authUser.id;
 
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
+    // Also capture an optional Authorization header token (may be used to
+    // forward to external posting endpoints if no social account token exists).
+    const authHeader = request.headers.get('authorization');
+    const forwardedJwtToken =
+      authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : null;
 
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
-    // Verify session exists for this user
-    const session = sessionOperations.findByUserId(payload.userId as string);
+    // Verify session exists for this user via sessionOperations (same as before)
+    const session = sessionOperations.findByUserId(userId);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },
@@ -44,7 +50,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { jobId, category, type, videoUrl, caption } = await request.json();
+    const { jobId, category, type, videoUrl, caption, selectedAccountId } =
+      await request.json();
 
     if (!jobId) {
       return NextResponse.json(
@@ -55,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the job belongs to the user
     const job = jobOperations.getByJobId(jobId);
-    if (!job || job.user_id !== payload.userId) {
+    if (!job || job.user_id !== userId) {
       return NextResponse.json({ message: 'Job not found' }, { status: 404 });
     }
 
@@ -76,14 +83,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare the posting payload for external service
-    const postingPayload = {
+    // Prepare the base posting payload for external service
+    const postingPayloadBase: Record<string, unknown> = {
       jobId,
       category,
       type,
       videoUrl,
       caption,
-      userId: payload.userId,
+      userId,
       timestamp: new Date().toISOString(),
       reelConfig: {
         title: reelType.title,
@@ -91,6 +98,51 @@ export async function POST(request: NextRequest) {
         message: reelType.message,
       },
     };
+
+    // If a selectedAccountId was provided, resolve the full account record
+    // server-side (including access_token) and attach non-sensitive metadata
+    // to the posting payload; also use its access_token for outgoing auth.
+    let resolvedAccount: Record<string, unknown> | null = null;
+    if (selectedAccountId) {
+      // Typed shape for the social account stored in the DB
+      type SocialAccountRecord = {
+        id: string;
+        user_id: string;
+        platform: string;
+        account_id: string;
+        username: string;
+        profile_image?: string | null;
+        access_token?: string | null;
+        refresh_token?: string | null;
+        expires_at?: string | null;
+        created_at?: string;
+        updated_at?: string;
+      };
+
+      const acct = socialAccountOperations.findById(
+        String(selectedAccountId)
+      ) as SocialAccountRecord | null;
+
+      if (!acct) {
+        return NextResponse.json(
+          { message: 'Selected account not found' },
+          { status: 404 }
+        );
+      }
+
+      // Ensure account belongs to the authenticated user
+      if (acct.user_id !== userId) {
+        return NextResponse.json(
+          { message: 'Selected account does not belong to user' },
+          { status: 403 }
+        );
+      }
+
+      // Keep the full account record server-side. We will forward the account
+      // object (without sending it back to the browser) to the external
+      // posting endpoint if needed. Also prefer acct.access_token for auth.
+      resolvedAccount = { ...acct } as Record<string, unknown>;
+    }
 
     // Check if we have a specific external posting URL (not self-referential)
     if (
@@ -100,11 +152,33 @@ export async function POST(request: NextRequest) {
     ) {
       try {
         // Make the actual request to the external posting service
+        // If selectedAccount was resolved, prefer its access_token for Authorization
+        const externalToken =
+          resolvedAccount && (resolvedAccount['access_token'] as string)
+            ? (resolvedAccount['access_token'] as string)
+            : forwardedJwtToken;
+
+        // Build final posting payload. Include account metadata but do not
+        // include raw tokens in the body unless the external service requires it.
+        const postingPayload = {
+          ...postingPayloadBase,
+          selectedAccount: resolvedAccount
+            ? {
+                id: resolvedAccount.id,
+                platform: resolvedAccount.platform,
+                username: resolvedAccount.username,
+                accountId: resolvedAccount.account_id,
+                profileImage: resolvedAccount.profile_image,
+                // Do NOT include access_token in the forwarded body by default.
+              }
+            : null,
+        };
+
         const postingResponse = await fetch(reelType.posting_url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Pass through the auth token
+            Authorization: `Bearer ${externalToken}`,
           },
           body: JSON.stringify(postingPayload),
         });

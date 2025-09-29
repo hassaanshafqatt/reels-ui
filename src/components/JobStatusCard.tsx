@@ -39,7 +39,7 @@ export default function JobStatusCard({
   isRefreshing,
   onRefresh,
 }: JobStatusCardProps) {
-  const { token } = useAuth();
+  const { token, selectedAccountId } = useAuth();
   // legacy fullscreen flag kept for className compatibility
   const [_isFullscreen] = useState(false);
   const [showFullCaption, setShowFullCaption] = useState(false);
@@ -201,6 +201,9 @@ export default function JobStatusCard({
           // Send the selected media URL (if undefined, server can handle)
           videoUrl: selectedMediaUrl,
           caption: job.caption,
+          // Only send the selected account id. Server will lookup the full
+          // account (including tokens) and perform the external posting.
+          selectedAccountId: selectedAccountId || null,
         }),
       });
 

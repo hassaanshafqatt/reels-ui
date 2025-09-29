@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobOperations, sessionOperations } from '@/lib/database';
 import { jwtVerify } from 'jose';
+import { verifyAuth } from '@/lib/auth';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
 
-// Helper function to verify JWT token
+// Helper function to verify JWT token retained for compatibility.
 async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
@@ -22,20 +23,13 @@ export async function PUT(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const user = await verifyAuth(request);
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
     // Verify session exists for this user
-    const session = sessionOperations.findByUserId(payload.userId as string);
+    const session = sessionOperations.findByUserId(user.id);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },
@@ -55,7 +49,7 @@ export async function PUT(
 
     // Verify the job belongs to the user
     const job = jobOperations.getByJobId(jobId);
-    if (!job || job.user_id !== payload.userId) {
+    if (!job || job.user_id !== user.id) {
       return NextResponse.json({ message: 'Job not found' }, { status: 404 });
     }
 

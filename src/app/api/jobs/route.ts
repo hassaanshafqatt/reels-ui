@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jobOperations, sessionOperations } from '@/lib/database';
 import { jwtVerify } from 'jose';
+import { verifyAuth } from '@/lib/auth';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
 );
 
-// Helper function to verify JWT token
+// Helper function to verify JWT token (kept for compatibility with any
+// direct-token forwarding scenarios elsewhere), but primary auth should use
+// verifyAuth(request).
 async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
@@ -19,20 +22,14 @@ async function verifyToken(token: string) {
 // GET - Get user's jobs
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Use shared verifyAuth helper (supports auth header and cookie refresh)
+    const user = await verifyAuth(request);
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
     // Verify session exists for this user
-    const session = sessionOperations.findByUserId(payload.userId as string);
+    const session = sessionOperations.findByUserId(user.id);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const jobs = jobOperations.getByUserId(payload.userId as string);
+    const jobs = jobOperations.getByUserId(user.id);
 
     return NextResponse.json({
       success: true,
@@ -57,20 +54,13 @@ export async function GET(request: NextRequest) {
 // POST - Create a new job
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const user = await verifyAuth(request);
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
     // Verify session exists for this user
-    const session = sessionOperations.findByUserId(payload.userId as string);
+    const session = sessionOperations.findByUserId(user.id);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },
@@ -87,14 +77,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const id = jobOperations.create(payload.userId as string, {
+    const id = jobOperations.create(user.id as string, {
       jobId,
       category,
       type,
     });
 
     // Clean old jobs for this user
-    jobOperations.cleanOldJobs(payload.userId as string);
+    jobOperations.cleanOldJobs(user.id as string);
 
     return NextResponse.json({
       success: true,
@@ -112,20 +102,13 @@ export async function POST(request: NextRequest) {
 // DELETE - Clear jobs for user (all or by category)
 export async function DELETE(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const user = await verifyAuth(request);
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token);
-
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
-    }
-
     // Verify session exists for this user
-    const session = sessionOperations.findByUserId(payload.userId as string);
+    const session = sessionOperations.findByUserId(user.id);
     if (!session) {
       return NextResponse.json(
         { message: 'Session not found' },
@@ -139,11 +122,8 @@ export async function DELETE(request: NextRequest) {
 
     // Clear jobs for this user (all or by category)
     const deletedCount = category
-      ? jobOperations.clearByCategoryAndUserId(
-          category,
-          payload.userId as string
-        )
-      : jobOperations.clearAllByUserId(payload.userId as string);
+      ? jobOperations.clearByCategoryAndUserId(category, user.id as string)
+      : jobOperations.clearAllByUserId(user.id as string);
 
     const message = category
       ? `Job history cleared successfully for category: ${category}`

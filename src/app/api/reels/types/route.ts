@@ -7,6 +7,18 @@ export async function GET(request: NextRequest) {
   try {
     const user = await verifyAuth(request);
     if (!user) {
+      if (process.env.NODE_ENV !== 'production') {
+        const hasAuthHeader = !!request.headers.get('authorization');
+        const hasRefreshCookie = !!request.cookies.get('refresh_token');
+        return NextResponse.json(
+          {
+            error: 'Unauthorized',
+            diagnostics: { hasAuthHeader, hasRefreshCookie },
+          },
+          { status: 401 }
+        );
+      }
+
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

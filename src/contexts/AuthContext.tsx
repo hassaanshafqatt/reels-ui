@@ -22,6 +22,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  // The currently selected social account id for posting (client-side only).
+  // The server will lookup the full account record (including tokens) when posting.
+  selectedAccountId: string | null;
+  setSelectedAccountId: (id: string | null) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (
@@ -54,6 +58,8 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [selectedAccountId, setSelectedAccountId] =
+    useState<AuthContextType['selectedAccountId']>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user && !!token;
@@ -209,6 +215,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     token,
+    selectedAccountId,
+    setSelectedAccountId,
     isLoading,
     isAuthenticated,
     login,

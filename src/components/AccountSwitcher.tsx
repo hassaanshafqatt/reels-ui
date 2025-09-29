@@ -62,7 +62,7 @@ export function AccountSwitcher({
   onAccountChange,
   isMobile = false,
 }: AccountSwitcherProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, setSelectedAccountId } = useAuth();
   const [activeAccount, setActiveAccount] = useState<SocialAccount | null>(
     null
   );
@@ -88,6 +88,9 @@ export function AccountSwitcher({
             setUserAccounts(data.accounts);
             if (data.accounts.length > 0) {
               setActiveAccount(data.accounts[0]);
+              if (setSelectedAccountId) {
+                setSelectedAccountId(String(data.accounts[0].id));
+              }
             }
           }
         }
@@ -107,6 +110,8 @@ export function AccountSwitcher({
   useEffect(() => {
     if (userAccounts.length > 0) {
       setActiveAccount(userAccounts[0]);
+      if (setSelectedAccountId)
+        setSelectedAccountId(String(userAccounts[0].id));
     }
   }, [userAccounts]);
 
@@ -132,6 +137,11 @@ export function AccountSwitcher({
     setShowAccountDropdown(false);
     if (onAccountChange) {
       onAccountChange(account);
+    }
+    try {
+      if (setSelectedAccountId) setSelectedAccountId(account.id);
+    } catch {
+      // ignore
     }
   };
 
@@ -285,29 +295,6 @@ export function AccountSwitcher({
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="p-4 bg-gray-50 rounded-xl">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">
-            Quick Stats
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Total Reach</span>
-              <span className="font-semibold text-gray-900">2.1M</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">This Month</span>
-              <span className="font-semibold text-teal-600">+12.5%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-teal-500 h-2 rounded-full"
-                style={{ width: '65%' }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="space-y-2">
           <button
@@ -317,14 +304,7 @@ export function AccountSwitcher({
             <Plus className="h-4 w-4" />
             <span className="text-sm font-medium">Add Account</span>
           </button>
-          <button className="w-full flex items-center space-x-3 p-3 text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all duration-200">
-            <User className="h-4 w-4" />
-            <span className="text-sm font-medium">Profile</span>
-          </button>
-          <button className="w-full flex items-center space-x-3 p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200">
-            <Settings className="h-4 w-4" />
-            <span className="text-sm font-medium">Settings</span>
-          </button>
+
           <button
             onClick={logout}
             className="w-full flex items-center space-x-3 p-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -672,28 +652,6 @@ export function AccountSwitcher({
         </div>
       </div>
 
-      {/* Quick Stats */}
-      {!isCollapsed && (
-        <div className="p-4 border-b border-gray-100">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Total Reach</span>
-              <span className="font-semibold text-gray-900">2.1M</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">This Month</span>
-              <span className="font-semibold text-teal-600">+12.5%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-teal-500 h-2 rounded-full"
-                style={{ width: '65%' }}
-              ></div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Spacer */}
       <div className="flex-1"></div>
 
@@ -703,14 +661,6 @@ export function AccountSwitcher({
       >
         {!isCollapsed ? (
           <>
-            <button className="w-full flex items-center space-x-3 p-3 text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all duration-200">
-              <User className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm font-medium">Profile</span>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200">
-              <Settings className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm font-medium">Settings</span>
-            </button>
             <button
               onClick={logout}
               className="w-full flex items-center space-x-3 p-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"

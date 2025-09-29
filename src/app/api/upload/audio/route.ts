@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
 import { sessionOperations } from '@/lib/database';
 import { jwtVerify } from 'jose';
+import { verifyAuth } from '@/lib/auth';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-here-make-it-long-and-random'
@@ -89,38 +90,9 @@ async function cleanupOldFiles(uploadsDir: string) {
   }
 }
 
-// Helper function to verify JWT token
-async function verifyToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
-// Helper function to verify auth
-async function verifyAuth(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authHeader.substring(7);
-  const payload = await verifyToken(token);
-
-  if (!payload || !payload.userId) {
-    return null;
-  }
-
-  // Verify session exists for this user
-  const session = sessionOperations.findByUserId(payload.userId as string);
-  if (!session) {
-    return null;
-  }
-
-  return { id: payload.userId, email: payload.email };
-}
+// Use the shared verifyAuth helper which supports Authorization header and
+// cookie-based refresh fallback. We still keep verifyToken available for any
+// potential direct-token forwarding scenarios.
 
 export async function POST(request: NextRequest) {
   try {
