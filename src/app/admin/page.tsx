@@ -176,7 +176,7 @@ export default function AdminPanel() {
       try {
         const response = await fetch('/api/uploads/audio/stats', {
           headers: {
-            'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '123456',
+            'x-api-key': process.env.NEXT_PUBLIC_API_KEY!,
           },
         });
         if (response.ok) {
@@ -783,8 +783,7 @@ export default function AdminPanel() {
                               {
                                 method: 'POST',
                                 headers: {
-                                  'x-api-key':
-                                    process.env.NEXT_PUBLIC_API_KEY || '123456',
+                                  'x-api-key': process.env.NEXT_PUBLIC_API_KEY!,
                                 },
                               }
                             );
@@ -800,8 +799,7 @@ export default function AdminPanel() {
                                   {
                                     headers: {
                                       'x-api-key':
-                                        process.env.NEXT_PUBLIC_API_KEY ||
-                                        '123456',
+                                        process.env.NEXT_PUBLIC_API_KEY!,
                                     },
                                   }
                                 );
@@ -833,8 +831,7 @@ export default function AdminPanel() {
                               '/api/uploads/audio/stats',
                               {
                                 headers: {
-                                  'x-api-key':
-                                    process.env.NEXT_PUBLIC_API_KEY || '123456',
+                                  'x-api-key': process.env.NEXT_PUBLIC_API_KEY!,
                                 },
                               }
                             );

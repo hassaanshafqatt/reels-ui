@@ -1,7 +1,5 @@
 node_modules
 .next
-.env
-.env.*
 # Allow the example env file to be copied into the image for documentation purposes
 !.env.example
 npm-debug.log*

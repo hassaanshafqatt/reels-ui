@@ -134,9 +134,9 @@ export const LoginPage = () => {
               <span className="text-teal-100">Automatically</span>
             </h2>
             <p className="text-teal-100 text-base xl:text-lg leading-relaxed">
-              Transform your Instagram presence with AI-powered reel generation.
-              Choose from viral templates, customize captions, and watch your
-              engagement soar.
+              Transform your social media presence with AI-powered reel
+              generation. Choose from viral templates, customize captions, and
+              watch your engagement soar.
             </p>
           </div>
 
@@ -165,7 +165,7 @@ export const LoginPage = () => {
                 Multi-Account
               </h3>
               <p className="text-teal-100 text-xs xl:text-sm">
-                Manage multiple Instagram accounts
+                Manage multiple social media accounts
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 xl:p-6">
@@ -396,30 +396,6 @@ export const LoginPage = () => {
                   )}
                 </Button>
               </div>
-
-              {!isRegistering && (
-                <div className="mt-3 sm:mt-4 lg:mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-300" />
-                    </div>
-                    <div className="relative flex justify-center text-xs sm:text-sm">
-                      <span className="px-2 bg-white text-gray-500">
-                        Or continue with
-                      </span>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full mt-2 sm:mt-3 lg:mt-4 h-9 sm:h-10 lg:h-11 border-gray-300 hover:bg-gray-50 text-xs sm:text-sm"
-                  >
-                    <Instagram className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                    Continue with Instagram
-                  </Button>
-                </div>
-              )}
             </CardContent>
           </Card>
 

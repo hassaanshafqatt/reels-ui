@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { verifyApiKey } from '@/lib/security';
 
 // File tracking for cleanup
 const fileAccessTracker = new Map<
@@ -13,17 +14,7 @@ const fileAccessTracker = new Map<
   }
 >();
 
-// Helper function to verify API key for external services only
-async function verifyApiKey(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key');
-
-  // Check if API key matches the one in environment variables
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-    return false;
-  }
-
-  return true;
-}
+// ...existing code...
 
 // Helper function to schedule file deletion after first access
 function scheduleFileDeletion(filename: string, filePath: string) {
@@ -141,10 +132,10 @@ export async function DELETE(
 ) {
   try {
     // Verify API key for external services
-    const isValidApiKey = await verifyApiKey(request);
-    if (!isValidApiKey) {
+    const apiKeyResult = verifyApiKey(request);
+    if (!apiKeyResult.valid) {
       return NextResponse.json(
-        { error: 'Invalid or missing API key' },
+        { error: apiKeyResult.error || 'Invalid or missing API key' },
         { status: 401 }
       );
     }

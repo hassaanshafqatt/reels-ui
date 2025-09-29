@@ -51,8 +51,15 @@ export function verifyApiKey(request: NextRequest): {
     return { valid: false, error: 'Missing API key' };
   }
 
-  // Check if API key matches environment variable
-  if (apiKey !== process.env.API_KEY) {
+  // Accept either a dedicated API_KEY or the NEXT_PUBLIC_API_KEY value (some deployments
+  // expose the public key via NEXT_PUBLIC_*). Also allow a developer fallback key
+  // when running outside production for easy local testing.
+  const expectedKey = process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY;
+  if (apiKey === expectedKey) {
+    // matched configured key
+  } else if (process.env.NODE_ENV !== 'production' && apiKey === '123456') {
+    // developer fallback allowed only outside production
+  } else {
     return { valid: false, error: 'Invalid API key' };
   }
 

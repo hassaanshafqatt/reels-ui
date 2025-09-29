@@ -2,26 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, stat, unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-
-// Helper function to verify API key
-async function verifyApiKey(request: NextRequest) {
-  const apiKey = request.headers.get('x-api-key');
-
-  // Check if API key matches the one in environment variables
-  if (!apiKey || apiKey !== process.env.API_KEY) {
-    return false;
-  }
-
-  return true;
-}
+import { verifyApiKey } from '@/lib/security';
 
 export async function POST(request: NextRequest) {
   try {
     // Verify API key for cleanup operations
-    const isValidApiKey = await verifyApiKey(request);
-    if (!isValidApiKey) {
+    const apiKeyResult = verifyApiKey(request);
+    if (!apiKeyResult.valid) {
       return NextResponse.json(
-        { error: 'Invalid or missing API key' },
+        { error: apiKeyResult.error || 'Invalid or missing API key' },
         { status: 401 }
       );
     }
