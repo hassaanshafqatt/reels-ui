@@ -54,9 +54,6 @@ FROM base AS runner
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 
-# Switch to non-root user
-USER nextjs
-
 # Working dir
 WORKDIR /app
 
@@ -84,6 +81,9 @@ RUN mkdir -p /app/data /app/public/uploads/audio \
 COPY --chown=nextjs:nodejs docker-init.sh /usr/local/bin/docker-init.sh
 RUN chmod +x /usr/local/bin/docker-init.sh \
  && sed -i 's/\r$//' /usr/local/bin/docker-init.sh
+
+# Switch to non-root user **after all installs/config**
+USER nextjs
 
 # Expose app port
 EXPOSE 4761
