@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { TooltipProvider, SimpleTooltip } from '@/components/ui/tooltip';
 import { getAuthHeaders } from '@/lib/clientAuth';
 import { Sparkles, Clock } from 'lucide-react';
 import { jobService, type StoredJob } from '@/lib/jobService';
@@ -718,10 +719,10 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
 
   // Render helpers
   const renderMobileNavigation = () => (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 mobile-bottom-nav safe-area-bottom">
-      <div className="px-3 py-2">
-        <div className="flex justify-center">
-          <div className="flex space-x-2 bg-gray-50 rounded-full p-1.5 max-w-full overflow-x-auto scrollbar-hide">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 shadow-lg">
+      <div className="px-2 py-2 pb-safe">
+        <div className="flex justify-start overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1.5 px-1 min-w-full">
             {reelCategories.map((category) => {
               const mobileTitle = category.title
                 .replace('Viral Reels', 'Viral')
@@ -736,18 +737,18 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                   key={category.id}
                   onClick={() => setActiveTab(category.name)}
                   aria-current={isActive ? 'true' : 'false'}
-                  className={`flex flex-col items-center px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 min-w-[64px] touch-target ${
+                  className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 min-w-[70px] flex-shrink-0 ${
                     isActive
-                      ? 'bg-teal-600 text-white'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'bg-teal-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
                   }`}
                 >
                   <div
-                    className={`transition-colors duration-200 ${isActive ? 'text-white' : 'text-gray-400'}`}
+                    className={`mb-1 transition-colors duration-200 ${isActive ? 'text-white' : 'text-gray-400'}`}
                   >
                     {getIconFromDatabase(category.icon || 'Sparkles')}
                   </div>
-                  <span className="mt-1 leading-none text-[11px] max-w-[68px] truncate">
+                  <span className="leading-tight text-[10px] text-center break-words max-w-[70px]">
                     {mobileTitle}
                   </span>
                 </button>
@@ -763,7 +764,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
     if (!selectedReel || selectedCategory !== activeTab) return null;
 
     return (
-      <div className="mt-3 sm:mt-4 lg:mt-6 pt-3 sm:pt-4 lg:pt-6 border-t border-gray-100">
+      <div className="mt-4 sm:mt-5 lg:mt-6 pt-4 sm:pt-5 lg:pt-6 border-t border-gray-100">
         <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">
           Generation Settings
         </h4>
@@ -808,23 +809,36 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
               </>
             )}
 
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || audioError !== null}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+          <SimpleTooltip
+            content={
+              isGenerating
+                ? 'AI is creating your reel. This may take a few minutes...'
+                : audioError
+                  ? 'Please fix the audio error before generating'
+                  : `Generate a new ${selectedReel?.title} reel using AI. ${generateCaption ? 'AI will create the caption automatically.' : 'Using your custom caption.'}`
+            }
+            side="top"
           >
-            {isGenerating ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                <span className="truncate">Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={16} className="flex-shrink-0" />
-                <span className="truncate">Generate {selectedReel?.title}</span>
-              </>
-            )}
-          </Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || audioError !== null}
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 sm:py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent flex-shrink-0" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} className="flex-shrink-0" />
+                  <span className="truncate">
+                    Generate {selectedReel?.title}
+                  </span>
+                </>
+              )}
+            </Button>
+          </SimpleTooltip>
         </div>
       </div>
     );
@@ -842,9 +856,9 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
           }
         />
 
-        <div className="p-3 sm:p-4 lg:p-6">
+        <div className="p-3 sm:p-5 lg:p-6">
           {currentSubTab === 'generate' && (
-            <div className="p-3 sm:p-4 lg:p-6">
+            <>
               <ReelTypeGrid
                 types={category.types}
                 selectedReel={selectedReel}
@@ -853,38 +867,36 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
                 onReelSelect={handleReelSelect}
               />
               {renderGenerationSettings()}
-            </div>
+            </>
           )}
 
           {currentSubTab === 'post' && (
-            <div className="space-y-6">
-              <GeneratedReelsSection
-                jobs={getJobsForCategory(activeTab)}
-                refreshingJobs={refreshingJobs}
-                onRefreshJob={(job) => {
-                  setRefreshingJobs((prev) => new Set(prev).add(job.job_id));
-                  checkJobStatus(job);
-                }}
-                isPolling={isPolling}
-                onManualRefresh={refetchJobs}
-              />
-            </div>
+            <GeneratedReelsSection
+              jobs={getJobsForCategory(activeTab)}
+              refreshingJobs={refreshingJobs}
+              onRefreshJob={(job) => {
+                setRefreshingJobs((prev) => new Set(prev).add(job.job_id));
+                checkJobStatus(job);
+              }}
+              isPolling={isPolling}
+              onManualRefresh={refetchJobs}
+            />
           )}
 
           {currentSubTab === 'history' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5 text-teal-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-teal-600 flex-shrink-0" />
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                     Generation History
                   </h3>
                 </div>
-                <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium">
+                <div className="bg-teal-100 text-teal-600 rounded-full px-3 py-1 text-sm font-medium self-start sm:self-auto">
                   {getJobsForCategory(category.name).length}
                 </div>
               </div>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 Track generation progress and view completed reels
               </p>
 
@@ -903,7 +915,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
   };
 
   const renderSingleCategoryView = (category: ReelCategoryWithTypes) => (
-    <div className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6 animate-in fade-in-50 duration-200">
       {error && (
         <Message type="error" message={error} onClose={() => setError(null)} />
       )}
@@ -937,7 +949,7 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
         <TabsContent
           key={category.id}
           value={category.name}
-          className="space-y-4 sm:space-y-6 animate-in fade-in-50 duration-200"
+          className="space-y-3 sm:space-y-4 lg:space-y-6 animate-in fade-in-50 duration-200"
         >
           {error && (
             <Message
@@ -966,35 +978,37 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
 
   const renderConfirmClearDialog = () => (
     <Dialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-      <DialogContent className="p-6">
+      <DialogContent className="max-w-[95vw] sm:max-w-lg p-4 sm:p-6">
         <DialogClose onClose={() => setConfirmClearOpen(false)}>
           <span className="sr-only">Close</span>
         </DialogClose>
-        <DialogHeader>
-          <DialogTitle>Clear Generation History</DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="space-y-2 sm:space-y-3">
+          <DialogTitle className="text-lg sm:text-xl">
+            Clear Generation History
+          </DialogTitle>
+          <DialogDescription className="text-sm sm:text-base">
             This will permanently delete generation history
             {clearCategoryCandidate ? ` for ${clearCategoryCandidate}` : ''}.
             This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-4 text-sm text-gray-700">
+        <div className="py-3 sm:py-4 text-xs sm:text-sm text-gray-700">
           Are you sure you want to clear the selected history? This will remove
           the records from your account.
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={() => setConfirmClearOpen(false)}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto order-2 sm:order-1"
           >
             Cancel
           </Button>
           <Button
             onClick={handleConfirmClear}
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white order-1 sm:order-2"
             disabled={isClearingHistory}
           >
             {isClearingHistory ? (
@@ -1043,16 +1057,18 @@ export default function Dashboard({ onReelSelect = () => {} }: DashboardProps) {
   if (!reelCategories.length) return null;
 
   return (
-    <div className="w-full min-h-screen flex flex-col">
-      <div className="max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8 pb-24 sm:pb-8">
-        {reelCategories.length === 1
-          ? renderSingleCategoryView(reelCategories[0])
-          : renderMultipleCategoriesView()}
-      </div>
+    <TooltipProvider>
+      <div className="w-full min-h-screen flex flex-col bg-gray-50">
+        <div className="max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 pb-20 sm:pb-6">
+          {reelCategories.length === 1
+            ? renderSingleCategoryView(reelCategories[0])
+            : renderMultipleCategoriesView()}
+        </div>
 
-      {renderMobileNavigation()}
-      {renderConfirmClearDialog()}
-      {renderCustomCaptionDialog()}
-    </div>
+        {renderMobileNavigation()}
+        {renderConfirmClearDialog()}
+        {renderCustomCaptionDialog()}
+      </div>
+    </TooltipProvider>
   );
 }

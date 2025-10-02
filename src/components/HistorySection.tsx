@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import {
   Clock,
   CheckCircle,
@@ -75,25 +76,30 @@ export default function HistorySection({
       {/* Clear History Button */}
       {jobs.length > 0 && onClearHistory && (
         <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearHistory}
-            disabled={isClearingHistory}
-            className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-all duration-200"
+          <SimpleTooltip
+            content="Permanently delete all generation history from this category. This action cannot be undone."
+            side="left"
           >
-            {isClearingHistory ? (
-              <>
-                <Loader className="h-4 w-4 mr-2 animate-spin" />
-                Clearing...
-              </>
-            ) : (
-              <>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear History
-              </>
-            )}
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearHistory}
+              disabled={isClearingHistory}
+              className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-400 transition-all duration-200"
+            >
+              {isClearingHistory ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Clearing...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear History
+                </>
+              )}
+            </Button>
+          </SimpleTooltip>
         </div>
       )}
 
@@ -117,39 +123,71 @@ export default function HistorySection({
                     <span className="text-xs text-gray-500">
                       {job.job_id.substring(0, 6)}...
                     </span>
-                    <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                      {job.status}
-                    </Badge>
+                    <SimpleTooltip
+                      content={
+                        job.status === 'completed'
+                          ? 'Reel generation completed successfully'
+                          : job.status === 'processing'
+                            ? 'AI is currently generating your reel'
+                            : job.status === 'failed'
+                              ? 'Generation failed - click refresh to retry or check for errors'
+                              : job.status === 'pending'
+                                ? 'Job is queued and waiting to be processed'
+                                : `Status: ${job.status}`
+                      }
+                      side="top"
+                    >
+                      <Badge
+                        variant="outline"
+                        className="text-xs px-1.5 py-0.5"
+                      >
+                        {job.status}
+                      </Badge>
+                    </SimpleTooltip>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center space-x-1 flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onRefreshJob(job);
-                  }}
-                  disabled={refreshingJobs.has(job.job_id)}
-                  className="h-10 w-10 p-0 border-teal-300 text-teal-600 hover:bg-teal-100 hover:border-teal-400 transition-all duration-200 active:scale-95"
+                <SimpleTooltip
+                  content={
+                    refreshingJobs.has(job.job_id)
+                      ? 'Checking job status...'
+                      : `Check status of job ${job.job_id.substring(0, 8)}... - Current: ${job.status}`
+                  }
+                  side="left"
                 >
-                  {refreshingJobs.has(job.job_id) ? (
-                    <Loader className="h-5 w-5 animate-spin text-teal-600" />
-                  ) : (
-                    <RefreshCw className="h-5 w-5" />
-                  )}
-                </Button>
-                {job.result_url && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(job.result_url, '_blank')}
-                    className="h-10 w-10 p-0 border-emerald-300 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-400 transition-all duration-200 active:scale-95"
-                    title="Open reel"
+                    onClick={() => {
+                      onRefreshJob(job);
+                    }}
+                    disabled={refreshingJobs.has(job.job_id)}
+                    className="h-10 w-10 p-0 border-teal-300 text-teal-600 hover:bg-teal-100 hover:border-teal-400 transition-all duration-200 active:scale-95"
                   >
-                    <ExternalLink className="h-5 w-5" />
+                    {refreshingJobs.has(job.job_id) ? (
+                      <Loader className="h-5 w-5 animate-spin text-teal-600" />
+                    ) : (
+                      <RefreshCw className="h-5 w-5" />
+                    )}
                   </Button>
+                </SimpleTooltip>
+                {job.result_url && (
+                  <SimpleTooltip
+                    content="Open completed reel in a new tab to view or download"
+                    side="left"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(job.result_url, '_blank')}
+                      className="h-10 w-10 p-0 border-emerald-300 text-emerald-600 hover:bg-emerald-100 hover:border-emerald-400 transition-all duration-200 active:scale-95"
+                      title="Open reel"
+                    >
+                      <ExternalLink className="h-5 w-5" />
+                    </Button>
+                  </SimpleTooltip>
                 )}
               </div>
             </div>
